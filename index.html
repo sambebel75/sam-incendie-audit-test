@@ -893,7 +893,7 @@ input[type="number"], input[type="text"], input[type="email"], input[type="tel"]
 if ('serviceWorker' in navigator) {
   try {
     // Doit rester égale à VERSION dans sw.js : le message n'apparaît que si le service worker actif est plus récent que la page.
-    const VERSION_PAGE = 'v11';
+    const VERSION_PAGE = 'v12';
     let bandeauAffiche = false;
     navigator.serviceWorker.addEventListener('message', e => {
       if (!e.data || e.data.type !== 'sw-active' || e.data.version === VERSION_PAGE || bandeauAffiche) return;
@@ -1484,6 +1484,7 @@ a.essai-btn{display:inline-flex;align-items:center;justify-content:center;text-d
           </label>
         </div>
       </div>
+      <div id="precisions-seuils-target"></div>
       <div style="margin-bottom:16px;padding:15px;border:1px solid #e2e8f0;border-radius:6px;background:#f7fafc;font-family:sans-serif">
         <h4 style="margin:0 0 10px 0;color:#2d3748;font-size:14px">Visualisation des sorties du niveau principal</h4>
         <div style="display:flex;align-items:center;height:45px;background:#edf2f7;border-radius:4px;overflow:hidden;border:1px solid #cbd5e0">
@@ -1561,7 +1562,13 @@ a.essai-btn{display:inline-flex;align-items:center;justify-content:center;text-d
             <input type="checkbox" id="check-ssol" onchange="state.desenfumage.estEnSousSol=this.checked;evaluerObligationDesenfumage()"> &nbsp;Local en sous-sol
           </label>
           <label style="font-size:12px;color:#4a5568;display:flex;align-items:center;margin-top:18px;cursor:pointer">
-            <input type="checkbox" id="check-aveugle" onchange="state.desenfumage.estAveugle=this.checked;evaluerObligationDesenfumage()"> &nbsp;Local aveugle
+            <input type="checkbox" id="check-aveugle" onchange="state.desenfumage.estAveugle=this.checked;evaluerObligationDesenfumage()"> &nbsp;Local sans ouverture sur l'extérieur (aveugle)
+          </label>
+          <label id="bloc-danse" style="font-size:12px;color:#4a5568;display:none;align-items:center;margin-top:18px;cursor:pointer">
+            <input type="checkbox" id="check-danse" onchange="state.desenfumage.salleDanse=this.checked;evaluerObligationDesenfumage()"> &nbsp;Salle de danse (type P)
+          </label>
+          <label id="bloc-mezzanine" style="font-size:12px;color:#4a5568;display:none;align-items:center;margin-top:18px;cursor:pointer">
+            <input type="checkbox" id="check-mezzanine" onchange="state.desenfumage.mezzanine=this.checked;evaluerObligationDesenfumage()"> &nbsp;Mezzanine ou niveaux partiels (type P)
           </label>
         </div>
       </div>
@@ -1605,22 +1612,43 @@ a.essai-btn{display:inline-flex;align-items:center;justify-content:center;text-d
     <!-- 🏢 BLOC EXCLUSIF IMMEUBLE DE GRANDE HAUTEUR (IGH) -->
     <div id="block-technique-igh" style="display:none;">
       <div style="background:#f7fafc;padding:15px;border-radius:6px;border:1px solid #e2e8f0;margin-bottom:20px;font-family:sans-serif;">
-        <h4 style="margin:0 0 12px 0;color:#4a5568;font-size:14px;">Paramètres de Classification IGH (Arrêté du 30/12/2011)</h4>
+        <h4 style="margin:0 0 12px 0;color:#4a5568;font-size:14px;">Paramètres de Classification IGH (CCH R. 146-3 et R. 146-4)</h4>
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;">
           <label style="font-size:12px;color:#4a5568;font-weight:bold;">Classe / Vocation de l'IGH<br>
             <select id="select-classe-igh" style="width:100%;padding:6px;margin-top:4px;box-sizing:border-box;"
-              onchange="state.igh.classeIgh=this.value;evaluerReglesIGH();calcularMinimumExtincteurs();">
-              <option value="GHT">GHT — Bureaux (Seuil 28m)</option>
-              <option value="GHW">GHW — Bureaux / Archives W1-W2 (Seuil 28m)</option>
-              <option value="GHA">GHA — Habitation (Seuil 50m)</option>
-              <option value="GHO">GHO — Hôtels (Seuil 28m)</option>
-              <option value="GHU">GHU — Sanitaire / Soins (Seuil 28m)</option>
-              <option value="ITGH">ITGH — Très Grande Hauteur (&gt;200m)</option>
+              onchange="state.igh.classeIgh=this.value;if(this.value)state.igh.classeIghAncienne='';majChampsIgh();evaluerReglesIGH();calcularMinimumExtincteurs();">
+              <option value="">— choisir la classe —</option>
+              <option value="GHA">GHA — Habitation (H &gt; 50 m)</option>
+              <option value="GHO">GHO — Hôtel (H &gt; 28 m)</option>
+              <option value="GHR">GHR — Enseignement (H &gt; 28 m)</option>
+              <option value="GHS">GHS — Dépôt d'archives (H &gt; 28 m)</option>
+              <option value="GHTC">GHTC — Tour de contrôle (H &gt; 28 m)</option>
+              <option value="GHU">GHU — Sanitaire / soins (H &gt; 28 m)</option>
+              <option value="GHW1">GHW 1 — Bureaux, 28 m &lt; H ≤ 50 m (conditions du règlement)</option>
+              <option value="GHW2">GHW 2 — Bureaux, H &gt; 50 m</option>
+              <option value="GHZ">GHZ — Habitation 28 à 50 m avec locaux autres non indépendants</option>
+              <option value="ITGH">ITGH — Très grande hauteur (H &gt; 200 m)</option>
             </select>
           </label>
-          <label style="font-size:12px;color:#4a5568;font-weight:bold;">Hauteur du plancher bas le plus haut (m)<br>
+          <label style="font-size:12px;color:#4a5568;font-weight:bold;">Hauteur du plancher bas du dernier niveau (m), mesurée depuis le sol le plus haut utilisable par les engins de secours (pas la hauteur du toit)<br>
             <input type="number" id="input-h-igh" value="0" step="1" style="width:100%;padding:6px;margin-top:4px;box-sizing:border-box;"
               oninput="state.igh.hauteurDernierNiveau=parseFloat(this.value)||0;evaluerReglesIGH();evaluerColonnesHumidesGH50();">
+          </label>
+          <label id="bloc-igh-independance" style="font-size:12px;color:#4a5568;font-weight:bold;display:none;">Locaux autres que d'habitation : indépendants au sens de l'arrêté (R. 146-5) ?<br>
+            <select id="select-igh-independance" style="width:100%;padding:6px;margin-top:4px;box-sizing:border-box;"
+              onchange="state.igh.independanceLocaux=this.value;evaluerReglesIGH();">
+              <option value="">— à vérifier —</option>
+              <option value="oui">Oui : conditions d'indépendance remplies</option>
+              <option value="non">Non : conditions non remplies</option>
+            </select>
+          </label>
+          <label id="bloc-igh-ghw1" style="font-size:12px;color:#4a5568;font-weight:bold;display:none;">Conditions de la classe GHW 1 (règlement R. 122-4) remplies ?<br>
+            <select id="select-igh-ghw1" style="width:100%;padding:6px;margin-top:4px;box-sizing:border-box;"
+              onchange="state.igh.conditionsGhw1=this.value;evaluerReglesIGH();">
+              <option value="">— à vérifier —</option>
+              <option value="oui">Oui</option>
+              <option value="non">Non</option>
+            </select>
           </label>
           <label style="font-size:12px;color:#4a5568;font-weight:bold;">Nombre total de compartiments<br>
             <input type="number" id="input-comp-igh" value="1" style="width:100%;padding:6px;margin-top:4px;box-sizing:border-box;"
@@ -2134,7 +2162,7 @@ let state = {
   },
   techniqueErp: {},
   igh: {
-    classeIgh: 'GHT',
+    classeIgh: '',
     hauteurDernierNiveau: 0,
     nombreCompartiments: 1,
     typeClapets: 'autonome',
@@ -2168,6 +2196,13 @@ function copierSur(cible, source){
   return cible;
 }
 
+// Classes IGH disparues de R. 146-4 (GHT « bureaux ») ou scindées (GHW -> GHW 1 / GHW 2) : jamais renommées
+// automatiquement. L'ancienne valeur est gardée dans classeIghAncienne, la classe est à ressaisir.
+function migrerClasseIghAncienne(igh){
+  if(igh && (igh.classeIgh==='GHT' || igh.classeIgh==='GHW')){ igh.classeIghAncienne = igh.classeIgh; igh.classeIgh = ''; }
+  return igh;
+}
+
 function dossierVierge(){
   return {
     erpSubType: '',
@@ -2180,7 +2215,7 @@ function dossierVierge(){
     desenfumage: {surfaceLocal:0, hauteurSousPlafond:3.0, longueurCirculation:0, effectifSousSol:0, estEnSousSol:false, estAveugle:false, presenceRisqueSpecial:false},
     habitation: {hauteurPlancherBas:0, nombreEtages:0, typeCirculation:'encloisonnee', aAscenseur:false},
     techniqueErp: {},
-    igh: {classeIgh:'GHT', hauteurDernierNiveau:0, nombreCompartiments:1, typeClapets:'autonome', hasReportCMSI:false, nombreColonnesHumides:1},
+    igh: {classeIgh:'', hauteurDernierNiveau:0, nombreCompartiments:1, typeClapets:'autonome', hasReportCMSI:false, nombreColonnesHumides:1},
     essai: {activite:'', reponses:{}},
   };
 }
@@ -2199,6 +2234,7 @@ function normaliserDossier(raw){
   copierSur(d.habitation, raw.habitation);
   copierSur(d.techniqueErp, raw.techniqueErp);
   copierSur(d.igh, raw.igh);
+  migrerClasseIghAncienne(d.igh);
   copierSur(d.essai, raw.essai);
   return d;
 }
@@ -2444,6 +2480,7 @@ function dossierDepuisLegacy(type, b, p, conflits){
   copierSur(d.habitation, B.habitation);   copierSur(d.habitation, P.habitation);
   copierSur(d.techniqueErp, B.techniqueErp);
   copierSur(d.igh, B.igh);
+  migrerClasseIghAncienne(d.igh);
   copierSur(d.essai, B.essai); copierSur(d.essai, P.essai);
   d.scores = fusionnerScores(B.scores, P.scores, conflits, type);
   return d;
@@ -2715,6 +2752,7 @@ function restoreDesenfumageFields(){
   if(circEl) circEl.value = df.longueurCirculation||0;
   if(ssolCk) ssolCk.checked = !!df.estEnSousSol;
   if(avCk)   avCk.checked   = !!df.estAveugle;
+  rendrePrecisionsSeuils(true); majChampsDesenfumageSpeciaux(); majChampsIgh();
   if(typeof executerCalculCO36==='function') executerCalculCO36();
   if(typeof evaluerObligationDesenfumage==='function') evaluerObligationDesenfumage();
   const hplbEl  = document.getElementById('input-hplb');
@@ -2914,10 +2952,9 @@ function doPrint(){
   // BUG2 FIX: categorieText calculé depuis getCategorieERP (pas de dépendance à executerCalculCO36)
   let coverCat = id.categorie ? `${id.categorie}e catégorie` : '—';
   if(state.auditType==='erp'){
-    const types = state.mixteTypes?.length ? state.mixteTypes : (state.erpSubType ? [state.erpSubType] : []);
     const effNum = parseInt(String(id.effectif||'').match(/\d+/)?.[0])||0;
-    const cat = getCategorieERP(effNum, types, !!id.sommeil);
-    if(cat) coverCat = cat.indicative ? `${cat.categorieAffichee} (${cat.mention})` : cat.categorie;
+    const cat = getCategorieERP(effNum>0 ? effNum : undefined);
+    if(cat && !cat.indeterminee) coverCat = cat.indicative ? `${cat.categorieAffichee} (${cat.mention})` : cat.categorie;
   }
   setText('cover-nom', id.nom);
   setText('cover-adresse', id.adresse);
@@ -4235,6 +4272,7 @@ function showTab(n){
         if(rdcEl)  rdcEl.value  = state.effectifRdc||0;
         if(ssolEl) ssolEl.value = (state.desenfumage&&state.desenfumage.effectifSousSol)||0;
         if(surfEl && state.desenfumage) surfEl.value = state.desenfumage.surfaceLocal||0;
+        rendrePrecisionsSeuils(); majChampsDesenfumageSpeciaux();
         if(typeof executerCalculCO36==='function')          executerCalculCO36();
         if(typeof evaluerObligationDesenfumage==='function') evaluerObligationDesenfumage();
         if(typeof calcularMinimumExtincteurs==='function')  calcularMinimumExtincteurs();
@@ -4255,11 +4293,12 @@ function showTab(n){
         if(typeof calcularMinimumExtincteurs==='function') calcularMinimumExtincteurs();
       } else if(state.auditType==='igh'){
         blockIgh.style.display = 'block';
-        if(!state.igh) state.igh={classeIgh:'GHT',hauteurDernierNiveau:0,nombreCompartiments:1,typeClapets:'autonome',hasReportCMSI:false,nombreColonnesHumides:1};
+        if(!state.igh) state.igh={classeIgh:'',hauteurDernierNiveau:0,nombreCompartiments:1,typeClapets:'autonome',hasReportCMSI:false,nombreColonnesHumides:1};
         const selClasse = document.getElementById('select-classe-igh');
         const inputH    = document.getElementById('input-h-igh');
         const inputComp = document.getElementById('input-comp-igh');
-        if(selClasse) selClasse.value = state.igh.classeIgh||'GHT';
+        if(selClasse) selClasse.value = state.igh.classeIgh||'';
+        majChampsIgh();
         if(inputH)    inputH.value    = state.igh.hauteurDernierNiveau||0;
         if(inputComp) inputComp.value = state.igh.nombreCompartiments||1;
         const selClapets = document.getElementById('select-type-clapets');
@@ -5132,19 +5171,10 @@ function renderPlan() {
         });
     }
 
-    // 2. Alerte Rupture de Seuil ERP (Bascule 1er Groupe)
+    // 2. Alerte Rupture de Seuil ERP (Bascule 1er Groupe) : seulement quand le moteur est sûr (voir alertesRuptureSeuil)
     const typePrincipal = state.erpSubType || "M";
     if (state.auditType === 'erp') {
-        const refType = seuilsErp(typePrincipal);
-        const effectifTotal = (parseInt(state.effectifRdc,10)||0) + (parseInt(state.desenfumage?.effectifSousSol,10)||0);
-        if (refType && effectifTotal >= refType.seuilGlobal) {
-            actionsCompilees.push({
-                id: "R-CCH-01",
-                priorite: "P1",
-                constat: `Rupture de seuil de la 5e catégorie (Totalisé à ${effectifTotal} personnes pour le Type ${typePrincipal}, seuil : ${refType.seuilGlobal}).` + (refType.statut==='valide' ? '' : ` Seuil indicatif — ${MENTION_A_VALIDER}.`),
-                preconisation: "Déposer un dossier complet de mise en conformité en préfecture. Planifier le passage obligatoire de la Commission de Sécurité."
-            });
-        }
+        alertesRuptureSeuil().forEach(a => actionsCompilees.push(a));
     }
 
     // 3. Type U : Injection alerte SSI Catégorie A (Art. U 43) si point u_02_01 défaillant
@@ -5171,14 +5201,14 @@ function renderPlan() {
 
     // 4. Alerte Extincteur sur Roues IGH GHW (Art. GH 52)
     if (state.auditType === 'igh') {
-        const classeIghActive = state.igh ? (state.igh.classeIgh || "GHT") : "GHT";
+        const classeIghActive = state.igh ? (state.igh.classeIgh || "") : "";
         const surface = parseFloat(state.desenfumage ? state.desenfumage.surfaceLocal : 0) || 0;
         const aRisqueSpecial = state.desenfumage ? !!state.desenfumage.presenceRisqueSpecial : false;
-        if (classeIghActive === "GHW" && (aRisqueSpecial || surface > 1000)) {
+        if (estGhw(classeIghActive) && (aRisqueSpecial || surface > 1000)) {
             actionsCompilees.push({
                 id: "IGH-GHW-EXT-01",
                 priorite: "P1",
-                constat: `Absence d'un moyen d'extinction lourd sur roues dans un compartiment de classe GHW (Surface : ${surface} m² ou Risques Spéciaux présents).`,
+                constat: `Absence d'un moyen d'extinction lourd sur roues dans un compartiment de classe ${classeIghActive.replace("GHW","GHW ")} (Surface : ${surface} m² ou Risques Spéciaux présents).`,
                 preconisation: "Doter obligatoirement la circulation ou le local d'un extincteur sur roues de 50 litres d'eau pulvérisée ou de 25 kg de poudre polyvalente ABC (Conforme à l'Article GH 52)."
             });
         }
@@ -5297,35 +5327,8 @@ function renderPlanTechAlerts(){
   const alertTarget = document.getElementById('panel-plan-target');
   if(!alertTarget) return;
   const techAlerts = [];
-  const effRdc = parseInt(state.effectifRdc,10)||0;
-  const effSs  = parseInt(state.desenfumage?.effectifSousSol,10)||0;
-  const effectifTotal = effRdc+effSs;
-  const typePrincipal = state.erpSubType||'M';
-  // Seuils de l'article PE 2 §1, locaux à sommeil pris en compte
-  const refType = seuilsErp(typePrincipal);
-  if(refType && effectifTotal>0){
-    if(effectifTotal>=refType.seuilGlobal){
-      techAlerts.push({id:'R-CCH-01',priorite:'P1',
-        constat:`Rupture de seuil 5e catégorie — effectif cumulé ${effectifTotal} pers. (seuil Type ${typePrincipal} : ${refType.seuilGlobal} pers.)` + (refType.statut==='valide' ? '' : ` Seuil indicatif — ${MENTION_A_VALIDER}.`),
-        preconisation:'Déposer dossier de mise en conformité en préfecture. Commission de sécurité obligatoire.'});
-    } else if(effSs>0 && refType.seuilSousSol!==null && effSs>=refType.seuilSousSol){
-      techAlerts.push({id:'R-CCH-02',priorite:'P1',
-        constat:`Rupture de seuil sous-sol — ${effSs} pers. en sous-sol (seuil Type ${typePrincipal} : ${refType.seuilSousSol} pers.)` + (refType.statut==='valide' ? '' : ` Seuil indicatif — ${MENTION_A_VALIDER}.`),
-        preconisation:'Application des dispositions générales CO 39. Escalier montant isolé obligatoire.'});
-    }
-  }
-  const surf = parseFloat(state.desenfumage?.surfaceLocal)||0;
-  const dfRef = REFERENTIEL_DESENFUMAGE_LOCAL.defaut;
-  const dfMention = dfRef.statut==='valide' ? '' : ` Seuil indicatif — ${MENTION_A_VALIDER}.`;
-  if(surf>dfRef.aerien && !state.desenfumage?.estEnSousSol){
-    techAlerts.push({id:'T-DF-01',priorite:'P1',
-      constat:`Local aérien de ${surf} m² dépasse le seuil de ${dfRef.aerien} m² (IT 246).` + dfMention,
-      preconisation:'Installer désenfumage conforme (naturel ou mécanique). Débit min : 12 vol/h.'});
-  } else if(surf>dfRef.sousSolOuAveugle && state.desenfumage?.estEnSousSol){
-    techAlerts.push({id:'T-DF-02',priorite:'P1',
-      constat:`Local enterré/aveugle de ${surf} m² dépasse le seuil de ${dfRef.sousSolOuAveugle} m² (IT 246 / Art. DF 7).` + dfMention,
-      preconisation:'Désenfumage mécanique requis (tirage naturel via conduits débouchant accepté).'});
-  }
+  alertesRuptureSeuil().forEach(a=>techAlerts.push(a));
+  alerteDesenfumageLocal().forEach(a=>techAlerts.push(a));
   if(!techAlerts.length){ alertTarget.innerHTML=''; return; }
   const techRows = techAlerts.map(a=>{
     const bg = a.priorite==='P1'?'#E53E3E':a.priorite==='P3'?'#ECC94B':'#ED8936';
@@ -5624,32 +5627,11 @@ function executerCalculCO36(){
   const typePrincipal = state.erpSubType||'M';
   const typesMixtes   = state.mixteTypes||[];
 
-  if(state.desenfumage) state.desenfumage.estEnSousSol = (effSs>0);
-  if(effectifTotal<=0) return;
-
-  // Seuils : REFERENTIEL_SEUILS_ERP (tableau unique), mixteTypes inclus
-  const typesAControler = [...new Set([typePrincipal,...typesMixtes])].filter(t=>REFERENTIEL_SEUILS_ERP[t]);
-  let estPremierGroupe=false, motifBascule='';
-  typesAControler.forEach(type=>{
-    const ref = seuilsErp(type);
-    if(effectifTotal>=ref.seuilGlobal){
-      estPremierGroupe=true;
-      motifBascule=`Effectif global cumulé (${effectifTotal} pers.) : seuil du 1er groupe atteint pour le Type ${type} (${ref.seuilGlobal} pers., PE 2 §1)`;
-    }
-    if(effSs>0 && ref.seuilSousSol!==null && effSs>=ref.seuilSousSol){
-      estPremierGroupe=true;
-      motifBascule=`Effectif en sous-sol (${effSs} pers.) : seuil du 1er groupe en sous-sol atteint pour le Type ${type} (${ref.seuilSousSol} pers., PE 2 §1)`;
-    }
-  });
-
-  // Catégories du 1er groupe : article R. 143-19 du CCH
-  let categorieText='5e catégorie', badgeColor='#48BB78';
-  if(estPremierGroupe){
-    if(effectifTotal>1500)       { categorieText='1re catégorie'; badgeColor='#9B2C2C'; }
-    else if(effectifTotal>=701)  { categorieText='2e catégorie';  badgeColor='#E53E3E'; }
-    else if(effectifTotal>=301)  { categorieText='3e catégorie';  badgeColor='#DD6B20'; }
-    else                         { categorieText='4e catégorie';  badgeColor='#ED8936'; }
-  }
+  // Groupe ERP et catégorie : moteurs purs (bloc MOTEURS-REGLEMENTAIRES), jamais de conformité par défaut.
+  // L'écran ne fait qu'afficher leur réponse : « 1er groupe », « 5e catégorie » ou « indéterminé ».
+  const cat = getCategorieERP();
+  const badgeColor = cat.couleur;
+  const estPremierGroupe = cat.groupe==='1er';
 
   // Type O (Hôtels) et Type U (Soins) → contraintes sommeil d'office
   const estZoneSommeil = (typePrincipal==='O' || typePrincipal==='U');
@@ -5667,7 +5649,7 @@ function executerCalculCO36(){
 
   // SOUS-MOTEUR B : Dégagements RDC (Art. CO 38 §1 pour le nombre, CO 36 pour les largeurs)
   let rdcDeg=0, rdcUP=0, rdcAcc=0, rdcLargeur=0.0;
-  if(typeof getCO36==='function'){
+  if(effectifTotal>0 && typeof getCO36==='function'){
     const rdcCO36 = getCO36(effectifTotal);
     rdcDeg = rdcCO36.degn||1;
     rdcUP  = rdcCO36.up||2;
@@ -5680,29 +5662,147 @@ function executerCalculCO36(){
   const txtPorte   = document.getElementById('gauge-up-text');
 
   if(zoneAlerte){
-    const seuilRef = typesAControler.length ? typesAControler.reduce((m,t)=>Math.min(m,seuilsErp(t).seuilGlobal),Infinity) : 300;
-    const notesSeuils = typesAControler.map(t=>{
-      const r = seuilsErp(t);
-      return [r.note, r.seuilEtages!==null ? `Type ${t} : seuil de ${r.seuilEtages} personnes en étages, non contrôlé ici (pas de saisie par étage).` : ''].filter(Boolean).join(' ');
-    }).filter(Boolean).map(n=>`<br><span style="color:#92400e">⚠️ ${n}</span>`).join('');
-    const indicatif = effectifTotal<=300 && !seuilsValides(typesAControler);
-    const HTMLBadge=`<div style="display:inline-block;padding:4px 10px;background:${badgeColor};color:white;font-weight:bold;font-size:11px;border-radius:3px;text-transform:uppercase;margin-bottom:8px">Classement réglementaire : ${categorieText}${indicatif?' — indicative':''} (Type ${typePrincipal})</div>`
-      + (indicatif ? `<div class="a-valider" style="margin:0 0 8px;color:#92400e;font-weight:700">⚠️ ${MENTION_A_VALIDER}</div>` : '');
-    if(estPremierGroupe){
-      zoneAlerte.innerHTML=`<div style="margin-top:12px;padding:12px 15px;border-left:4px solid #E53E3E;background:#fff5f5;color:#c53030;font-size:12px;font-family:sans-serif;border-radius:0 4px 4px 0;line-height:1.5">${HTMLBadge}<strong style="display:block;margin-bottom:4px;font-size:13px">⚠️ RUPTURE DE SEUIL — 1er GROUPE</strong><strong>Motif :</strong> ${motifBascule}.<br>L'établissement sort de la 5e catégorie. Application intégrale des dispositions particulières du Type ${typePrincipal} pour le 1er groupe.${notesSeuils}</div>`;
-    } else {
+    const typeAffiche = state.erpSubType || 'non choisi';
+    const notesHtml = cat.notes.concat(cat.anomalies).map(n=>`<br><span style="color:#92400e">⚠️ ${n}</span>`).join('');
+    const mentionHtml = cat.indicative ? `<div class="a-valider" style="margin:0 0 8px;color:#92400e;font-weight:700">⚠️ ${MENTION_A_VALIDER}</div>` : '';
+    const HTMLBadge=`<div style="display:inline-block;padding:4px 10px;background:${badgeColor};color:white;font-weight:bold;font-size:11px;border-radius:3px;text-transform:uppercase;margin-bottom:8px">Classement réglementaire : ${cat.categorieAffichee} (Type ${typeAffiche})</div>${mentionHtml}`;
+    const boite = (bordure, fond, texte, contenu)=>`<div style="margin-top:12px;padding:12px 15px;border-left:4px solid ${bordure};background:${fond};color:${texte};font-size:12px;font-family:sans-serif;border-radius:0 4px 4px 0;line-height:1.5">${contenu}</div>`;
+    if(cat.groupe==='1er'){
+      zoneAlerte.innerHTML=boite('#E53E3E','#fff5f5','#c53030',`${HTMLBadge}<strong style="display:block;margin-bottom:4px;font-size:13px">⚠️ RUPTURE DE SEUIL — 1er GROUPE</strong><strong>Motif :</strong> ${cat.motifs.map(m=>m.texte).join(' ; ')}.<br>L'établissement sort de la 5e catégorie. Application intégrale des dispositions particulières du type pour le 1er groupe.${notesHtml}`);
+    } else if(cat.groupe==='5e'){
       const detailSs=effSs>0?`<br><span style="color:#2b6cb0;font-weight:bold">Art. CO 39 (SS) :</span> Escalier dimensionné pour ${effSs} pers. Exigence : <strong>${ssLargeur.toFixed(2)} m</strong> (${ssUP} UP / ${ssDeg} issue(s)).`:'';
-      zoneAlerte.innerHTML=`<div style="margin-top:12px;padding:12px 15px;border-left:4px solid #48BB78;background:#f0fff4;color:#22543d;font-size:12px;font-family:sans-serif;border-radius:0 4px 4px 0;line-height:1.4">${HTMLBadge}<br><strong>ℹ️ CONFORMITÉ 5e CATÉGORIE (2e groupe)</strong><br>L'effectif reste inférieur au seuil de ${seuilRef} personnes (PE 2 §1). ${detailSs}${notesSeuils}</div>`;
+      zoneAlerte.innerHTML=boite('#48BB78','#f0fff4','#22543d',`${HTMLBadge}<br><strong>ℹ️ 5e CATÉGORIE (2e groupe)</strong><br>L'effectif du public reste inférieur aux seuils applicables du tableau PE 2 §1. ${detailSs}${notesHtml}`);
+    } else {
+      const manque = cat.manquants.length ? `<br><strong>Données manquantes :</strong> ${libellesManquants(cat.manquants).join(' ; ')}.` : '';
+      zoneAlerte.innerHTML=boite('#718096','#f7fafc','#4a5568',`${HTMLBadge}<strong style="display:block;margin-bottom:4px;font-size:13px">❓ GROUPE ERP INDÉTERMINÉ — donnée manquante</strong>Aucune conclusion (ni 5e catégorie, ni 1er groupe) tant que ces données ne sont pas saisies dans « Précisions pour les seuils » ci-dessus.${manque}${notesHtml}`);
     }
   }
 
-  if(barPorte&&txtPorte){
+  if(barPorte&&txtPorte&&effectifTotal>0){
     barPorte.style.width=Math.min(20+rdcLargeur*15,100)+'%';
     barPorte.style.backgroundColor=badgeColor;
     barPorte.textContent=`${rdcUP} UP (${rdcDeg} sortie${rdcDeg>1?'s':''})`;
     txtPorte.innerHTML=`<strong>Dégagements du RDC (Flux Cumulé) :</strong> Débouché extérieur requis de <strong>${rdcLargeur.toFixed(2)} m</strong> cumulés (${rdcUP} UP sur ${rdcDeg} dégagement${rdcDeg>1?'s':''}${rdcAcc?' + 1 dégagement accessoire':''}, CO 38 §1).`;
   }
   planifierSauvegardeAutomatique();
+}
+
+// ==================== PRÉCISIONS POUR LES SEUILS (onglet Calcul des dégagements) ====================
+// Données d'entrée des moteurs, stockées dans state.techniqueErp.seuils (objet ouvert : aucune migration nécessaire).
+function majPrecisionSeuil(cle, valeur, genre, rendreEncore){
+  if(!state.techniqueErp) state.techniqueErp = {};
+  if(!state.techniqueErp.seuils || typeof state.techniqueErp.seuils!=='object') state.techniqueErp.seuils = {};
+  let v = valeur;
+  if(genre==='nombre') v = nombre(valeur);          // champ vide = donnée non renseignée (null), jamais 0 par défaut
+  else if(genre==='coche') v = !!valeur;
+  state.techniqueErp.seuils[cle] = v;
+  if(rendreEncore) rendrePrecisionsSeuils(true);
+  rafraichirApresPrecision();
+}
+function rafraichirApresPrecision(){
+  if(typeof executerCalculCO36==='function') executerCalculCO36();
+  if(typeof evaluerObligationDesenfumage==='function') evaluerObligationDesenfumage();
+  if(typeof calcDeg==='function') calcDeg();
+  if(typeof planifierSauvegardeAutomatique==='function') planifierSauvegardeAutomatique();
+}
+function echapperAttr(t){ return String(t==null?'':t).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;'); }
+function rendrePrecisionsSeuils(forcer){
+  const cible = document.getElementById('precisions-seuils-target');
+  if(!cible) return;
+  if(state.auditType!=='erp'){ cible.innerHTML = ''; cible.dataset.cle = ''; return; }
+  const types = typesErpPourSeuils();
+  const cle = types.join(',');
+  if(!forcer && cible.dataset.cle===cle && cible.innerHTML) return;
+  cible.dataset.cle = cle;
+  const p = precisionsSeuils();
+  const val = k => (p[k]===null || p[k]===undefined) ? '' : echapperAttr(p[k]);
+  const stylePlace = 'width:100%;padding:6px;margin-top:4px;box-sizing:border-box';
+  const nb = (k, label, aide) => `<label style="font-size:12px;color:#4a5568;font-weight:bold">${label}<br>
+      <input type="number" min="0" value="${val(k)}" placeholder="${aide||''}" style="${stylePlace}" oninput="majPrecisionSeuil('${k}',this.value,'nombre')"></label>`;
+  const choix = (k, label, options, rendre) => `<label style="font-size:12px;color:#4a5568;font-weight:bold">${label}<br>
+      <select style="${stylePlace}" onchange="majPrecisionSeuil('${k}',this.value,'texte'${rendre?',true':''})">
+        ${options.map(o=>`<option value="${o[0]}"${(p[k]||'')===o[0]?' selected':''}>${o[1]}</option>`).join('')}
+      </select></label>`;
+  let champs = '';
+  if(types.includes('J')){
+    champs += choix('populationJ', 'Type J : population accueillie', [['','— à préciser —'],['ages','Personnes âgées'],['handicapes','Personnes handicapées']]);
+    champs += nb('residentsJ', 'Type J : effectif des résidents', 'obligatoire');
+    champs += nb('effectifTotalJ', 'Type J : effectif total', 'obligatoire');
+  }
+  if(types.includes('L')){
+    champs += choix('activiteL', 'Type L : activité exacte de la salle', [
+      ['','— à préciser —'],
+      ['auditions',"Salle d'auditions, de conférences, de réunions, de pari, d'association, de quartier, multimédia"],
+      ['polyvalente_autre','Autre salle polyvalente (non visée au chapitre X)'],
+      ['polyvalente_sportive','Salle polyvalente à dominante sportive'],
+      ['spectacle','Salle de spectacles, de projections (cirques non forains), cabaret']], true);
+    if(p.activiteL==='polyvalente_sportive'){
+      champs += nb('surfaceSalleL', 'Superficie unitaire de la salle (m²)', 'obligatoire');
+      champs += nb('hauteurSalleL', 'Hauteur sous plafond (m)', 'obligatoire');
+    }
+  }
+  if(types.includes('R')){
+    champs += choix('brancheR', "Type R : nature de l'établissement", [['','— à préciser —'],['petite_enfance',"École maternelle, crèche, halte-garderie, jardin d'enfants"],['autres',"Autre établissement d'enseignement"]], true);
+    if(p.brancheR==='petite_enfance'){
+      champs += `<label style="font-size:12px;color:#4a5568;display:flex;align-items:center;margin-top:18px;cursor:pointer;font-weight:bold">
+        <input type="checkbox"${p.niveauUniqueEnEtageR?' checked':''} onchange="majPrecisionSeuil('niveauUniqueEnEtageR',this.checked,'coche')">&nbsp;L'établissement ne comporte qu'un seul niveau situé en étage</label>`;
+    }
+  }
+  champs += nb('effectifEtages', 'Effectif du public aux étages', '0 si aucun');
+  champs += nb('personnelNonIndependant', "Personnel n'occupant pas de locaux indépendants", 'pour la catégorie');
+  const horsPerimetre = Object.keys(TYPES_HORS_PERIMETRE).join(', ');
+  cible.innerHTML = `<div style="background:#f7fafc;padding:15px;border-radius:6px;border:1px solid #e2e8f0;margin-bottom:16px;font-family:sans-serif">
+      <h4 style="margin:0 0 4px 0;color:#4a5568;font-size:14px">Précisions pour les seuils (PE 2 §1) et la catégorie (R. 143-19)</h4>
+      <p style="margin:0 0 10px;font-size:11px;color:#718096">Sans ces données, le groupe ERP reste « indéterminé » : l'outil ne conclut ni 5e catégorie ni 1er groupe. La case « Locaux à sommeil » est dans l'onglet Identification (déterminante pour les types R et U).</p>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px">${champs}</div>
+      <p style="margin:10px 0 0;font-size:11px;color:#92400e">Types ${horsPerimetre} : hors périmètre de l'outil, aucun classement calculé (ils ne sont pas proposés).</p>
+    </div>`;
+}
+// Cases propres au type P (désenfumage, P 14 §2) : visibles seulement pour ce type, valeurs restaurées depuis le dossier.
+function majChampsDesenfumageSpeciaux(){
+  const df = state.desenfumage || {};
+  const estP = state.auditType==='erp' && typesErpPourSeuils().includes('P');
+  ['bloc-danse','bloc-mezzanine'].forEach(id=>{ const el = document.getElementById(id); if(el) el.style.display = estP ? 'flex' : 'none'; });
+  const d = document.getElementById('check-danse'), m = document.getElementById('check-mezzanine');
+  if(d) d.checked = !!df.salleDanse;
+  if(m) m.checked = !!df.mezzanine;
+}
+// Champs propres à l'IGH : visibilité selon la classe choisie, valeurs restaurées depuis le dossier.
+function majChampsIgh(){
+  const i = state.igh || {};
+  const ind = document.getElementById('bloc-igh-independance'), g1 = document.getElementById('bloc-igh-ghw1');
+  if(ind) ind.style.display = (i.classeIgh==='GHZ' || i.classeIgh==='GHA') ? 'block' : 'none';
+  if(g1) g1.style.display = i.classeIgh==='GHW1' ? 'block' : 'none';
+  const si = document.getElementById('select-igh-independance'), sg = document.getElementById('select-igh-ghw1');
+  if(si) si.value = i.independanceLocaux || '';
+  if(sg) sg.value = i.conditionsGhw1 || '';
+}
+
+// Alertes « rupture de seuil » : uniquement quand le moteur est SÛR (groupe = 1er). Indéterminé : aucune alerte inventée.
+function alertesRuptureSeuil(){
+  const g = moteurGroupeErp(entreeGroupeErp());
+  if(g.groupe!=='1er') return [];
+  const suffixe = g.statutsValides ? '' : ` Seuil indicatif — ${MENTION_A_VALIDER}.`;
+  const sousSolSeul = g.motifs.length>0 && g.motifs.every(m=>m.critere==='sous-sol');
+  return [{
+    id: sousSolSeul ? 'R-CCH-02' : 'R-CCH-01', priorite:'P1',
+    constat: `Rupture de seuil de la 5e catégorie — ${g.motifs.map(m=>m.texte).join(' ; ')}.` + suffixe,
+    preconisation: sousSolSeul ? 'Application des dispositions générales CO 39. Escalier montant isolé obligatoire.'
+                              : 'Déposer un dossier complet de mise en conformité en préfecture. Planifier le passage obligatoire de la Commission de Sécurité.'
+  }];
+}
+function desenfumageValide(){ return ['df7','pe14','p14'].every(k=>REFERENTIEL_DESENFUMAGE[k].statut==='valide'); }
+function alerteDesenfumageLocal(){
+  if(state.auditType!=='erp') return [];
+  const g = moteurGroupeErp(entreeGroupeErp());
+  const r = moteurDesenfumageLocal(entreeDesenfumageLocal(g.groupe));
+  if(r.resultat!=='oui') return [];
+  const enSousSol = !!(state.desenfumage && state.desenfumage.estEnSousSol);
+  return [{
+    id: enSousSol ? 'T-DF-02' : 'T-DF-01', priorite:'P1',
+    constat: r.motif + (desenfumageValide() ? '' : ` Seuil indicatif — ${MENTION_A_VALIDER}.`),
+    preconisation: enSousSol ? 'Désenfumage mécanique requis (tirage naturel via conduits débouchant accepté).' : 'Installer désenfumage conforme (naturel ou mécanique). Débit min : 12 vol/h.'
+  }];
 }
 
 // ==================== DÉSENFUMAGE IT 246 ====================
@@ -5715,26 +5815,18 @@ function evaluerObligationDesenfumage(){
   const typeErp      = state.erpSubType||'M';
   const estZoneSommeil = (typeErp==='O' || typeErp==='U');
 
-  let diagLocal = {obligatoire:false, typeRequis:'Aucun', motif:"Hors critères d'assujettissement."};
   let diagCirc  = {obligatoire:false, typeRequis:'Aucun', motif:"Hors critères d'assujettissement."};
 
-  // Seuil local modulé par type
-  const seuilSurfaceAerienne = seuilDesenfumageLocal(typeErp);
-  const seuilSurfaceEnterre = REFERENTIEL_DESENFUMAGE_LOCAL.defaut.sousSolOuAveugle;
-
-  if(sousSol||aveugle){
-    if(surface>seuilSurfaceEnterre){
-      diagLocal.obligatoire=true;
-      diagLocal.typeRequis='Extraction Mécanique Recommandée (IT 246)';
-      diagLocal.motif=`Surface (${surface} m²) > ${seuilSurfaceEnterre} m² en espace aveugle ou infrastructure basse (Art. DF 7).`;
-    }
-  } else {
-    if(surface>seuilSurfaceAerienne){
-      diagLocal.obligatoire=true;
-      diagLocal.typeRequis='Tirage Naturel ou Mécanique';
-      diagLocal.motif=`Surface (${surface} m²) > seuil critique de ${seuilSurfaceAerienne} m² défini pour le Type ${typeErp}.`;
-    }
-  }
+  // Local principal : moteur pur (DF 7 au 1er groupe, PE 14 en 5e catégorie, P 14 §2 pour la danse) ; seuils STRICTS (> et non ≥).
+  const groupeErp = moteurGroupeErp(entreeGroupeErp()).groupe;
+  const rLocal = moteurDesenfumageLocal(entreeDesenfumageLocal(groupeErp));
+  const diagLocal = {
+    etat: rLocal.resultat,
+    obligatoire: rLocal.resultat==='oui',
+    typeRequis: rLocal.resultat!=='oui' ? 'Aucun' : ((sousSol||aveugle) ? 'Extraction Mécanique Recommandée (IT 246)' : 'Tirage Naturel ou Mécanique'),
+    motif: rLocal.motif + (rLocal.manquants.length ? ' Donnée manquante : '+libellesManquants(rLocal.manquants).join(' ; ')+'.' : ''),
+    regle: rLocal.regle, notes: rLocal.notes||[]
+  };
 
   // Circulations horizontales
   if(estZoneSommeil){
@@ -5759,7 +5851,7 @@ function evaluerObligationDesenfumage(){
 
   // Débit IT 246
   let debitHTML='';
-  if(diagLocal.obligatoire&&(diagLocal.typeRequis.includes('Mécanique')||surface>seuilSurfaceAerienne)){
+  if(diagLocal.obligatoire && surface>0){
     const vol = surface*hauteurPl;
     const debitS = Math.max(vol*12/3600, 1.5);
     debitHTML=`<div style="margin-top:10px;padding:10px;background:#f7fafc;border:1px dashed #cbd5e0;font-family:monospace;font-size:11px;color:#4a5568">
@@ -5778,9 +5870,11 @@ function evaluerObligationDesenfumage(){
       <div style="margin-bottom:15px">
         <div style="display:flex;justify-content:space-between;align-items:center">
           <span style="font-weight:bold;color:#4a5568">1. Désenfumage du local principal :</span>
-          <span style="padding:3px 8px;border-radius:3px;font-size:11px;font-weight:bold;color:white;background:${diagLocal.obligatoire?'#E53E3E':'#48BB78'}">${diagLocal.obligatoire?'OBLIGATOIRE':'NON EXIGÉ'}</span>
+          <span style="padding:3px 8px;border-radius:3px;font-size:11px;font-weight:bold;color:white;background:${diagLocal.etat==='indetermine'?'#718096':(diagLocal.obligatoire?'#E53E3E':'#48BB78')}">${diagLocal.etat==='indetermine'?'INDÉTERMINÉ':(diagLocal.obligatoire?'OBLIGATOIRE':'NON EXIGÉ')}</span>
         </div>
         <p style="margin:5px 0 0;font-size:12px;color:#718096"><strong>Règle :</strong> ${diagLocal.motif}</p>
+        ${diagLocal.notes.map(n=>`<p style="margin:3px 0 0;font-size:11px;color:#92400e">⚠️ ${n}</p>`).join('')}
+        ${desenfumageValide()?'':`<p class="a-valider" style="margin:3px 0 0;font-size:11px;color:#92400e;font-weight:700">⚠️ Seuil indicatif — ${MENTION_A_VALIDER}</p>`}
         ${diagLocal.obligatoire?`<p style="margin:3px 0 0;font-size:12px;color:#2b6cb0"><strong>Technologie :</strong> ${diagLocal.typeRequis}</p>`:''}
         ${debitHTML}
       </div>
@@ -5869,24 +5963,29 @@ function evaluerReglesHabitation(){
 
 function evaluerReglesIGH(){
   if(state.auditType!=='igh') return;
-  const classeActive = state.igh?.classeIgh||'GHT';
+  const classeActive = state.igh?.classeIgh||'';
   const hauteur = parseFloat(state.igh?.hauteurDernierNiveau)||0;
-  const refClasse = CLASSES_IGH[classeActive];
-  let estIGH = false;
+  // Qualification : moteur pur (R. 146-3 / R. 146-4). Comparateurs stricts : H > seuil ; ITGH : H > 200 m.
+  const q = moteurIgh(entreeIgh());
+  const estIGH = q.qualification==='igh' || q.qualification==='itgh';
   let diagnostic = {compartiment:'',desenfumage:'',hydraulique:'',ascenseurs:''};
   let alerteStyle = 'border-left:4px solid #48BB78;background-color:#f0fff4;color:#22543d;';
-  if(refClasse){
-    if(hauteur > refClasse.seuilMetres || classeActive==='ITGH') estIGH=true;
-  }
+  const ancienne = state.igh?.classeIghAncienne;
+  const avertissements = [
+    ancienne ? `Ancienne classe « ${ancienne} » conservée dans le dossier : elle n'existe pas dans R. 146-4. ${ancienne==='GHT' ? 'Les bureaux relèvent de GHW 1 ou GHW 2, les tours de contrôle de GHTC.' : 'Choisir GHW 1 (28 m < H ≤ 50 m) ou GHW 2 (H > 50 m).'} Choisir la classe ci-dessus.` : '',
+    ...q.notes
+  ].filter(Boolean);
   if(!estIGH){
-    diagnostic.compartiment = `La hauteur saisie (${hauteur} m) est inférieure au seuil critique de la classe ${classeActive} (${refClasse?refClasse.seuilMetres:28} m).`;
-    diagnostic.desenfumage = 'Hors périmètre IGH strict. Se référer aux règles ERP ou Habitation courantes.';
-    alerteStyle = 'border-left:4px solid #ED8936;background-color:#fffaf0;color:#dd6b20;';
+    const incertain = q.qualification==='indetermine' || q.qualification==='incoherent';
+    diagnostic.compartiment = `<strong>${incertain ? (q.qualification==='incoherent' ? 'Classe et hauteur incompatibles' : 'Qualification indéterminée') : 'Non qualifié IGH'} :</strong> ${q.motifs.join(' ')}`
+      + (q.manquants.length ? `<br><strong>Données manquantes :</strong> ${libellesManquants(q.manquants).join(' ; ')}.` : '');
+    diagnostic.desenfumage = incertain ? "Aucune règle IGH n'est appliquée ni écartée tant que la qualification n'est pas établie." : 'Hors périmètre IGH strict. Se référer aux règles ERP ou Habitation courantes.';
+    alerteStyle = incertain ? 'border-left:4px solid #718096;background-color:#f7fafc;color:#4a5568;' : 'border-left:4px solid #ED8936;background-color:#fffaf0;color:#dd6b20;';
   } else {
     alerteStyle = 'border-left:4px solid #9B2C2C;background-color:#fff5f5;color:#9B2C2C;';
     diagnostic.compartiment = `<strong>Art. GH 7 & GH 23 :</strong> Immeuble classé IGH. Obligation de découpage en compartiments étanches aux flammes et aux gaz pendant 2h. Chaque niveau de compartiment doit disposer de <strong>2 escaliers de 2 UP minimum</strong>, indépendants et protégés (Portes CF 2h à sas).`;
     diagnostic.desenfumage = `<strong>Art. GH 29 :</strong> Désenfumage de type IGH obligatoire. Soufflage dans les escaliers/gaines (surpression) combiné à extraction mécanique des circulations horizontales communes (CHC) activée par niveau. Débit d'extraction minimal par compartiment sinistré : <strong>1 m³/s (3600 m³/h)</strong> par recoupement de circulation.`;
-    if(hauteur>50||classeActive==='ITGH'){
+    if(hauteur>50||q.qualification==='itgh'){
       diagnostic.hydraulique = `<strong>Art. GH 50 :</strong> Hauteur > 50m. <strong>Colonne Humide DN100 obligatoire</strong> par cage d'escalier, alimentée en permanence par deux sources distinctes (surpresseurs) maintenant 7 à 9 bars au niveau le plus haut.`;
     } else {
       diagnostic.hydraulique = `<strong>Art. GH 50 :</strong> Hauteur ≤ 50m. Colonne sèche DN65 en acier obligatoire par cage d'escalier (Prise d'incendie à chaque niveau dans les sas).`;
@@ -5897,8 +5996,10 @@ function evaluerReglesIGH(){
   if(conteneur){
     conteneur.innerHTML = `
       <div style="background:white;padding:20px;border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,0.05);font-family:sans-serif;${alerteStyle}margin-top:20px;">
-        <h3 style="margin-top:0;font-size:15px;text-transform:uppercase;letter-spacing:0.5px;">🏢 Diagnostic Technique : IGH (Classe ${classeActive})</h3>
-        <p style="margin:4px 0 15px 0;font-size:12px;opacity:0.8;">Analyse de vulnérabilité structurelle selon le décret IGH et l'Arrêté du 30 décembre 2011.</p>
+        <h3 style="margin-top:0;font-size:15px;text-transform:uppercase;letter-spacing:0.5px;">🏢 Diagnostic Technique : IGH (Classe ${classeActive||'à préciser'}${q.qualification==='itgh'?' — ITGH':''})</h3>
+        ${avertissements.map(a=>`<p style="margin:0 0 8px;font-size:12px;color:#92400e;font-weight:600">⚠️ ${a}</p>`).join('')}
+        ${REFERENTIEL_IGH[classeActive] && REFERENTIEL_IGH[classeActive].statut!=='valide' ? `<p class="a-valider" style="margin:0 0 8px;font-size:12px;color:#92400e;font-weight:700">⚠️ Seuil de hauteur indicatif — ${MENTION_A_VALIDER}</p>` : ''}
+        <p style="margin:4px 0 15px 0;font-size:12px;opacity:0.8;">Qualification selon le CCH (R. 146-3 : définition et hauteur ; R. 146-4 : classes) ; règles techniques selon l'arrêté du 30 décembre 2011.</p>
         <div style="background:rgba(255,255,255,0.85);padding:15px;border-radius:6px;font-size:12px;line-height:1.5;border:1px solid #cbd5e0;">
           <div style="margin-bottom:10px;"><strong>1. Structure & Compartimentage :</strong><br>${diagnostic.compartiment}</div>
           <div style="margin-bottom:10px;border-top:1px solid #edf2f7;padding-top:8px;"><strong>2. Désenfumage IGH (Surpression/Extraction) :</strong><br>${diagnostic.desenfumage}</div>
@@ -5917,7 +6018,7 @@ function evaluerClapetsIGH() {
 
     const typeClapets = state.igh.typeClapets || "autonome";
     const reportCMSI = !!state.igh.hasReportCMSI;
-    const classeIgh = state.igh.classeIgh || "GHT";
+    const classeIgh = state.igh.classeIgh || "";
 
     let statutConformite = "NON CONFORME";
     let badgeBg = "#E53E3E";
@@ -6029,7 +6130,7 @@ function calcularMinimumExtincteurs(){
   const surface        = parseFloat(state.desenfumage ? state.desenfumage.surfaceLocal : 0)||0;
   const etages         = parseInt(state.habitation ? state.habitation.nombreEtages : 1, 10)||1;
   const aRisqueSpecial = state.desenfumage ? !!state.desenfumage.presenceRisqueSpecial : false;
-  const classeIghActive  = state.igh ? (state.igh.classeIgh||'GHT') : 'GHT';
+  const classeIghActive  = state.igh ? (state.igh.classeIgh||'') : '';
   const nbCompartiments  = state.igh ? (Math.max(parseInt(state.igh.nombreCompartiments,10)||1,1)) : 1;
 
   let nbExtincteursCourant=0, nbExtincteursSpeciaux=0, nbExtincteursSurRoues=0, texteExplication='';
@@ -6064,7 +6165,7 @@ function calcularMinimumExtincteurs(){
     const baseParComp = Math.ceil(surface/(nbCompartiments*200))||1;
     nbExtincteursCourant = baseParComp * nbCompartiments;
     texteExplication = `Règlement IGH (Art. GH 51) : 1 extincteur de 6L par tranche de 200 m² réparti de manière étanche par compartiment (Calculé pour ${nbCompartiments} compartiment(s)).`;
-    if(classeIghActive==='GHW'){
+    if(estGhw(classeIghActive)){
       nbExtincteursSpeciaux = nbCompartiments;
       texteExplication+=`<br><span style='color:#9B2C2C;font-weight:bold'>🏢 Règle Spécifique GHW (Bureaux IGH) :</span> Dotation systématique de protection des risques électriques : minimum 1 extincteur CO2 par compartiment.`;
       if(aRisqueSpecial||surface>1000){
@@ -6175,6 +6276,7 @@ function rafraichirChampsSpecifiquesIdentification() {
     }
 
     conteneur.innerHTML = htmlContextuel;
+    rendrePrecisionsSeuils(); majChampsDesenfumageSpeciaux();
 }
 
 // ==================== SYNCHRONISATION SURFACES TYPE M ====================
@@ -6193,17 +6295,6 @@ function synchroniserSurfacesTypeM(){
 
 // ==================== CALCUL UP / DÉGAGEMENTS ====================
 // Les seuils de la 5e catégorie par type sont plus bas, dans REFERENTIEL_SEUILS_ERP (article PE 2 §1).
-const CLASSES_IGH = {
-  GHA:  { statut:'a_valider', nom: "IGH à usage d'habitation",                       seuilMetres: 50  },
-  GHO:  { statut:'a_valider', nom: "IGH à usage d'hôtel",                            seuilMetres: 28  },
-  GHR:  { statut:'a_valider', nom: "IGH à usage d'enseignement",                     seuilMetres: 28  },
-  GHS:  { statut:'a_valider', nom: "IGH à usage de dépôt d'archives",                seuilMetres: 28  },
-  GHT:  { statut:'a_valider', nom: "IGH à usage de bureaux",                         seuilMetres: 28  },
-  GHU:  { statut:'a_valider', nom: "IGH à usage sanitaire / soins",                  seuilMetres: 28  },
-  GHW:  { statut:'a_valider', nom: "IGH à usage de bureaux (Ancienne norme W1/W2)",  seuilMetres: 28  },
-  GHZ:  { statut:'a_valider', nom: "IGH à usage mixte",                              seuilMetres: 28  },
-  ITGH: { statut:'a_valider', nom: "Immeuble de Très Grande Hauteur",                 seuilMetres: 200 },
-};
 
 const REFERENTIEL_IGH_DOMAINS = [
   {
@@ -6286,85 +6377,395 @@ const REFERENTIEL_HABITATION_DOMAINS = [
     }
 ];
 
-// Seuils du 1er groupe par type d'exploitation : tableau de l'article PE 2 §1 (version en vigueur au 01/01/2026).
-// L'établissement est de 5e catégorie tant que l'effectif du public est INFÉRIEUR au seuil ; il passe
-// en 1er groupe dès qu'il l'atteint. Catégories du 1er groupe : article R. 143-19 du CCH.
-// seuilGlobal = ensemble des niveaux ; seuilSousSol / seuilEtages = null quand le tableau ne fixe pas de seuil propre.
-// sommeil = seuils applicables quand des locaux à sommeil sont déclarés.
-// note = sous-cas du tableau que l'outil ne distingue pas : elle est affichée à côté du classement.
-// seuilEtages est donné pour référence : l'outil n'a pas de saisie par étage et ne le contrôle pas.
-// statut : 'a_valider' tant que la ligne n'a pas été validée par un expert certifié en sécurité incendie, puis 'valide'.
-// Tant qu'une ligne est 'a_valider', la catégorie qui en découle s'affiche comme INDICATIVE (voir getCategorieERP).
-// Ce tableau doit rester égal à la fiche sam-incendie-audit/validation/fiche-validation-seuils.json (test tests/seuils.test.js).
+// ==================== MOTEURS RÉGLEMENTAIRES (fonctions pures) ====================
+// MOTEURS-REGLEMENTAIRES:DEBUT
+// Principe : chaque moteur reçoit ses données d'entrée (jamais l'état de l'écran) et répond « oui », « non » ou
+// « indéterminé », avec la liste des données manquantes. Jamais de conformité par défaut.
+// Six sujets séparés : (1) lignes de seuils applicables, (2) groupe ERP (5e catégorie ou 1er groupe), (3) catégorie,
+// (4) désenfumage d'un local, (5) qualification IGH, (6) conditions techniques (dans les fonctions d'affichage).
+// Chaque tableau porte un statut : 'a_valider' tant qu'une ligne n'a pas été validée par un expert certifié en
+// sécurité incendie, puis 'valide'. Les tableaux doivent rester égaux à la fiche
+// sam-incendie-audit/validation/fiche-validation-seuils.json (test tests/seuils.test.js).
 const MENTION_A_VALIDER = 'À VALIDER par un expert certifié en sécurité incendie';
+const INTERDIT = 'interdit';   // activité interdite à ce niveau : ce n'est ni 0 ni une valeur chiffrée
+
+// Article PE 2 §1, tableau « Seuils du 1er groupe » (version en vigueur au 01/01/2026, arrêté du 1er décembre 2025).
+// Une ligne = { sousSol, etages, global } ; null = pas de seuil chiffré dans cette case du tableau (« - »).
+// Le public reste en 5e catégorie tant que l'effectif est INFÉRIEUR au seuil : atteindre le seuil = 1er groupe.
 const REFERENTIEL_SEUILS_ERP = {
-  J:{statut:'a_valider', seuilGlobal:25,  seuilSousSol:null, seuilEtages:null, note:"Type J : le seuil est de 25 résidents (20 pour les personnes handicapées), ou de 100 personnes en effectif total."},
-  L:{statut:'a_valider', seuilGlobal:200, seuilSousSol:100,  seuilEtages:null, note:"Type L : seuil ramené à 50 personnes (20 en sous-sol) pour les salles de spectacles, de projections et les cabarets."},
-  M:{statut:'a_valider', seuilGlobal:200, seuilSousSol:100,  seuilEtages:100},
-  N:{statut:'a_valider', seuilGlobal:200, seuilSousSol:100,  seuilEtages:200},
-  O:{statut:'a_valider', seuilGlobal:100, seuilSousSol:null, seuilEtages:null},
-  P:{statut:'a_valider', seuilGlobal:120, seuilSousSol:20,   seuilEtages:100},
-  R:{statut:'a_valider', seuilGlobal:200, seuilSousSol:100,  seuilEtages:100, sommeil:{seuilGlobal:30, seuilSousSol:null, seuilEtages:null},
-     note:"Type R : seuil ramené à 100 personnes pour les écoles maternelles, crèches, haltes-garderies et jardins d'enfants (interdits en sous-sol), et à 30 avec locaux à sommeil."},
-  S:{statut:'a_valider', seuilGlobal:200, seuilSousSol:100,  seuilEtages:100},
-  T:{statut:'a_valider', seuilGlobal:200, seuilSousSol:100,  seuilEtages:100},
-  U:{statut:'a_valider', seuilGlobal:100, seuilSousSol:null, seuilEtages:null, sommeil:{seuilGlobal:20, seuilSousSol:null, seuilEtages:null},
-     note:"Type U : seuil de 100 personnes sans hébergement, de 20 avec hébergement."},
-  V:{statut:'a_valider', seuilGlobal:300, seuilSousSol:100,  seuilEtages:200},
-  W:{statut:'a_valider', seuilGlobal:200, seuilSousSol:100,  seuilEtages:100},
-  X:{statut:'a_valider', seuilGlobal:200, seuilSousSol:100,  seuilEtages:100},
-  Y:{statut:'a_valider', seuilGlobal:200, seuilSousSol:100,  seuilEtages:100},
+  J:{statut:'a_valider', assujettissement:7, lignes:{
+       ages:{libelle:"Structures d'accueil pour personnes âgées", residents:25, total:100},
+       handicapes:{libelle:"Structures d'accueil pour personnes handicapées", residents:20, total:100}}},
+  L:{statut:'a_valider', lignes:{
+       auditions:{libelle:"Salles d'auditions, de conférences, de réunions, de pari, réservées aux associations, de quartier, multimédia, polyvalentes", sousSol:100, etages:null, global:200},
+       spectacle:{libelle:"Salles de spectacles, de projections (cirques non forains compris), cabarets", sousSol:20, etages:null, global:50}}},
+  M:{statut:'a_valider', lignes:{standard:{libelle:"Magasins de vente", sousSol:100, etages:100, global:200}}},
+  N:{statut:'a_valider', lignes:{standard:{libelle:"Restaurants ou débits de boissons", sousSol:100, etages:200, global:200}}},
+  O:{statut:'a_valider', lignes:{standard:{libelle:"Hôtels ou pensions de famille", sousSol:null, etages:null, global:100}}},
+  P:{statut:'a_valider', lignes:{standard:{libelle:"Salles de danse ou salles de jeux", sousSol:20, etages:100, global:120}}},
+  R:{statut:'a_valider', lignes:{
+       petite_enfance:{libelle:"Écoles maternelles, crèches, haltes-garderies, jardins d'enfants", sousSol:INTERDIT, etages:1, etagesNiveauUniqueEnEtage:20, global:100},
+       autres:{libelle:"Autres établissements d'enseignement", sousSol:100, etages:100, global:200},
+       sommeil:{libelle:"Établissements avec locaux réservés au sommeil", sousSol:null, etages:null, global:30}}},
+  S:{statut:'a_valider', lignes:{standard:{libelle:"Bibliothèques ou centres de documentation", sousSol:100, etages:100, global:200}}},
+  T:{statut:'a_valider', lignes:{standard:{libelle:"Salles d'expositions", sousSol:100, etages:100, global:200}}},
+  U:{statut:'a_valider', lignes:{
+       sans:{libelle:"Établissements de soins sans hébergement", sousSol:null, etages:null, global:100},
+       avec:{libelle:"Établissements de soins avec hébergement", sousSol:null, etages:null, global:20}}},
+  V:{statut:'a_valider', lignes:{standard:{libelle:"Établissements de culte", sousSol:100, etages:200, global:300}}},
+  W:{statut:'a_valider', lignes:{standard:{libelle:"Administrations, banques, bureaux", sousSol:100, etages:100, global:200}}},
+  X:{statut:'a_valider', lignes:{standard:{libelle:"Établissements sportifs couverts", sousSol:100, etages:100, global:200}}},
+  Y:{statut:'a_valider', lignes:{standard:{libelle:"Musées", sousSol:100, etages:100, global:200}}},
 };
-// Désenfumage d'un local accessible au public (article DF 7 §1) : surface au-delà de laquelle le désenfumage est exigé.
-// 'defaut' = texte de DF 7 §1 ; L, T et P = valeurs propres au type reprises de l'ancien code, non retrouvées dans DF 7.
-const REFERENTIEL_DESENFUMAGE_LOCAL = {
-  defaut:{statut:'a_valider', aerien:300, sousSolOuAveugle:100},
-  L:{statut:'a_valider', aerien:100},
-  T:{statut:'a_valider', aerien:200},
-  P:{statut:'a_valider', aerien:100},
+// Types du tableau PE 2 §1 que l'outil ne traite pas : signalés « hors périmètre », jamais présentés comme conformes.
+const TYPES_HORS_PERIMETRE = { OA:"Hôtels-restaurants d'altitude (seuil 20)", GA:"Gares aériennes (seuil 200 ; gares souterraines et mixtes : 1er groupe quel que soit l'effectif)", PA:"Établissements de plein air (seuil 300)" };
+
+// Désenfumage d'un local accessible au public : surface au-delà de laquelle le désenfumage est exigé (STRICTEMENT supérieure).
+//  df7 : établissements du 1er groupe (article DF 7 §1) ; pe14 : 5e catégorie (article PE 14 §1) ;
+//  p14 : règle propre au type P (aggravation de DF 7, sans condition de surface).
+const REFERENTIEL_DESENFUMAGE = {
+  df7:{statut:'a_valider', article:'DF 7 §1', comparateur:'>', aerien:300, sousSol:100, aveugle:100},
+  pe14:{statut:'a_valider', article:'PE 14 §1', comparateur:'>', aerien:300, sousSol:100},
+  p14:{statut:'a_valider', article:'P 14 §2', sansSeuilSurface:true},
 };
-function seuilDesenfumageLocal(type){
-  return (REFERENTIEL_DESENFUMAGE_LOCAL[type] && REFERENTIEL_DESENFUMAGE_LOCAL[type].aerien) || REFERENTIEL_DESENFUMAGE_LOCAL.defaut.aerien;
+
+// Classes IGH : CCH R. 146-3 (définition, mesure de la hauteur) et R. 146-4 (classes). H = hauteur du plancher bas du
+// dernier niveau par rapport au sol le plus haut utilisable par les engins de secours (pas la hauteur du toit).
+// Comparateur : H STRICTEMENT supérieure à seuilMetres ; borneHaute (si présente) : H inférieure ou égale.
+const REFERENTIEL_IGH = {
+  GHA: {statut:'a_valider', libelle:"Immeubles à usage d'habitation", seuilMetres:50},
+  GHO: {statut:'a_valider', libelle:"Immeubles à usage d'hôtel", seuilMetres:28},
+  GHR: {statut:'a_valider', libelle:"Immeubles à usage d'enseignement", seuilMetres:28},
+  GHS: {statut:'a_valider', libelle:"Immeubles à usage de dépôt d'archives", seuilMetres:28},
+  GHTC:{statut:'a_valider', libelle:"Immeubles à usage de tour de contrôle", seuilMetres:28},
+  GHU: {statut:'a_valider', libelle:"Immeubles à usage sanitaire", seuilMetres:28},
+  GHW1:{statut:'a_valider', libelle:"Immeubles de bureaux répondant aux conditions du règlement (R. 122-4), 28 m < H ≤ 50 m", seuilMetres:28, borneHaute:50},
+  GHW2:{statut:'a_valider', libelle:"Immeubles à usage de bureaux, H > 50 m", seuilMetres:50},
+  GHZ: {statut:'a_valider', libelle:"Immeubles à usage principal d'habitation, 28 m < H ≤ 50 m, avec locaux autres non indépendants", seuilMetres:28, borneHaute:50},
+  ITGH:{statut:'a_valider', libelle:"Immeuble de très grande hauteur", seuilMetres:200},
+};
+function estGhw(classe){ return classe==='GHW1' || classe==='GHW2'; }
+
+const LIBELLES_MANQUANTS = {
+  type:"type d'établissement",
+  populationJ:"population accueillie (personnes âgées ou personnes handicapées)",
+  residents:"effectif des résidents",
+  effectifTotalJ:"effectif total",
+  activiteL:"activité exacte de la salle (type L)",
+  surfaceSalleL:"superficie de la salle (m²)",
+  hauteurSalleL:"hauteur sous plafond de la salle (m)",
+  brancheR:"nature de l'établissement d'enseignement (petite enfance ou autres)",
+  effectifEtages:"effectif du public aux étages (saisir 0 s'il n'y en a pas)",
+  effectifPublic:"effectif du public",
+  surfaceLocal:"surface du local (m²)",
+  groupeErp:"groupe ERP (1er groupe ou 5e catégorie), qui détermine la règle applicable",
+  classeIgh:"classe de l'immeuble",
+  hauteurIgh:"hauteur du plancher bas du dernier niveau (m)",
+  independance:"indépendance des locaux autres que d'habitation",
+  conditionsGhw1:"conditions de la classe GHW 1",
+};
+function libellesManquants(codes){ return (codes||[]).map(c=>LIBELLES_MANQUANTS[c]||c); }
+
+// Nombre fini, ou null quand la donnée n'est pas renseignée (vide, absente, non numérique).
+function nombre(v){
+  if(v===null || v===undefined || v==='') return null;
+  const n = Number(v);
+  return isFinite(n) ? n : null;
 }
-// Seuils applicables à un type, compte tenu des locaux à sommeil déclarés dans l'identification.
-function seuilsErp(type, sommeil){
-  const r = REFERENTIEL_SEUILS_ERP[type];
-  if(!r) return null;
-  const som = (sommeil===undefined) ? !!(state.identification && state.identification.sommeil) : !!sommeil;
-  return Object.assign({}, r, (som && r.sommeil) ? r.sommeil : {}, {note: r.note||'', statut: r.statut==='valide' ? 'valide' : 'a_valider'});
-}
-// Vrai si TOUTES les lignes de seuils utilisées sont validées. Au moindre doute (type inconnu, ligne sans statut) : faux.
-function seuilsValides(types){
-  const liste = (types||[]).filter(t=>REFERENTIEL_SEUILS_ERP[t]);
-  return liste.length>0 && liste.every(t=>REFERENTIEL_SEUILS_ERP[t].statut==='valide');
+function uniques(liste){ return liste.filter((x,i)=>liste.indexOf(x)===i); }
+
+// (1) Lignes du tableau PE 2 §1 applicables selon les précisions saisies. Sans précision nécessaire : donnée manquante.
+function lignesSeuilsApplicables(type, ctx){
+  const ref = REFERENTIEL_SEUILS_ERP[type];
+  const res = {lignes:[], manquants:[], notes:[]};
+  if(!ref){ res.manquants.push('type'); return res; }
+  const c = ctx || {};
+  const ajouter = (t, cle)=>res.lignes.push({id:t+'.'+cle, type:t, cle:cle, seuils:REFERENTIEL_SEUILS_ERP[t].lignes[cle]});
+  if(type==='J'){
+    if(c.populationJ==='ages' || c.populationJ==='handicapes') ajouter('J', c.populationJ); else res.manquants.push('populationJ');
+  } else if(type==='L'){
+    const a = c.activiteL;
+    if(a==='spectacle') ajouter('L','spectacle');
+    else if(a==='auditions' || a==='polyvalente_autre') ajouter('L','auditions');
+    else if(a==='polyvalente_sportive'){
+      const s = nombre(c.surfaceSalleL), h = nombre(c.hauteurSalleL);
+      // Salle polyvalente à dominante sportive : ligne L seulement si superficie ≥ 1 200 m² ou hauteur < 6,50 m, sinon type X.
+      if((s!==null && s>=1200) || (h!==null && h<6.5)) ajouter('L','auditions');
+      else if(s!==null && h!==null){ ajouter('X','standard'); res.notes.push("Salle polyvalente à dominante sportive de moins de 1 200 m² et de hauteur sous plafond d'au moins 6,50 m : ligne du type X."); }
+      else { if(s===null) res.manquants.push('surfaceSalleL'); if(h===null) res.manquants.push('hauteurSalleL'); }
+    } else res.manquants.push('activiteL');
+  } else if(type==='R'){
+    if(c.brancheR==='petite_enfance' || c.brancheR==='autres') ajouter('R', c.brancheR); else res.manquants.push('brancheR');
+    if(c.sommeil) ajouter('R','sommeil');
+  } else if(type==='U'){
+    ajouter('U', c.sommeil ? 'avec' : 'sans');
+  } else {
+    ajouter(type, 'standard');
+  }
+  return res;
 }
 
-function getCategorieERP(eff, types, sommeil){
-  if(!eff || eff<=0) return null;
-  // Type « PE » choisi dans l'outil : le seuil dépend de l'activité, reprise de l'essai quand elle est connue.
-  const liste = (types||[]).slice();
-  const declarePE = liste.includes('PE');
-  if(declarePE && state.essai && state.essai.activite) liste.push(state.essai.activite);
-  const activeTypes = liste.filter(t=>REFERENTIEL_SEUILS_ERP[t]);
-  const seuilPE = activeTypes.length
-    ? activeTypes.reduce((m,t)=>Math.min(m,seuilsErp(t,sommeil).seuilGlobal),Infinity)
-    : null;
-  // PE 2 §1 : 5e catégorie si l'effectif est inférieur au seuil du type (à effectif égal : 1er groupe).
-  // Sans type connu, le classement en 5e catégorie ne peut pas être établi par l'effectif seul.
-  const isPE = seuilPE!==null ? eff<seuilPE : (declarePE && eff<=300);
-  let categorie, couleur;
-  if(isPE)       { categorie='5e catégorie (PE)';  couleur='#48BB78'; }
-  else if(eff<=300) { categorie = (seuilPE===null) ? '4e catégorie (5e possible : type à préciser)' : '4e catégorie'; couleur='#68D391'; }
-  else if(eff<=700) { categorie='3e catégorie';    couleur='#ED8936'; }
-  else if(eff<=1500){ categorie='2e catégorie';    couleur='#E53E3E'; }
-  else              { categorie='1ère catégorie';   couleur='#9B2C2C'; }
-  const sommeilActif = !!sommeil && activeTypes.some(t=>['O','J','U','R'].includes(t));
-  const notes = activeTypes.map(t=>seuilsErp(t,sommeil).note).filter(Boolean);
-  // Au-dessus de 300 personnes, la catégorie (3e, 2e, 1re) ne dépend plus du tableau PE 2 §1 : il n'y a rien à valider.
-  // En dessous, ou si le type est inconnu, le résultat repose sur des seuils pas encore validés : classement indicatif.
-  const indicative = eff<=300 && !seuilsValides(activeTypes);
-  const categorieAffichee = indicative ? categorie + ' — indicative' : categorie;
-  return { categorie, categorieAffichee, indicative, mention: indicative ? MENTION_A_VALIDER : '', couleur, isPE, seuilPE, sommeilActif, notes };
+// Comparaison d'un effectif à un seuil. valeur = connue (ou borne basse), exact = la valeur est complète, borneSup = maximum possible.
+// « oui » : seuil atteint (valeur ≥ seuil) ; « non » : sûrement sous le seuil ; « indetermine » : la donnée manque pour conclure.
+function seuilAtteint(valeur, exact, borneSup, seuil){
+  if(valeur >= seuil) return 'oui';
+  if(exact || borneSup < seuil) return 'non';
+  return 'indetermine';
+}
+
+// Évalue une ligne du tableau. eff = { global, globalExact, sousSol (null = inconnu), etages (null = inconnu), residents, totalJ }.
+function evaluerLigneSeuils(type, cle, seuils, eff, ctx){
+  const criteres = [], manquants = [], anomalies = [];
+  const c = ctx || {};
+  if(type==='J'){
+    const r = nombre(eff.residents), t = nombre(eff.totalJ);
+    criteres.push({critere:'effectif des résidents', seuil:seuils.residents, valeur:r, etat: r===null ? 'indetermine' : (r>=seuils.residents ? 'oui' : 'non')});
+    criteres.push({critere:'effectif total', seuil:seuils.total, valeur:t, etat: t===null ? 'indetermine' : (t>=seuils.total ? 'oui' : 'non')});
+    if(r===null) manquants.push('residents');
+    if(t===null) manquants.push('effectifTotalJ');
+  } else {
+    const infini = Infinity;
+    const gx = !!eff.globalExact;
+    criteres.push({critere:'ensemble des niveaux', seuil:seuils.global, valeur:eff.global, etat: seuilAtteint(eff.global, gx, infini, seuils.global)});
+    if(typeof seuils.sousSol==='number'){
+      const ssX = eff.sousSol!==null && eff.sousSol!==undefined;
+      const ssV = ssX ? eff.sousSol : 0;
+      const ssB = ssX ? ssV : (gx ? eff.global : infini);
+      criteres.push({critere:'sous-sol', seuil:seuils.sousSol, valeur:ssV, etat: seuilAtteint(ssV, ssX, ssB, seuils.sousSol)});
+    } else if(seuils.sousSol===INTERDIT && (eff.sousSol||0)>0){
+      anomalies.push("Activité interdite en sous-sol (PE 2 §1, note *) alors qu'un effectif est saisi en sous-sol.");
+    }
+    if(typeof seuils.etages==='number'){
+      const seuilEt = (c.niveauUniqueEnEtage && typeof seuils.etagesNiveauUniqueEnEtage==='number') ? seuils.etagesNiveauUniqueEnEtage : seuils.etages;
+      const etX = eff.etages!==null && eff.etages!==undefined;
+      const etV = etX ? eff.etages : 0;
+      const etB = etX ? etV : (gx ? Math.max(0, eff.global-(eff.sousSol||0)) : infini);
+      criteres.push({critere:'étages', seuil:seuilEt, valeur:etV, etat: seuilAtteint(etV, etX, etB, seuilEt)});
+    }
+    criteres.forEach(k=>{
+      if(k.etat==='indetermine'){
+        manquants.push(k.critere==='sous-sol' ? 'effectifPublic' : 'effectifEtages');
+      }
+    });
+    if(!(eff.global>0)) manquants.push('effectifPublic');
+  }
+  let etat = 'non';
+  if(criteres.some(k=>k.etat==='oui')) etat = 'oui';
+  else if(criteres.some(k=>k.etat==='indetermine') || manquants.length) etat = 'indetermine';
+  return {etat:etat, criteres:criteres, manquants:uniques(manquants), anomalies:anomalies};
+}
+
+// (2) Groupe ERP : « 1er » dès qu'un seuil applicable est atteint ; « 5e » seulement si TOUTES les lignes applicables
+// sont sûrement sous leurs seuils ; sinon « indetermine ».
+function moteurGroupeErp(entree){
+  const e = entree || {};
+  const sortie = {groupe:'indetermine', motifs:[], manquants:[], anomalies:[], notes:[], lignes:[], horsPerimetre:[], statutsValides:false};
+  const types = uniques((e.types||[]).filter(Boolean));
+  if(!types.length){ sortie.manquants.push('type'); return sortie; }
+  let un = false, indet = false;
+  types.forEach(t=>{
+    if(TYPES_HORS_PERIMETRE[t]){ sortie.horsPerimetre.push(t); indet = true; sortie.notes.push('Type '+t+' : hors périmètre de l\'outil, aucun classement calculé ('+TYPES_HORS_PERIMETRE[t]+').'); return; }
+    if(!REFERENTIEL_SEUILS_ERP[t]){ sortie.manquants.push('type'); indet = true; return; }
+    const ap = lignesSeuilsApplicables(t, e.ctx);
+    sortie.manquants.push.apply(sortie.manquants, ap.manquants);
+    sortie.notes.push.apply(sortie.notes, ap.notes);
+    if(ap.manquants.length) indet = true;
+    ap.lignes.forEach(l=>{
+      const r = evaluerLigneSeuils(l.type, l.cle, l.seuils, e.eff||{}, e.ctx);
+      sortie.lignes.push({id:l.id, etat:r.etat, criteres:r.criteres});
+      sortie.manquants.push.apply(sortie.manquants, r.manquants);
+      sortie.anomalies.push.apply(sortie.anomalies, r.anomalies);
+      r.criteres.filter(k=>k.etat==='oui').forEach(k=>{
+        un = true;
+        sortie.motifs.push({type:l.type, ligne:l.id, critere:k.critere, seuil:k.seuil, valeur:k.valeur,
+          texte:'Type '+l.type+' : '+k.critere+' — effectif '+k.valeur+' ≥ seuil '+k.seuil+' (PE 2 §1)'});
+      });
+      if(r.etat==='indetermine') indet = true;
+    });
+  });
+  sortie.manquants = uniques(sortie.manquants);
+  sortie.statutsValides = types.every(t=>REFERENTIEL_SEUILS_ERP[t] && REFERENTIEL_SEUILS_ERP[t].statut==='valide');
+  sortie.groupe = un ? '1er' : (indet ? 'indetermine' : '5e');
+  return sortie;
+}
+
+// (3) Catégorie : 5e catégorie si le groupe est « 5e » (le personnel n'entre pas dans le calcul, PE 3 §2) ; au 1er groupe,
+// effectif du public + personnel n'occupant pas de locaux indépendants (CCH R. 143-19). Jamais « 4e » par défaut.
+function moteurCategorie(e){
+  const pub = nombre(e.effectifPublic);
+  const sortie = {categorie:null, libelle:'indéterminée', indeterminee:true, manquants:[], notes:[]};
+  if(pub===null || pub<=0){ sortie.manquants.push('effectifPublic'); return sortie; }
+  const perso = nombre(e.personnel);
+  if(e.groupe==='5e'){
+    return {categorie:5, libelle:'5e catégorie', indeterminee:false, manquants:[], notes:[]};
+  }
+  if(e.groupe==='1er' || pub>300){
+    const total = pub + (perso||0);
+    const cat = total>1500 ? 1 : (total>=701 ? 2 : (total>=301 ? 3 : 4));
+    const libelles = {1:'1re catégorie', 2:'2e catégorie', 3:'3e catégorie', 4:'4e catégorie'};
+    const notes = [];
+    if(perso===null) notes.push("Personnel n'occupant pas de locaux indépendants : non saisi, non ajouté à l'effectif (R. 143-19).");
+    return {categorie:cat, libelle:libelles[cat], indeterminee:false, manquants:[], notes:notes};
+  }
+  sortie.libelle = '4e ou 5e catégorie (indéterminé)';
+  sortie.manquants = (e.manquantsGroupe||[]).slice();
+  return sortie;
+}
+
+// (4) Désenfumage d'un local accessible au public. e = { groupe, type, surface, sousSol, aveugle, salleDanse, mezzanine }.
+// Régime : DF 7 au 1er groupe, PE 14 en 5e catégorie ; groupe inconnu : on évalue les deux et on ne conclut que s'ils concordent.
+function moteurDesenfumageLocal(e){
+  const type = e.type || '';
+  const s = nombre(e.surface);
+  const surface = (s!==null && s>0) ? s : null;
+  const sousSol = !!e.sousSol, aveugle = !!e.aveugle;
+  const regimes = e.groupe==='5e' ? ['pe14'] : (e.groupe==='1er' ? ['df7'] : ['df7','pe14']);
+  const notes = [];
+  if(type==='L') notes.push("Type L : espaces scéniques et autres configurations particulières à examiner séparément (L 30 ne fixe pas de seuil de surface).");
+  if(type==='T') notes.push("Type T : T 25 ne fixe pas de seuil de surface propre ; les autres conditions de DF 7 restent applicables.");
+  const evaluer = r=>{
+    const T = REFERENTIEL_DESENFUMAGE[r];
+    if(r==='df7' && type==='P' && (sousSol || (e.salleDanse && e.mezzanine))){
+      const p = REFERENTIEL_DESENFUMAGE.p14;
+      return {resultat:'oui', regle:p.article, motif:"En aggravation de DF 7, les salles de danse comportant des mezzanines ou des niveaux partiels et les salles situées en sous-sol doivent être désenfumées (P 14 §2), sans condition de surface.", manquants:[]};
+    }
+    if(surface===null) return {resultat:'indetermine', regle:T.article, motif:'Surface du local non renseignée.', manquants:['surfaceLocal']};
+    let seuil, situation;
+    if(sousSol){ seuil = T.sousSol; situation = 'en sous-sol'; }
+    else if(r==='df7' && aveugle){ seuil = T.aveugle; situation = 'sans ouverture sur l\'extérieur'; }
+    else { seuil = T.aerien; situation = 'au rez-de-chaussée ou en étage'; }
+    const oui = surface > seuil;
+    return {resultat: oui ? 'oui' : 'non', regle:T.article, seuil:seuil,
+      motif:'Local '+situation+' de '+surface+' m² : '+(oui ? 'supérieur' : 'non supérieur')+' au seuil de '+seuil+' m² ('+T.article+').', manquants:[]};
+  };
+  const evals = regimes.map(evaluer);
+  if(evals.length===1) return Object.assign({}, evals[0], {regime:regimes[0], notes:notes});
+  const [a, b] = evals;
+  if(a.resultat===b.resultat && a.resultat!=='indetermine'){
+    return {resultat:a.resultat, regle:a.regle+' / '+b.regle, motif:a.motif+' Même résultat avec la règle PE 14 (5e catégorie).', manquants:[], regime:'df7+pe14', notes:notes};
+  }
+  if(a.resultat==='indetermine' && b.resultat==='indetermine') return {resultat:'indetermine', regle:a.regle+' / '+b.regle, motif:a.motif, manquants:uniques(a.manquants.concat(b.manquants)), regime:'df7+pe14', notes:notes};
+  return {resultat:'indetermine', regle:a.regle+' / '+b.regle, motif:'Le résultat dépend du groupe ERP : '+a.motif+' | PE 14 : '+b.motif, manquants:['groupeErp'], regime:'df7+pe14', notes:notes};
+}
+
+// (5) Qualification IGH. e = { classe, hauteur, independance ('oui'|'non'|''), conditionsGhw1 ('oui'|'non'|'') }.
+// Résultat : 'igh', 'itgh', 'non_igh', 'non_itgh', 'incoherent' (classe et hauteur incompatibles) ou 'indetermine'.
+function moteurIgh(e){
+  const classe = e.classe || '';
+  const h = nombre(e.hauteur);
+  const sortie = {qualification:'indetermine', classe:classe, motifs:[], manquants:[], notes:[]};
+  if(!REFERENTIEL_IGH[classe]) sortie.manquants.push('classeIgh');
+  if(h===null || h<=0) sortie.manquants.push('hauteurIgh');
+  if(sortie.manquants.length) return sortie;
+  const ref = REFERENTIEL_IGH[classe];
+  const mesure = 'plancher bas du dernier niveau à '+h+' m';
+  const fin = (q, motif)=>{ sortie.qualification = q; sortie.motifs.push(motif); return sortie; };
+  if(h>200 && classe!=='ITGH') sortie.notes.push("H > 200 m : immeuble de très grande hauteur (R. 146-4), en plus de la classe d'usage.");
+  if(classe==='ITGH'){
+    return h>200 ? fin('itgh', 'ITGH : '+mesure+', supérieur à 200 m.')
+                 : fin('non_itgh', 'Critère ITGH non atteint : '+mesure+'. Il faut une hauteur strictement supérieure à 200 m (à exactement 200 m, il n\'est pas atteint).');
+  }
+  if(classe==='GHA'){
+    if(h>50) return fin('igh', 'GHA : '+mesure+', supérieur à 50 m.');
+    if(h>28) return fin('non_igh', 'Habitation : '+mesure+', pas supérieur à 50 m : pas un IGH d\'habitation. Si des locaux autres que d\'habitation ne sont pas indépendants, la classe GHZ est à examiner (R. 146-4).');
+    return fin('non_igh', 'Habitation : '+mesure+', pas supérieur à 28 m.');
+  }
+  if(classe==='GHZ'){
+    if(h>50) return fin('incoherent', 'GHZ vise 28 m < H ≤ 50 m ; '+mesure+' dépasse 50 m : classe GHA.');
+    if(h<=28) return fin('non_igh', 'GHZ vise 28 m < H ≤ 50 m ; '+mesure+', pas supérieur à 28 m.');
+    if(e.independance==='oui') return fin('non_igh', 'Habitation entre 28 m et 50 m dont les locaux autres que d\'habitation répondent aux conditions d\'indépendance : pas un IGH (R. 146-3).');
+    if(e.independance==='non') return fin('igh', 'GHZ : habitation entre 28 m et 50 m avec locaux autres que d\'habitation ne répondant pas aux conditions d\'indépendance (R. 146-4).');
+    sortie.manquants.push('independance');
+    return fin('indetermine', 'GHZ : l\'indépendance des locaux autres que d\'habitation décide entre « pas un IGH » (R. 146-3) et « IGH classe GHZ » (R. 146-4).');
+  }
+  if(classe==='GHW1'){
+    if(h>50) return fin('incoherent', 'GHW 1 vise 28 m < H ≤ 50 m ; '+mesure+' dépasse 50 m : classe GHW 2.');
+    if(h<=28) return fin('non_igh', 'Bureaux : '+mesure+', pas supérieur à 28 m.');
+    if(e.conditionsGhw1==='oui') return fin('igh', 'GHW 1 : bureaux entre 28 m et 50 m répondant aux conditions du règlement (R. 146-4).');
+    if(e.conditionsGhw1==='non') return fin('indetermine', 'Bureaux entre 28 m et 50 m ne répondant pas aux conditions de GHW 1 : R. 146-4 ne classe pas ce cas en GHW 1, à instruire.');
+    sortie.manquants.push('conditionsGhw1');
+    return fin('indetermine', 'GHW 1 : les conditions fixées par le règlement (R. 122-4) doivent être vérifiées.');
+  }
+  if(classe==='GHW2'){
+    if(h>50) return fin('igh', 'GHW 2 : bureaux, '+mesure+', supérieur à 50 m.');
+    if(h>28) return fin('incoherent', 'GHW 2 vise H > 50 m ; '+mesure+' : classe GHW 1 si les conditions du règlement sont remplies.');
+    return fin('non_igh', 'Bureaux : '+mesure+', pas supérieur à 28 m.');
+  }
+  if(classe==='GHS') sortie.notes.push("GHS : examiner aussi les exclusions de champ (R. 146-2) ; le seul usage ne suffit pas à conclure.");
+  if(h>ref.seuilMetres) return fin('igh', classe+' : '+mesure+', supérieur à '+ref.seuilMetres+' m.');
+  return fin('non_igh', classe+' : '+mesure+', pas supérieur à '+ref.seuilMetres+' m.');
+}
+// MOTEURS-REGLEMENTAIRES:FIN
+
+// ---------- Lecture de l'écran → données d'entrée des moteurs (le seul endroit qui lit l'état) ----------
+// Précisions saisies dans l'onglet « Calcul des dégagements » : state.techniqueErp.seuils (objet ouvert, sans migration).
+function precisionsSeuils(){
+  const t = state.techniqueErp;
+  return (t && t.seuils && typeof t.seuils==='object') ? t.seuils : {};
+}
+function typesErpPourSeuils(){
+  const brut = (state.mixteTypes && state.mixteTypes.length) ? state.mixteTypes.slice() : (state.erpSubType ? [state.erpSubType] : []);
+  const res = [];
+  brut.forEach(t=>{
+    if(t==='PE'){ const a = state.essai && state.essai.activite; res.push(a ? a : 'PE'); }
+    else res.push(t);
+  });
+  return res.filter((t,i)=>res.indexOf(t)===i);
+}
+// effPublicSaisi : effectif tapé dans la calculette (ensemble des niveaux) ; sinon effectifs de l'onglet (RDC + sous-sol + étages).
+function entreeGroupeErp(effPublicSaisi){
+  const p = precisionsSeuils();
+  const df = state.desenfumage || {};
+  const rdc = parseInt(state.effectifRdc,10) || 0;
+  const ss  = parseInt(df.effectifSousSol,10) || 0;
+  const et  = nombre(p.effectifEtages);
+  const ctx = {
+    populationJ:p.populationJ||'', activiteL:p.activiteL||'', surfaceSalleL:p.surfaceSalleL, hauteurSalleL:p.hauteurSalleL,
+    brancheR:p.brancheR||'', niveauUniqueEnEtage:!!p.niveauUniqueEnEtageR, sommeil:!!(state.identification && state.identification.sommeil)
+  };
+  let eff;
+  if(effPublicSaisi!==undefined && effPublicSaisi!==null){
+    eff = {global:Number(effPublicSaisi)||0, globalExact:true, sousSol:ss, etages:et};
+  } else {
+    eff = {global:rdc+ss+(et===null?0:et), globalExact:et!==null, sousSol:ss, etages:et};
+  }
+  eff.residents = p.residentsJ;
+  eff.totalJ = p.effectifTotalJ;
+  return {types:typesErpPourSeuils(), ctx:ctx, eff:eff};
+}
+const COULEURS_CATEGORIE = {1:'#9B2C2C', 2:'#E53E3E', 3:'#ED8936', 4:'#68D391', 5:'#48BB78'};
+// Groupe ERP + catégorie pour l'affichage. Catégorie « indicative » tant que les lignes de seuils ne sont pas validées.
+function getCategorieERP(effPublicSaisi){
+  const entree = entreeGroupeErp(effPublicSaisi);
+  const g = moteurGroupeErp(entree);
+  const pub = (effPublicSaisi!==undefined && effPublicSaisi!==null) ? nombre(effPublicSaisi) : entree.eff.global;
+  const c = moteurCategorie({groupe:g.groupe, effectifPublic:pub, personnel:precisionsSeuils().personnelNonIndependant, manquantsGroupe:g.manquants});
+  const notes = c.notes.slice();
+  if(!c.indeterminee && !entree.eff.globalExact && c.categorie<=4 && g.groupe==='1er') notes.push("Effectif du public aux étages non saisi : catégorie calculée au minimum.");
+  const indicative = !c.indeterminee && !g.statutsValides && !(pub>300);
+  const manquants = c.indeterminee ? uniques(c.manquants.concat(g.manquants)) : [];
+  let categorieAffichee = c.libelle;
+  if(c.indeterminee) categorieAffichee = 'Catégorie indéterminée (donnée manquante)';
+  else if(indicative) categorieAffichee = c.libelle + ' — indicative';
+  const types = entree.types;
+  return {
+    categorie:c.libelle, categorieAffichee:categorieAffichee, indeterminee:c.indeterminee, indicative:indicative,
+    mention: indicative ? MENTION_A_VALIDER : '', couleur: c.indeterminee ? '#718096' : COULEURS_CATEGORIE[c.categorie],
+    isPE: g.groupe==='5e', groupe:g.groupe, manquants:manquants, motifs:g.motifs, anomalies:g.anomalies,
+    notes:notes.concat(g.notes), horsPerimetre:g.horsPerimetre, statutsValides:g.statutsValides,
+    sommeilActif: !!(state.identification && state.identification.sommeil) && types.some(t=>['O','J','U','R'].includes(t))
+  };
+}
+// Entrée du moteur de désenfumage depuis l'écran.
+function entreeDesenfumageLocal(groupe){
+  const df = state.desenfumage || {};
+  return {groupe:groupe, type:state.erpSubType||'', surface:df.surfaceLocal, sousSol:!!df.estEnSousSol, aveugle:!!df.estAveugle,
+          salleDanse:!!df.salleDanse, mezzanine:!!df.mezzanine};
+}
+// Entrée du moteur IGH depuis l'écran.
+function entreeIgh(){
+  const i = state.igh || {};
+  return {classe:i.classeIgh||'', hauteur:i.hauteurDernierNiveau, independance:i.independanceLocaux||'', conditionsGhw1:i.conditionsGhw1||''};
 }
 
 // Nombre de dégagements et d'unités de passage selon l'effectif : article CO 38 §1 (1er groupe).
@@ -6438,22 +6839,19 @@ function calcDeg(){
     highlightCO36Row(-1); return;
   }
 
-  // ERP category badge
+  // ERP category badge (moteurs purs : 5e catégorie, 1er groupe ou « indéterminé »)
   let catHtml = '';
   if(state.auditType==='erp'){
-    const types = state.mixteTypes?.length ? state.mixteTypes : (state.erpSubType ? [state.erpSubType] : []);
-    const sommeil = !!state.identification?.sommeil;
-    const cat = getCategorieERP(eff, types, sommeil);
-    if(cat){
-      catHtml = `<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap">`;
-      catHtml += `<span style="background:${cat.couleur};color:#fff;font-weight:700;font-size:13px;padding:5px 14px;border-radius:20px">${cat.categorieAffichee}</span>`;
-      if(cat.indicative) catHtml += `<span class="a-valider" style="background:#fef3c7;border:1px solid #f59e0b;color:#92400e;font-weight:700;font-size:12px;padding:4px 10px;border-radius:6px">${cat.mention}</span>`;
-      if(cat.isPE) catHtml += `<span style="font-size:12px;color:#276749">ERP de 5e catégorie — règles PE applicables${cat.seuilPE?` (effectif inférieur au seuil de ${cat.seuilPE} personnes, PE 2 §1)`:''}</span>`;
-      else         catHtml += `<span style="font-size:12px;color:var(--text2)">ERP de 1er groupe${cat.seuilPE?` — seuil du type : ${cat.seuilPE} personnes (PE 2 §1)`:' — type à préciser pour savoir si la 5e catégorie est possible'}</span>`;
-      if(cat.sommeilActif) catHtml += `<span style="background:#fef3c7;border:1px solid #f59e0b;color:#92400e;font-size:12px;padding:4px 10px;border-radius:6px">⚠️ Locaux à sommeil — exigences renforcées, voir les dispositions du type</span>`;
-      catHtml += `</div>`;
-      (cat.notes||[]).forEach(n=>{ catHtml += `<p style="font-size:12px;color:#92400e;background:#fef3c7;border:1px solid #f59e0b;padding:6px 10px;border-radius:6px;margin:0 0 10px">${n}</p>`; });
-    }
+    const cat = getCategorieERP(eff);
+    catHtml = `<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap">`;
+    catHtml += `<span style="background:${cat.couleur};color:#fff;font-weight:700;font-size:13px;padding:5px 14px;border-radius:20px">${cat.categorieAffichee}</span>`;
+    if(cat.indicative) catHtml += `<span class="a-valider" style="background:#fef3c7;border:1px solid #f59e0b;color:#92400e;font-weight:700;font-size:12px;padding:4px 10px;border-radius:6px">${cat.mention}</span>`;
+    if(cat.indeterminee) catHtml += `<span style="font-size:12px;color:var(--text2)">Donnée manquante : ${libellesManquants(cat.manquants).join(' ; ')}</span>`;
+    else if(cat.groupe==='5e') catHtml += `<span style="font-size:12px;color:#276749">ERP de 5e catégorie — règles PE applicables (effectif du public inférieur aux seuils, PE 2 §1)</span>`;
+    else catHtml += `<span style="font-size:12px;color:var(--text2)">ERP de 1er groupe (seuil du tableau PE 2 §1 atteint ou effectif supérieur à 300)</span>`;
+    if(cat.sommeilActif) catHtml += `<span style="background:#fef3c7;border:1px solid #f59e0b;color:#92400e;font-size:12px;padding:4px 10px;border-radius:6px">⚠️ Locaux à sommeil — exigences renforcées, voir les dispositions du type</span>`;
+    catHtml += `</div>`;
+    cat.notes.concat(cat.anomalies).forEach(n=>{ catHtml += `<p style="font-size:12px;color:#92400e;background:#fef3c7;border:1px solid #f59e0b;padding:6px 10px;border-radius:6px;margin:0 0 10px">${n}</p>`; });
   }
 
   const distrib = degn>0 ? distributeUP(up,degn) : [];
