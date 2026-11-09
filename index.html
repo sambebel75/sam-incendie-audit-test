@@ -889,7 +889,7 @@ input[type="number"], input[type="text"], input[type="email"], input[type="tel"]
 if ('serviceWorker' in navigator) {
   try {
     // Doit rester égale à VERSION dans sw.js : le message n'apparaît que si le service worker actif est plus récent que la page.
-    const VERSION_PAGE = 'v8';
+    const VERSION_PAGE = 'v9';
     let bandeauAffiche = false;
     navigator.serviceWorker.addEventListener('message', e => {
       if (!e.data || e.data.type !== 'sw-active' || e.data.version === VERSION_PAGE || bandeauAffiche) return;
@@ -6863,13 +6863,15 @@ function renderComparatif(snapshots) {
       <tbody>
         ${shown.map((s,i) => {
           const prev = i > 0 ? shown[i-1] : null;
-          const delta = prev ? (s.score - prev.score) : null;
-          const arrow = delta === null ? '' : delta > 0 ? `<span style="color:#15803d">▲ +${delta.toFixed(1)}</span>` : delta < 0 ? `<span style="color:#dc2626">▼ ${delta.toFixed(1)}</span>` : '<span style="color:#888">→ 0</span>';
-          const bar = `<div class="comp-bar" style="width:${Math.round((s.score||0))}%;background:${(s.score||0)>=80?'var(--s4)':(s.score||0)>=40?'var(--s2)':'var(--accent)'}"></div>`;
+          // Le score d'un snapshot est la moyenne des notes (0 à 5), enregistrée sous forme de texte : on la convertit.
+          const sc = parseFloat(s.score) || 0;
+          const delta = prev ? (sc - (parseFloat(prev.score) || 0)) : null;
+          const arrow = delta === null ? '' : Math.abs(delta) < 0.05 ? '<span style="color:#888">→ 0</span>' : delta > 0 ? `<span style="color:#15803d">▲ +${delta.toFixed(1)}</span>` : delta < 0 ? `<span style="color:#dc2626">▼ ${delta.toFixed(1)}</span>` : '<span style="color:#888">→ 0</span>';
+          const bar = `<div class="comp-bar" style="width:${Math.max(0, Math.min(100, Math.round(sc / 5 * 100)))}%;background:${sc>=4?'var(--s4)':sc>=2?'var(--s2)':'var(--accent)'}"></div>`;
           return `<tr>
             <td>${s.nom || 'Audit'}</td>
             <td style="white-space:nowrap">${s.date}</td>
-            <td><div style="display:flex;align-items:center;gap:6px"><div style="flex:1;background:#e5e7eb;border-radius:4px;height:8px;min-width:60px">${bar}</div><span style="font-weight:600">${(s.score||0).toFixed(1)}%</span></div></td>
+            <td><div style="display:flex;align-items:center;gap:6px"><div style="flex:1;background:#e5e7eb;border-radius:4px;height:8px;min-width:60px">${bar}</div><span style="font-weight:600">${sc.toFixed(1)}/5</span></div></td>
             <td style="text-align:center;font-weight:700;color:${(s.nc||0)>0?'#dc2626':'#15803d'}">${s.nc||0}</td>
             <td style="text-align:center">${s.saisis||0}/${s.total||0}</td>
             <td>${arrow}</td>
