@@ -26,6 +26,7 @@
     exportJson: "Vos exports seront en .json. C'est plus gros, mais ça marche.",
     horsLigne: "Le mode hors ligne n'est pas disponible sur ce navigateur. L'application fonctionnera uniquement avec une connexion.",
     photosLocal: "Les photos seront gardées dans l'espace limité du navigateur (environ 5 Mo). Exportez souvent votre dossier.",
+    iphone: "Cette application fonctionne mieux sur Chrome, Edge, Firefox ou Safari 16.4+. Sur iPhone, installez l'application sur l'écran d'accueil pour conserver vos données.",
     webkit7j: "Safari peut effacer les données d'un site que vous n'ouvrez pas pendant 7 jours. Ajoutez l'application à l'écran d'accueil et exportez régulièrement votre dossier.",
     conseil: 'Pour un fonctionnement complet, utilisez Chrome, Edge, Firefox ou Safari récent.',
     quota: function (pct) {
@@ -206,6 +207,9 @@
     ajouter('horsLigne', caps.serviceWorker ? 'ok' : 'attention',
       caps.serviceWorker ? 'Le mode hors ligne est disponible.' : MSG.horsLigne);
 
+    if (info.os === 'iOS' && !ctx.installee) {
+      ajouter('iphone', 'info', MSG.iphone);
+    }
     if (info.famille === 'webkit' && !ctx.installee) {
       ajouter('safari7j', 'info', MSG.webkit7j);
     }
@@ -889,7 +893,7 @@ input[type="number"], input[type="text"], input[type="email"], input[type="tel"]
 if ('serviceWorker' in navigator) {
   try {
     // Doit rester égale à VERSION dans sw.js : le message n'apparaît que si le service worker actif est plus récent que la page.
-    const VERSION_PAGE = 'v9';
+    const VERSION_PAGE = 'v11';
     let bandeauAffiche = false;
     navigator.serviceWorker.addEventListener('message', e => {
       if (!e.data || e.data.type !== 'sw-active' || e.data.version === VERSION_PAGE || bandeauAffiche) return;
@@ -2913,7 +2917,7 @@ function doPrint(){
     const types = state.mixteTypes?.length ? state.mixteTypes : (state.erpSubType ? [state.erpSubType] : []);
     const effNum = parseInt(String(id.effectif||'').match(/\d+/)?.[0])||0;
     const cat = getCategorieERP(effNum, types, !!id.sommeil);
-    if(cat) coverCat = cat.categorie;
+    if(cat) coverCat = cat.indicative ? `${cat.categorieAffichee} (${cat.mention})` : cat.categorie;
   }
   setText('cover-nom', id.nom);
   setText('cover-adresse', id.adresse);
@@ -5137,7 +5141,7 @@ function renderPlan() {
             actionsCompilees.push({
                 id: "R-CCH-01",
                 priorite: "P1",
-                constat: `Rupture de seuil de la 5e catégorie (Totalisé à ${effectifTotal} personnes pour le Type ${typePrincipal}, seuil : ${refType.seuilGlobal}).`,
+                constat: `Rupture de seuil de la 5e catégorie (Totalisé à ${effectifTotal} personnes pour le Type ${typePrincipal}, seuil : ${refType.seuilGlobal}).` + (refType.statut==='valide' ? '' : ` Seuil indicatif — ${MENTION_A_VALIDER}.`),
                 preconisation: "Déposer un dossier complet de mise en conformité en préfecture. Planifier le passage obligatoire de la Commission de Sécurité."
             });
         }
@@ -5302,22 +5306,24 @@ function renderPlanTechAlerts(){
   if(refType && effectifTotal>0){
     if(effectifTotal>=refType.seuilGlobal){
       techAlerts.push({id:'R-CCH-01',priorite:'P1',
-        constat:`Rupture de seuil 5e catégorie — effectif cumulé ${effectifTotal} pers. (seuil Type ${typePrincipal} : ${refType.seuilGlobal} pers.)`,
+        constat:`Rupture de seuil 5e catégorie — effectif cumulé ${effectifTotal} pers. (seuil Type ${typePrincipal} : ${refType.seuilGlobal} pers.)` + (refType.statut==='valide' ? '' : ` Seuil indicatif — ${MENTION_A_VALIDER}.`),
         preconisation:'Déposer dossier de mise en conformité en préfecture. Commission de sécurité obligatoire.'});
     } else if(effSs>0 && refType.seuilSousSol!==null && effSs>=refType.seuilSousSol){
       techAlerts.push({id:'R-CCH-02',priorite:'P1',
-        constat:`Rupture de seuil sous-sol — ${effSs} pers. en sous-sol (seuil Type ${typePrincipal} : ${refType.seuilSousSol} pers.)`,
+        constat:`Rupture de seuil sous-sol — ${effSs} pers. en sous-sol (seuil Type ${typePrincipal} : ${refType.seuilSousSol} pers.)` + (refType.statut==='valide' ? '' : ` Seuil indicatif — ${MENTION_A_VALIDER}.`),
         preconisation:'Application des dispositions générales CO 39. Escalier montant isolé obligatoire.'});
     }
   }
   const surf = parseFloat(state.desenfumage?.surfaceLocal)||0;
-  if(surf>300 && !state.desenfumage?.estEnSousSol){
+  const dfRef = REFERENTIEL_DESENFUMAGE_LOCAL.defaut;
+  const dfMention = dfRef.statut==='valide' ? '' : ` Seuil indicatif — ${MENTION_A_VALIDER}.`;
+  if(surf>dfRef.aerien && !state.desenfumage?.estEnSousSol){
     techAlerts.push({id:'T-DF-01',priorite:'P1',
-      constat:`Local aérien de ${surf} m² dépasse le seuil de 300 m² (IT 246).`,
+      constat:`Local aérien de ${surf} m² dépasse le seuil de ${dfRef.aerien} m² (IT 246).` + dfMention,
       preconisation:'Installer désenfumage conforme (naturel ou mécanique). Débit min : 12 vol/h.'});
-  } else if(surf>100 && state.desenfumage?.estEnSousSol){
+  } else if(surf>dfRef.sousSolOuAveugle && state.desenfumage?.estEnSousSol){
     techAlerts.push({id:'T-DF-02',priorite:'P1',
-      constat:`Local enterré/aveugle de ${surf} m² dépasse le seuil de 100 m² (IT 246 / Art. DF 7).`,
+      constat:`Local enterré/aveugle de ${surf} m² dépasse le seuil de ${dfRef.sousSolOuAveugle} m² (IT 246 / Art. DF 7).` + dfMention,
       preconisation:'Désenfumage mécanique requis (tirage naturel via conduits débouchant accepté).'});
   }
   if(!techAlerts.length){ alertTarget.innerHTML=''; return; }
@@ -5431,8 +5437,10 @@ let compatBandeauFerme = false;
 function majBandeauCompat(){
   const existant = document.getElementById('compat-bandeau');
   if(!state.isDemo || compatBandeauFerme || !window.SamCompat || !SamCompat.caps){ if(existant) existant.remove(); return; }
-  const d = SamCompat.decrire(SamCompat.caps, SamCompat.info, {indexedDBActif: undefined, installee: false, quotaPct: Quota.pct()});
-  const pertinentes = d.lignes.filter(l => l.etat === 'attention' && l.cle !== 'compression' && l.cle !== 'photos');
+  const installee = (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) || window.navigator.standalone === true;
+  const d = SamCompat.decrire(SamCompat.caps, SamCompat.info, {indexedDBActif: undefined, installee, quotaPct: Quota.pct()});
+  // Sur iPhone (non installé), le message d'installation s'affiche aussi en essai : c'est lui qui protège les données.
+  const pertinentes = d.lignes.filter(l => (l.etat === 'attention' && l.cle !== 'compression' && l.cle !== 'photos') || l.cle === 'iphone');
   if(!pertinentes.length){ if(existant) existant.remove(); return; }
   if(existant) return;
   const bandeau = document.createElement('div');
@@ -5619,7 +5627,7 @@ function executerCalculCO36(){
   if(state.desenfumage) state.desenfumage.estEnSousSol = (effSs>0);
   if(effectifTotal<=0) return;
 
-  // FIX: REFERENTIEL_SEUILS_ERP (pas window.SEUIL_PE) — inclut mixteTypes
+  // Seuils : REFERENTIEL_SEUILS_ERP (tableau unique), mixteTypes inclus
   const typesAControler = [...new Set([typePrincipal,...typesMixtes])].filter(t=>REFERENTIEL_SEUILS_ERP[t]);
   let estPremierGroupe=false, motifBascule='';
   typesAControler.forEach(type=>{
@@ -5677,7 +5685,9 @@ function executerCalculCO36(){
       const r = seuilsErp(t);
       return [r.note, r.seuilEtages!==null ? `Type ${t} : seuil de ${r.seuilEtages} personnes en étages, non contrôlé ici (pas de saisie par étage).` : ''].filter(Boolean).join(' ');
     }).filter(Boolean).map(n=>`<br><span style="color:#92400e">⚠️ ${n}</span>`).join('');
-    const HTMLBadge=`<div style="display:inline-block;padding:4px 10px;background:${badgeColor};color:white;font-weight:bold;font-size:11px;border-radius:3px;text-transform:uppercase;margin-bottom:8px">Classement réglementaire : ${categorieText} (Type ${typePrincipal})</div>`;
+    const indicatif = effectifTotal<=300 && !seuilsValides(typesAControler);
+    const HTMLBadge=`<div style="display:inline-block;padding:4px 10px;background:${badgeColor};color:white;font-weight:bold;font-size:11px;border-radius:3px;text-transform:uppercase;margin-bottom:8px">Classement réglementaire : ${categorieText}${indicatif?' — indicative':''} (Type ${typePrincipal})</div>`
+      + (indicatif ? `<div class="a-valider" style="margin:0 0 8px;color:#92400e;font-weight:700">⚠️ ${MENTION_A_VALIDER}</div>` : '');
     if(estPremierGroupe){
       zoneAlerte.innerHTML=`<div style="margin-top:12px;padding:12px 15px;border-left:4px solid #E53E3E;background:#fff5f5;color:#c53030;font-size:12px;font-family:sans-serif;border-radius:0 4px 4px 0;line-height:1.5">${HTMLBadge}<strong style="display:block;margin-bottom:4px;font-size:13px">⚠️ RUPTURE DE SEUIL — 1er GROUPE</strong><strong>Motif :</strong> ${motifBascule}.<br>L'établissement sort de la 5e catégorie. Application intégrale des dispositions particulières du Type ${typePrincipal} pour le 1er groupe.${notesSeuils}</div>`;
     } else {
@@ -5709,16 +5719,14 @@ function evaluerObligationDesenfumage(){
   let diagCirc  = {obligatoire:false, typeRequis:'Aucun', motif:"Hors critères d'assujettissement."};
 
   // Seuil local modulé par type
-  let seuilSurfaceAerienne = 300;
-  if(typeErp==='L') seuilSurfaceAerienne=100;
-  if(typeErp==='T') seuilSurfaceAerienne=200;
-  if(typeErp==='P') seuilSurfaceAerienne=100;
+  const seuilSurfaceAerienne = seuilDesenfumageLocal(typeErp);
+  const seuilSurfaceEnterre = REFERENTIEL_DESENFUMAGE_LOCAL.defaut.sousSolOuAveugle;
 
   if(sousSol||aveugle){
-    if(surface>100){
+    if(surface>seuilSurfaceEnterre){
       diagLocal.obligatoire=true;
       diagLocal.typeRequis='Extraction Mécanique Recommandée (IT 246)';
-      diagLocal.motif=`Surface (${surface} m²) > 100 m² en espace aveugle ou infrastructure basse (Art. DF 7).`;
+      diagLocal.motif=`Surface (${surface} m²) > ${seuilSurfaceEnterre} m² en espace aveugle ou infrastructure basse (Art. DF 7).`;
     }
   } else {
     if(surface>seuilSurfaceAerienne){
@@ -6186,15 +6194,15 @@ function synchroniserSurfacesTypeM(){
 // ==================== CALCUL UP / DÉGAGEMENTS ====================
 // Les seuils de la 5e catégorie par type sont plus bas, dans REFERENTIEL_SEUILS_ERP (article PE 2 §1).
 const CLASSES_IGH = {
-  GHA:  { nom: "IGH à usage d'habitation",                       seuilMetres: 50  },
-  GHO:  { nom: "IGH à usage d'hôtel",                            seuilMetres: 28  },
-  GHR:  { nom: "IGH à usage d'enseignement",                     seuilMetres: 28  },
-  GHS:  { nom: "IGH à usage de dépôt d'archives",                seuilMetres: 28  },
-  GHT:  { nom: "IGH à usage de bureaux",                         seuilMetres: 28  },
-  GHU:  { nom: "IGH à usage sanitaire / soins",                  seuilMetres: 28  },
-  GHW:  { nom: "IGH à usage de bureaux (Ancienne norme W1/W2)",  seuilMetres: 28  },
-  GHZ:  { nom: "IGH à usage mixte",                              seuilMetres: 28  },
-  ITGH: { nom: "Immeuble de Très Grande Hauteur",                 seuilMetres: 200 },
+  GHA:  { statut:'a_valider', nom: "IGH à usage d'habitation",                       seuilMetres: 50  },
+  GHO:  { statut:'a_valider', nom: "IGH à usage d'hôtel",                            seuilMetres: 28  },
+  GHR:  { statut:'a_valider', nom: "IGH à usage d'enseignement",                     seuilMetres: 28  },
+  GHS:  { statut:'a_valider', nom: "IGH à usage de dépôt d'archives",                seuilMetres: 28  },
+  GHT:  { statut:'a_valider', nom: "IGH à usage de bureaux",                         seuilMetres: 28  },
+  GHU:  { statut:'a_valider', nom: "IGH à usage sanitaire / soins",                  seuilMetres: 28  },
+  GHW:  { statut:'a_valider', nom: "IGH à usage de bureaux (Ancienne norme W1/W2)",  seuilMetres: 28  },
+  GHZ:  { statut:'a_valider', nom: "IGH à usage mixte",                              seuilMetres: 28  },
+  ITGH: { statut:'a_valider', nom: "Immeuble de Très Grande Hauteur",                 seuilMetres: 200 },
 };
 
 const REFERENTIEL_IGH_DOMAINS = [
@@ -6278,8 +6286,6 @@ const REFERENTIEL_HABITATION_DOMAINS = [
     }
 ];
 
-window.SEUIL_PE = { "J":100, "L":200, "M":300, "N":200, "O":100, "P":120, "R":200, "S":200, "T":200, "U":100, "V":300, "W":200, "X":200, "Y":200 };
-
 // Seuils du 1er groupe par type d'exploitation : tableau de l'article PE 2 §1 (version en vigueur au 01/01/2026).
 // L'établissement est de 5e catégorie tant que l'effectif du public est INFÉRIEUR au seuil ; il passe
 // en 1er groupe dès qu'il l'atteint. Catégories du 1er groupe : article R. 143-19 du CCH.
@@ -6287,30 +6293,50 @@ window.SEUIL_PE = { "J":100, "L":200, "M":300, "N":200, "O":100, "P":120, "R":20
 // sommeil = seuils applicables quand des locaux à sommeil sont déclarés.
 // note = sous-cas du tableau que l'outil ne distingue pas : elle est affichée à côté du classement.
 // seuilEtages est donné pour référence : l'outil n'a pas de saisie par étage et ne le contrôle pas.
+// statut : 'a_valider' tant que la ligne n'a pas été validée par un expert certifié en sécurité incendie, puis 'valide'.
+// Tant qu'une ligne est 'a_valider', la catégorie qui en découle s'affiche comme INDICATIVE (voir getCategorieERP).
+// Ce tableau doit rester égal à la fiche sam-incendie-audit/validation/fiche-validation-seuils.json (test tests/seuils.test.js).
+const MENTION_A_VALIDER = 'À VALIDER par un expert certifié en sécurité incendie';
 const REFERENTIEL_SEUILS_ERP = {
-  J:{seuilGlobal:25,  seuilSousSol:null, seuilEtages:null, note:"Type J : le seuil est de 25 résidents (20 pour les personnes handicapées), ou de 100 personnes en effectif total."},
-  L:{seuilGlobal:200, seuilSousSol:100,  seuilEtages:null, note:"Type L : seuil ramené à 50 personnes (20 en sous-sol) pour les salles de spectacles, de projections et les cabarets."},
-  M:{seuilGlobal:200, seuilSousSol:100,  seuilEtages:100},
-  N:{seuilGlobal:200, seuilSousSol:100,  seuilEtages:200},
-  O:{seuilGlobal:100, seuilSousSol:null, seuilEtages:null},
-  P:{seuilGlobal:120, seuilSousSol:20,   seuilEtages:100},
-  R:{seuilGlobal:200, seuilSousSol:100,  seuilEtages:100, sommeil:{seuilGlobal:30, seuilSousSol:null, seuilEtages:null},
+  J:{statut:'a_valider', seuilGlobal:25,  seuilSousSol:null, seuilEtages:null, note:"Type J : le seuil est de 25 résidents (20 pour les personnes handicapées), ou de 100 personnes en effectif total."},
+  L:{statut:'a_valider', seuilGlobal:200, seuilSousSol:100,  seuilEtages:null, note:"Type L : seuil ramené à 50 personnes (20 en sous-sol) pour les salles de spectacles, de projections et les cabarets."},
+  M:{statut:'a_valider', seuilGlobal:200, seuilSousSol:100,  seuilEtages:100},
+  N:{statut:'a_valider', seuilGlobal:200, seuilSousSol:100,  seuilEtages:200},
+  O:{statut:'a_valider', seuilGlobal:100, seuilSousSol:null, seuilEtages:null},
+  P:{statut:'a_valider', seuilGlobal:120, seuilSousSol:20,   seuilEtages:100},
+  R:{statut:'a_valider', seuilGlobal:200, seuilSousSol:100,  seuilEtages:100, sommeil:{seuilGlobal:30, seuilSousSol:null, seuilEtages:null},
      note:"Type R : seuil ramené à 100 personnes pour les écoles maternelles, crèches, haltes-garderies et jardins d'enfants (interdits en sous-sol), et à 30 avec locaux à sommeil."},
-  S:{seuilGlobal:200, seuilSousSol:100,  seuilEtages:100},
-  T:{seuilGlobal:200, seuilSousSol:100,  seuilEtages:100},
-  U:{seuilGlobal:100, seuilSousSol:null, seuilEtages:null, sommeil:{seuilGlobal:20, seuilSousSol:null, seuilEtages:null},
+  S:{statut:'a_valider', seuilGlobal:200, seuilSousSol:100,  seuilEtages:100},
+  T:{statut:'a_valider', seuilGlobal:200, seuilSousSol:100,  seuilEtages:100},
+  U:{statut:'a_valider', seuilGlobal:100, seuilSousSol:null, seuilEtages:null, sommeil:{seuilGlobal:20, seuilSousSol:null, seuilEtages:null},
      note:"Type U : seuil de 100 personnes sans hébergement, de 20 avec hébergement."},
-  V:{seuilGlobal:300, seuilSousSol:100,  seuilEtages:200},
-  W:{seuilGlobal:200, seuilSousSol:100,  seuilEtages:100},
-  X:{seuilGlobal:200, seuilSousSol:100,  seuilEtages:100},
-  Y:{seuilGlobal:200, seuilSousSol:100,  seuilEtages:100},
+  V:{statut:'a_valider', seuilGlobal:300, seuilSousSol:100,  seuilEtages:200},
+  W:{statut:'a_valider', seuilGlobal:200, seuilSousSol:100,  seuilEtages:100},
+  X:{statut:'a_valider', seuilGlobal:200, seuilSousSol:100,  seuilEtages:100},
+  Y:{statut:'a_valider', seuilGlobal:200, seuilSousSol:100,  seuilEtages:100},
 };
+// Désenfumage d'un local accessible au public (article DF 7 §1) : surface au-delà de laquelle le désenfumage est exigé.
+// 'defaut' = texte de DF 7 §1 ; L, T et P = valeurs propres au type reprises de l'ancien code, non retrouvées dans DF 7.
+const REFERENTIEL_DESENFUMAGE_LOCAL = {
+  defaut:{statut:'a_valider', aerien:300, sousSolOuAveugle:100},
+  L:{statut:'a_valider', aerien:100},
+  T:{statut:'a_valider', aerien:200},
+  P:{statut:'a_valider', aerien:100},
+};
+function seuilDesenfumageLocal(type){
+  return (REFERENTIEL_DESENFUMAGE_LOCAL[type] && REFERENTIEL_DESENFUMAGE_LOCAL[type].aerien) || REFERENTIEL_DESENFUMAGE_LOCAL.defaut.aerien;
+}
 // Seuils applicables à un type, compte tenu des locaux à sommeil déclarés dans l'identification.
 function seuilsErp(type, sommeil){
   const r = REFERENTIEL_SEUILS_ERP[type];
   if(!r) return null;
   const som = (sommeil===undefined) ? !!(state.identification && state.identification.sommeil) : !!sommeil;
-  return Object.assign({}, r, (som && r.sommeil) ? r.sommeil : {}, {note: r.note||''});
+  return Object.assign({}, r, (som && r.sommeil) ? r.sommeil : {}, {note: r.note||'', statut: r.statut==='valide' ? 'valide' : 'a_valider'});
+}
+// Vrai si TOUTES les lignes de seuils utilisées sont validées. Au moindre doute (type inconnu, ligne sans statut) : faux.
+function seuilsValides(types){
+  const liste = (types||[]).filter(t=>REFERENTIEL_SEUILS_ERP[t]);
+  return liste.length>0 && liste.every(t=>REFERENTIEL_SEUILS_ERP[t].statut==='valide');
 }
 
 function getCategorieERP(eff, types, sommeil){
@@ -6334,7 +6360,11 @@ function getCategorieERP(eff, types, sommeil){
   else              { categorie='1ère catégorie';   couleur='#9B2C2C'; }
   const sommeilActif = !!sommeil && activeTypes.some(t=>['O','J','U','R'].includes(t));
   const notes = activeTypes.map(t=>seuilsErp(t,sommeil).note).filter(Boolean);
-  return { categorie, couleur, isPE, seuilPE, sommeilActif, notes };
+  // Au-dessus de 300 personnes, la catégorie (3e, 2e, 1re) ne dépend plus du tableau PE 2 §1 : il n'y a rien à valider.
+  // En dessous, ou si le type est inconnu, le résultat repose sur des seuils pas encore validés : classement indicatif.
+  const indicative = eff<=300 && !seuilsValides(activeTypes);
+  const categorieAffichee = indicative ? categorie + ' — indicative' : categorie;
+  return { categorie, categorieAffichee, indicative, mention: indicative ? MENTION_A_VALIDER : '', couleur, isPE, seuilPE, sommeilActif, notes };
 }
 
 // Nombre de dégagements et d'unités de passage selon l'effectif : article CO 38 §1 (1er groupe).
@@ -6416,7 +6446,8 @@ function calcDeg(){
     const cat = getCategorieERP(eff, types, sommeil);
     if(cat){
       catHtml = `<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap">`;
-      catHtml += `<span style="background:${cat.couleur};color:#fff;font-weight:700;font-size:13px;padding:5px 14px;border-radius:20px">${cat.categorie}</span>`;
+      catHtml += `<span style="background:${cat.couleur};color:#fff;font-weight:700;font-size:13px;padding:5px 14px;border-radius:20px">${cat.categorieAffichee}</span>`;
+      if(cat.indicative) catHtml += `<span class="a-valider" style="background:#fef3c7;border:1px solid #f59e0b;color:#92400e;font-weight:700;font-size:12px;padding:4px 10px;border-radius:6px">${cat.mention}</span>`;
       if(cat.isPE) catHtml += `<span style="font-size:12px;color:#276749">ERP de 5e catégorie — règles PE applicables${cat.seuilPE?` (effectif inférieur au seuil de ${cat.seuilPE} personnes, PE 2 §1)`:''}</span>`;
       else         catHtml += `<span style="font-size:12px;color:var(--text2)">ERP de 1er groupe${cat.seuilPE?` — seuil du type : ${cat.seuilPE} personnes (PE 2 §1)`:' — type à préciser pour savoir si la 5e catégorie est possible'}</span>`;
       if(cat.sommeilActif) catHtml += `<span style="background:#fef3c7;border:1px solid #f59e0b;color:#92400e;font-size:12px;padding:4px 10px;border-radius:6px">⚠️ Locaux à sommeil — exigences renforcées, voir les dispositions du type</span>`;
