@@ -889,7 +889,7 @@ input[type="number"], input[type="text"], input[type="email"], input[type="tel"]
 if ('serviceWorker' in navigator) {
   try {
     // Doit rester égale à VERSION dans sw.js : le message n'apparaît que si le service worker actif est plus récent que la page.
-    const VERSION_PAGE = 'v6';
+    const VERSION_PAGE = 'v8';
     let bandeauAffiche = false;
     navigator.serviceWorker.addEventListener('message', e => {
       if (!e.data || e.data.type !== 'sw-active' || e.data.version === VERSION_PAGE || bandeauAffiche) return;
@@ -1664,7 +1664,7 @@ a.essai-btn{display:inline-flex;align-items:center;justify-content:center;text-d
       </div>
       <div style="display:flex;gap:8px;flex-wrap:wrap">
         <button class="btn" id="btnSauvegardesSecours" style="display:none" onclick="telechargerSauvegardesSecours()" title="Copies des anciennes données, conservées 30 jours">🛟 Sauvegardes de secours</button>
-        <button class="btn btn-accent" onclick="sauvegarderSnapshotHistorique()">💾 Sauvegarder snapshot maintenant</button>
+        <button class="btn btn-accent" onclick="sauvegarderSnapshotHistorique(this)">💾 Sauvegarder snapshot maintenant</button>
       </div>
     </div>
     <div id="hist-comparatif" style="margin-bottom:32px;"></div>
@@ -1689,7 +1689,7 @@ a.essai-btn{display:inline-flex;align-items:center;justify-content:center;text-d
   <button class="btn" onclick="document.getElementById('importFile').click()" title="Charger un audit JSON">📂 Import JSON</button>
   <input type="file" id="importFile" accept=".json,.gz,application/json,application/gzip" style="display:none" onchange="importJSON(event)">
   <button class="btn" onclick="doPrint()" title="Imprimer / exporter PDF">🖨️ Imprimer / PDF</button>
-  <button class="btn" onclick="sauvegarderSnapshotHistorique()" title="Sauvegarder un snapshot dans l'historique">📸 Snapshot</button>
+  <button class="btn" onclick="sauvegarderSnapshotHistorique(this)" title="Sauvegarder un snapshot dans l'historique">📸 Snapshot</button>
   <div class="toolbar-spacer"></div>
   <div class="progress-global">
     <div class="prog-bar-wrap"><div class="prog-bar" id="globalProgBar" style="width:0%"></div></div>
@@ -6627,7 +6627,23 @@ function getHistorique() {
     catch(e) { return []; }
 }
 
-function sauvegarderSnapshotHistorique() {
+function afficherToastSnapshot(msg) {
+    let t = document.getElementById('toast-snapshot');
+    if (!t) {
+        t = document.createElement('div');
+        t.id = 'toast-snapshot';
+        t.setAttribute('role', 'status');
+        t.setAttribute('aria-live', 'polite');
+        t.style.cssText = 'position:fixed;left:50%;bottom:70px;transform:translateX(-50%);background:#0a7a3c;color:#fff;padding:10px 18px;border-radius:8px;font-size:14px;font-weight:600;z-index:100000;box-shadow:0 4px 14px rgba(0,0,0,.35);max-width:90vw;text-align:center;';
+        document.body.appendChild(t);
+    }
+    t.textContent = msg;
+    t.style.display = 'block';
+    clearTimeout(t._fin);
+    t._fin = setTimeout(() => { t.style.display = 'none'; }, 3000);
+}
+
+function sauvegarderSnapshotHistorique(btnClique) {
     const snapshots = getHistorique();
     const data = getAuditData();
     const allPts = getAllPoints();
@@ -6649,12 +6665,40 @@ function sauvegarderSnapshotHistorique() {
         state: JSON.parse(JSON.stringify(state))
     });
     if (snapshots.length > 20) snapshots.shift();
-    try {
-        localStorage.setItem(HIST_KEY, JSON.stringify(snapshots));
-        const btn = document.querySelector('[onclick="sauvegarderSnapshotHistorique()"]');
-        if (btn) { btn.textContent = '✅ Snapshot sauvé!'; setTimeout(() => btn.textContent = '💾 Snapshot', 2000); }
-        if (state.activeTab === 6) renderHistorique();
-    } catch(e) { alert('Espace localStorage insuffisant — supprimez d\'anciens snapshots.'); }
+    const ecrire = liste => { try { localStorage.setItem(HIST_KEY, JSON.stringify(liste)); return true; } catch(e) { return false; } };
+    let ok = ecrire(snapshots);
+    let retires = 0;
+    if (!ok) {
+        // Espace plein : on propose de retirer les plus anciens snapshots (jamais sans accord).
+        const pct = Math.min(100, Math.round(Quota.pct() * 100));
+        const anciens = snapshots.length - 1;
+        if (anciens > 0 && confirm('Espace de stockage presque plein (' + pct + ' %).\n\nSupprimer les snapshots les plus anciens pour enregistrer celui-ci ?\n(' + anciens + ' snapshot(s) disponibles. Pensez à faire un Export JSON avant.)')) {
+            while (!ok && snapshots.length > 1) { snapshots.shift(); retires++; ok = ecrire(snapshots); }
+        }
+    }
+    if (!ok) {
+        // Dernier recours : le snapshot seul est trop gros ; on retire les photos intégrées (les références restent).
+        const seul = snapshots[snapshots.length - 1];
+        const photosIntegrees = JSON.stringify(seul.state).includes('"data:');
+        if (photosIntegrees) {
+            Object.values(seul.state.scores || {}).forEach(s => { if (s && Array.isArray(s.photos)) s.photos = s.photos.filter(p => !(typeof p === 'string' && p.indexOf('data:') === 0)); });
+            seul.sansPhotos = true;
+            ok = ecrire(snapshots); // seul est le dernier élément : il est modifié en place
+        }
+    }
+    if (!ok) {
+        alert('Le snapshot n’a pas pu être enregistré : l’espace de stockage du navigateur est plein (' + Math.min(100, Math.round(Quota.pct() * 100)) + ' %).\n\nFaites un Export JSON pour garder votre dossier, puis supprimez d’anciens snapshots (onglet Historique) ou libérez de l’espace.\n\nAstuce : ouvrez l’application depuis son adresse web (https://…) plutôt que depuis un fichier local : l’espace y est propre à l’application.');
+        return;
+    }
+    // Retour visuel sur le bouton réellement cliqué (barre d'outils ou onglet Historique), puis texte d'origine.
+    const btn = btnClique && btnClique.nodeType === 1 ? btnClique : null;
+    if (btn) {
+        if (!btn.dataset.texteOrigine) btn.dataset.texteOrigine = btn.textContent;
+        btn.textContent = '✅ Snapshot sauvé !';
+        setTimeout(() => { btn.textContent = btn.dataset.texteOrigine; }, 2000);
+    }
+    afficherToastSnapshot('Snapshot enregistré dans l’onglet Historique (' + snapshots.length + ').' + (retires ? ' ' + retires + ' ancien(s) supprimé(s).' : '') + (snapshots[snapshots.length - 1].sansPhotos ? ' Photos intégrées non conservées (espace).' : ''));
+    if (state.activeTab === 6) renderHistorique();
 }
 
 function renderHistorique() {
