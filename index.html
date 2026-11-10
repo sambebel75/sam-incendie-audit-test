@@ -893,7 +893,7 @@ input[type="number"], input[type="text"], input[type="email"], input[type="tel"]
 if ('serviceWorker' in navigator) {
   try {
     // Doit rester égale à VERSION dans sw.js : le message n'apparaît que si le service worker actif est plus récent que la page.
-    const VERSION_PAGE = 'v15';
+    const VERSION_PAGE = 'v16';
     let bandeauAffiche = false;
     navigator.serviceWorker.addEventListener('message', e => {
       if (!e.data || e.data.type !== 'sw-active' || e.data.version === VERSION_PAGE || bandeauAffiche) return;
@@ -1247,7 +1247,6 @@ a.essai-btn{display:inline-flex;align-items:center;justify-content:center;text-d
           <option value="X">Type X — Établissements sportifs</option>
           <option value="Y">Type Y — Musées</option>
           <option value="OA">Type OA — Hôtels-restaurants d'altitude</option>
-          <option value="GA">Type GA — Gares</option>
           <option value="PA">Type PA — Plein air</option>
           <option value="PE">PE — Petits établissements (5e catégorie)</option>
         </select>
@@ -1268,7 +1267,6 @@ a.essai-btn{display:inline-flex;align-items:center;justify-content:center;text-d
         <button class="erp-type-btn" data-type="X" onclick="setErpType('X')">X — Sportifs</button>
         <button class="erp-type-btn" data-type="Y" onclick="setErpType('Y')">Y — Musées</button>
         <button class="erp-type-btn" data-type="OA" onclick="setErpType('OA')">OA — Altitude</button>
-        <button class="erp-type-btn" data-type="GA" onclick="setErpType('GA')">GA — Gares</button>
         <button class="erp-type-btn" data-type="PA" onclick="setErpType('PA')">PA — Plein air</button>
         <button class="erp-type-btn" data-type="PE" onclick="setErpType('PE')">PE — 5e catégorie</button>
       </div>
@@ -2104,7 +2102,6 @@ const ERP_TYPE_SPECIFICS = {
     {id:'y_04',label:'Ateliers de restauration : locaux à risques moyens isolés',ref:'Y — CO 27'},
   ]},
   OA:{name:"Type OA — Hôtels-restaurants d'altitude",icon:'🏔️',points:[]},
-  GA:{name:'Type GA — Gares',icon:'🚉',points:[]},
   PA:{name:"Type PA — Établissements de plein air",icon:'⛺',points:[]},
   PE:{name:'5e catégorie — Petits ERP (PE)',icon:'🏪',points:[
     {id:'pe_01',label:'Plan schématique d\'intervention apposé à l\'entrée (sous-sol, rez-de-chaussée, étages ; locaux techniques, commandes de sécurité, coupures de fluides et d\'énergie, moyens d\'extinction et d\'alarme)',ref:'PE 27 §6 / Arr. 04/02/2026'},
@@ -2124,7 +2121,7 @@ const ERP_TYPE_SPECIFICS = {
   ]},
 };
 
-// Phrase de la note « type ERP » : un type sans point spécifique (OA, GA, PA) n'annonce pas de points ajoutés à la grille.
+// Phrase de la note « type ERP » : un type sans point spécifique (OA, PA) n'annonce pas de points ajoutés à la grille.
 function notePointsSpecifiques(spec){
   if(!spec.points.length) return `${spec.icon} ${spec.name} — seuil de classement PE 2 §1 intégré ; aucun point spécifique ajouté à la grille`;
   return `${spec.icon} ${spec.name} — ${spec.points.length} points spécifiques ajoutés à la grille (source : samincendie.fr)`;
@@ -5777,9 +5774,6 @@ function rendrePrecisionsSeuils(forcer){
         <input type="checkbox"${p.niveauUniqueEnEtageR?' checked':''} onchange="majPrecisionSeuil('niveauUniqueEnEtageR',this.checked,'coche')">&nbsp;L'établissement ne comporte qu'un seul niveau situé en étage</label>`;
     }
   }
-  if(types.includes('GA')){
-    champs += choix('natureGare', 'Type GA : nature de la gare', [['','— à préciser —']].concat(Object.keys(NATURES_GARE).map(k=>[k, NATURES_GARE[k]])));
-  }
   champs += nb('effectifEtages', 'Public présent aux ÉTAGES seulement (niveaux au-dessus du RDC)', '0 si aucun');
   champs += nb('personnelNonIndependant', "Personnel n'occupant pas de locaux indépendants", 'pour la catégorie');
   cible.innerHTML = `<div style="background:#f7fafc;padding:15px;border-radius:6px;border:1px solid #e2e8f0;margin-bottom:16px;font-family:sans-serif">
@@ -6462,9 +6456,7 @@ const REFERENTIEL_SEUILS_ERP = {
   Y:{statut:'valide', lignes:{standard:{libelle:"Musées", sousSol:100, etages:100, global:200}}},
   // Types à seuil unique (ensemble des niveaux) : « - » dans les colonnes sous-sol et étages du tableau PE 2 §1.
   OA:{statut:'valide', lignes:{standard:{libelle:"Hôtels-restaurants d'altitude", sousSol:null, etages:null, global:20}}},
-  // GA : le tableau parle de « gares aériennes » (seuil 200) ; la note (***) classe les gares souterraines et mixtes
-  // dans le 1er groupe quel que soit l'effectif : c'est une donnée d'entrée (natureGare), pas un seuil chiffré.
-  GA:{statut:'valide', lignes:{standard:{libelle:"Gares aériennes", sousSol:null, etages:null, global:200}}},
+  // Type GA (gares) : volontairement absent de l'outil (décision de l'expert du 10/11/2026).
   PA:{statut:'valide', lignes:{standard:{libelle:"Établissements de plein air", sousSol:null, etages:null, global:300}}},
 };
 // Type L : activités distinctes de la ligne « salles d'auditions… » et de la ligne « spectacles… » de PE 2 §1.
@@ -6491,9 +6483,6 @@ const NOMS_LIGNES = {
   'U.sans':'U (sans hébergement)', 'U.avec':'U (avec hébergement)'
 };
 function nomLigne(id){ return NOMS_LIGNES[id] || ('Type '+String(id).split('.')[0]); }
-
-// Nature d'une gare (type GA) : PE 2 §1, note (***).
-const NATURES_GARE = { aerienne:"Gare aérienne", souterraine_mixte:"Gare souterraine ou mixte" };
 
 // Désenfumage d'un local accessible au public : surface au-delà de laquelle le désenfumage est exigé (STRICTEMENT supérieure).
 //  df7 : établissements du 1er groupe (article DF 7 §1) ; pe14 : 5e catégorie (article PE 14 §1) ;
@@ -6531,7 +6520,6 @@ const LIBELLES_MANQUANTS = {
   surfaceSalleL:"superficie de la salle (m²)",
   hauteurSalleL:"hauteur sous plafond de la salle (m)",
   brancheR:"nature de l'établissement d'enseignement (petite enfance ou autres)",
-  natureGare:"nature de la gare (aérienne, ou souterraine / mixte)",
   effectifEtages:"effectif du public aux étages (saisir 0 s'il n'y en a pas)",
   effectifPublic:"effectif du public",
   surfaceLocal:"surface du local (m²)",
@@ -6561,12 +6549,6 @@ function lignesSeuilsApplicables(type, ctx){
   if(type==='J'){
     if(c.populationJ==='ages' || c.populationJ==='handicapes') ajouter('J', c.populationJ); else res.manquants.push('populationJ');
     res.notes.push("Type J : le seuil d'assujettissement de 7 (PE 2 §1) n'est pas traité par l'outil (limite connue).");
-  } else if(type==='GA'){
-    // PE 2 §1, note (***) : les gares souterraines et mixtes sont classées au 1er groupe quel que soit l'effectif.
-    if(c.natureGare==='souterraine_mixte'){
-      res.premierGroupeDirect = {ligne:'GA.standard', texte:'Type GA : gare souterraine ou mixte — 1er groupe quel que soit l\'effectif (PE 2 §1, note ***)'};
-    } else if(c.natureGare==='aerienne') ajouter('GA', 'standard');
-    else res.manquants.push('natureGare');
   } else if(type==='L'){
     // Anciennes valeurs (v12) reprises : polyvalente_autre et polyvalente_sportive = « polyvalente » + nature.
     let a = c.activiteL, nature = c.naturePolyvalente;
@@ -6660,11 +6642,6 @@ function moteurGroupeErp(entree){
     sortie.manquants.push.apply(sortie.manquants, ap.manquants);
     sortie.notes.push.apply(sortie.notes, ap.notes);
     if(ap.manquants.length) indet = true;
-    // Classement au 1er groupe sans condition d'effectif (gare souterraine ou mixte).
-    if(ap.premierGroupeDirect){
-      un = true;
-      sortie.motifs.push({type:t, ligne:ap.premierGroupeDirect.ligne, critere:'nature de la gare', seuil:null, valeur:null, texte:ap.premierGroupeDirect.texte});
-    }
     ap.lignes.forEach(l=>{
       const r = evaluerLigneSeuils(l.type, l.cle, l.seuils, e.eff||{}, e.ctx);
       sortie.lignes.push({id:l.id, etat:r.etat, criteres:r.criteres});
@@ -6839,7 +6816,7 @@ function entreeGroupeErp(effPublicSaisi){
   const et  = nombre(p.effectifEtages);
   const ctx = {
     populationJ:p.populationJ||'', activiteL:p.activiteL||'', naturePolyvalente:p.naturePolyvalente||'', surfaceSalleL:p.surfaceSalleL, hauteurSalleL:p.hauteurSalleL,
-    brancheR:p.brancheR||'', natureGare:p.natureGare||'', niveauUniqueEnEtage:!!p.niveauUniqueEnEtageR, sommeil:!!(state.identification && state.identification.sommeil)
+    brancheR:p.brancheR||'', niveauUniqueEnEtage:!!p.niveauUniqueEnEtageR, sommeil:!!(state.identification && state.identification.sommeil)
   };
   let eff;
   if(effPublicSaisi!==undefined && effPublicSaisi!==null){
