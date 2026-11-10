@@ -893,7 +893,7 @@ input[type="number"], input[type="text"], input[type="email"], input[type="tel"]
 if ('serviceWorker' in navigator) {
   try {
     // Doit rester égale à VERSION dans sw.js : le message n'apparaît que si le service worker actif est plus récent que la page.
-    const VERSION_PAGE = 'v14';
+    const VERSION_PAGE = 'v15';
     let bandeauAffiche = false;
     navigator.serviceWorker.addEventListener('message', e => {
       if (!e.data || e.data.type !== 'sw-active' || e.data.version === VERSION_PAGE || bandeauAffiche) return;
@@ -1246,6 +1246,9 @@ a.essai-btn{display:inline-flex;align-items:center;justify-content:center;text-d
           <option value="W">Type W — Administrations, Bureaux</option>
           <option value="X">Type X — Établissements sportifs</option>
           <option value="Y">Type Y — Musées</option>
+          <option value="OA">Type OA — Hôtels-restaurants d'altitude</option>
+          <option value="GA">Type GA — Gares</option>
+          <option value="PA">Type PA — Plein air</option>
           <option value="PE">PE — Petits établissements (5e catégorie)</option>
         </select>
       </label>
@@ -1264,6 +1267,9 @@ a.essai-btn{display:inline-flex;align-items:center;justify-content:center;text-d
         <button class="erp-type-btn" data-type="W" onclick="setErpType('W')">W — Bureaux</button>
         <button class="erp-type-btn" data-type="X" onclick="setErpType('X')">X — Sportifs</button>
         <button class="erp-type-btn" data-type="Y" onclick="setErpType('Y')">Y — Musées</button>
+        <button class="erp-type-btn" data-type="OA" onclick="setErpType('OA')">OA — Altitude</button>
+        <button class="erp-type-btn" data-type="GA" onclick="setErpType('GA')">GA — Gares</button>
+        <button class="erp-type-btn" data-type="PA" onclick="setErpType('PA')">PA — Plein air</button>
         <button class="erp-type-btn" data-type="PE" onclick="setErpType('PE')">PE — 5e catégorie</button>
       </div>
       <div class="erp-type-note" id="erpTypeNote">Réglementations spécifiques issues de <a href="https://samincendie.fr" target="_blank">samincendie.fr</a> — une section « Dispositions particulières » sera ajoutée à la grille.</div>
@@ -2097,6 +2103,9 @@ const ERP_TYPE_SPECIFICS = {
     {id:'y_03',label:'Extincteurs CO2 à proximité des œuvres sensibles à l\'eau',ref:'Y — MS 39'},
     {id:'y_04',label:'Ateliers de restauration : locaux à risques moyens isolés',ref:'Y — CO 27'},
   ]},
+  OA:{name:"Type OA — Hôtels-restaurants d'altitude",icon:'🏔️',points:[]},
+  GA:{name:'Type GA — Gares',icon:'🚉',points:[]},
+  PA:{name:"Type PA — Établissements de plein air",icon:'⛺',points:[]},
   PE:{name:'5e catégorie — Petits ERP (PE)',icon:'🏪',points:[
     {id:'pe_01',label:'Plan schématique d\'intervention apposé à l\'entrée (sous-sol, rez-de-chaussée, étages ; locaux techniques, commandes de sécurité, coupures de fluides et d\'énergie, moyens d\'extinction et d\'alarme)',ref:'PE 27 §6 / Arr. 04/02/2026'},
     {id:'pe_02',label:'ERP sans sommeil ≤ 19 pers. : accès libre sans surveillance autorisé (Arr. 04/02/2026)',ref:'PE 27 §1'},
@@ -2114,6 +2123,12 @@ const ERP_TYPE_SPECIFICS = {
     {id:'u_02_03',label:"Existe-t-il une commande manuelle de désenfumage mécanique par compartiment au Poste de Sécurité ?",ref:'Art. U 32'},
   ]},
 };
+
+// Phrase de la note « type ERP » : un type sans point spécifique (OA, GA, PA) n'annonce pas de points ajoutés à la grille.
+function notePointsSpecifiques(spec){
+  if(!spec.points.length) return `${spec.icon} ${spec.name} — seuil de classement PE 2 §1 intégré ; aucun point spécifique ajouté à la grille`;
+  return `${spec.icon} ${spec.name} — ${spec.points.length} points spécifiques ajoutés à la grille (source : samincendie.fr)`;
+}
 
 // Domaines à fort impact (20% → 80% du risque)
 const HIGH_IMPACT_DOMAINS = {
@@ -4380,7 +4395,7 @@ function switchType(type){
     const spec = ERP_TYPE_SPECIFICS[state.erpSubType];
     if(spec){
       const note = document.getElementById('erpTypeNote');
-      if(note) note.textContent = `${spec.icon} ${spec.name} — ${spec.points.length} points spécifiques ajoutés à la grille (source : samincendie.fr)`;
+      if(note) note.textContent = notePointsSpecifiques(spec);
       const sub = document.getElementById('tc-erp-sub');
       if(sub) sub.textContent = `11 familles — ${55+spec.points.length} points (type ${state.erpSubType})`;
     }
@@ -4470,7 +4485,7 @@ function getAuditData(){
 
   const structureErp = AUDIT_DATA.erp;
   const spec = ERP_TYPE_SPECIFICS && ERP_TYPE_SPECIFICS[state.erpSubType];
-  if (spec) {
+  if (spec && spec.points.length) {
     return {
       id: "erp_complet",
       reference: structureErp.reference,
@@ -4701,7 +4716,7 @@ function setErpType(t){
     document.querySelectorAll('.erp-type-btn').forEach(b=>b.classList.toggle('active',b.dataset.type===t));
     const spec = ERP_TYPE_SPECIFICS[t];
     const note = document.getElementById('erpTypeNote');
-    if(note && spec) note.textContent = `${spec.icon} ${spec.name} — ${spec.points.length} points spécifiques ajoutés à la grille (source : samincendie.fr)`;
+    if(note && spec) note.textContent = notePointsSpecifiques(spec);
     const sub = document.getElementById('tc-erp-sub');
     if(sub && spec) sub.textContent = `11 familles — ${55+spec.points.length} points (type ${t})`;
   }
@@ -4847,7 +4862,7 @@ function renderDomainPoints(data, idx){
   const erpBanner = (state.auditType==='erp' && state.erpSubType && ERP_TYPE_SPECIFICS[state.erpSubType])
     ? (isGN2
         ? `<div class="erp-type-banner">🏢 <span><strong>Groupement GN2</strong> — ${state.mixteTypes.length} types présents · règles générales du type <strong>${state.erpSubType}</strong> (le plus contraignant) · dispositions particulières par zone en fin de grille</span></div>`
-        : `<div class="erp-type-banner">${ERP_TYPE_SPECIFICS[state.erpSubType].icon} <span><strong>${ERP_TYPE_SPECIFICS[state.erpSubType].name}</strong> — Dispositions particulières disponibles dans le dernier domaine</span></div>`)
+        : `<div class="erp-type-banner">${ERP_TYPE_SPECIFICS[state.erpSubType].icon} <span><strong>${ERP_TYPE_SPECIFICS[state.erpSubType].name}</strong> — ${ERP_TYPE_SPECIFICS[state.erpSubType].points.length ? 'Dispositions particulières disponibles dans le dernier domaine' : 'aucune disposition particulière dans la grille (seuil de classement PE 2 §1 intégré)'}</span></div>`)
     : (state.auditType==='erp' ? `<div class="erp-type-banner" style="border-color:var(--text2);color:var(--text2)">⚠️ Aucun type ERP sélectionné — allez dans <strong>Identification</strong> pour choisir le type et activer les dispositions spécifiques.</div>` : '');
 
   const gn2ZoneBanner = domain.gn2Type ? (() => {
@@ -5762,16 +5777,17 @@ function rendrePrecisionsSeuils(forcer){
         <input type="checkbox"${p.niveauUniqueEnEtageR?' checked':''} onchange="majPrecisionSeuil('niveauUniqueEnEtageR',this.checked,'coche')">&nbsp;L'établissement ne comporte qu'un seul niveau situé en étage</label>`;
     }
   }
+  if(types.includes('GA')){
+    champs += choix('natureGare', 'Type GA : nature de la gare', [['','— à préciser —']].concat(Object.keys(NATURES_GARE).map(k=>[k, NATURES_GARE[k]])));
+  }
   champs += nb('effectifEtages', 'Public présent aux ÉTAGES seulement (niveaux au-dessus du RDC)', '0 si aucun');
   champs += nb('personnelNonIndependant', "Personnel n'occupant pas de locaux indépendants", 'pour la catégorie');
-  const horsPerimetre = Object.keys(TYPES_HORS_PERIMETRE).join(', ');
   cible.innerHTML = `<div style="background:#f7fafc;padding:15px;border-radius:6px;border:1px solid #e2e8f0;margin-bottom:16px;font-family:sans-serif">
       <h4 style="margin:0 0 4px 0;color:#4a5568;font-size:14px">Précisions pour les seuils (PE 2 §1) et la catégorie (R. 143-19)</h4>
       <p style="margin:0 0 6px;font-size:11px;color:#718096">Sans ces données, le groupe ERP reste « indéterminé » : l'outil ne conclut ni 5e catégorie ni 1er groupe. La case « Locaux à sommeil » est dans l'onglet Identification (déterminante pour les types R et U).</p>
       <p style="margin:0 0 10px;font-size:11px;color:#92400e"><strong>Attention :</strong> le champ « étages » ne reçoit que le public qui se trouve aux étages, pas l'effectif total. Le total est « Effectif à évacuer » ci-dessus, ou RDC + sous-sol + étages. Un seuil propre aux étages ou au sous-sol peut suffire à classer en 1er groupe (PE 2 §1).</p>
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px">${champs}</div>
-      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-top:10px">
-        <p style="margin:0;font-size:11px;color:#92400e">Types ${horsPerimetre} : hors périmètre de l'outil, aucun classement calculé (ils ne sont pas proposés).</p>
+      <div style="display:flex;justify-content:flex-end;align-items:center;flex-wrap:wrap;gap:8px;margin-top:10px">
         <button type="button" id="btn-raz-precisions" onclick="reinitialiserPrecisionsSeuils()" title="Vide les précisions de ce bloc. L'effectif, les sous-sols et la case « Locaux à sommeil » ne changent pas." style="font-size:12px;padding:5px 10px;border:1px solid #cbd5e0;border-radius:6px;background:#fff;color:#4a5568;cursor:pointer">Remettre les précisions à zéro</button>
       </div>
     </div>`;
@@ -5930,6 +5946,7 @@ function evaluerReglesHabitation(){
     ascenseur:     'Aucune contrainte spécifique.',
   };
   let alerteStyle = 'border-left:4px solid #48BB78;background-color:#f0fff4;color:#22543d;';
+  let noteHabitation = '';
 
   if(etages >= 1 && hplb <= 8){
     if(etages <= 3){
@@ -5950,8 +5967,16 @@ function evaluerReglesHabitation(){
       obligations.desenfumage    = 'Désenfumage mécanique des circulations horizontales communes requis (Extraction + Soufflage temporisé) ou solution d\'escalier à l\'air libre.';
       obligations.colonneSeche   = 'Obligatoire (1 colonne DN65 par cage d\'escalier avec raccordement en bas).';
     }
-  } else if(hplb > 28){
-    familleBatiment = '4e Famille (Immeuble de grande hauteur d\'habitation)';
+  } else if(moteurHabitationHauteur(hplb).niveau==='igh'){
+    // Au-delà de 50 m : hors du champ de l'arrêté du 31/01/1986, régime des IGH (CCH R. 146-3, classe GHA, > 50 m).
+    familleBatiment = 'Immeuble de grande hauteur d\'habitation (GHA) — hors du champ de l\'arrêté du 31 janvier 1986';
+    alerteStyle = 'border-left:4px solid #9B2C2C;background-color:#fff5f5;color:#742a2a;';
+    obligations.desenfumage  = 'Régime des immeubles de grande hauteur : utiliser l\'audit IGH (classe GHA, plancher bas du dernier niveau à plus de 50 m).';
+    obligations.colonneSeche = 'Voir l\'audit IGH.';
+    obligations.ascenseur    = 'Voir l\'audit IGH.';
+  } else if(moteurHabitationHauteur(hplb).niveau==='quatrieme_famille'){
+    familleBatiment = '4e Famille (28 m < H ≤ 50 m) — habitation non IGH';
+    noteHabitation = "Un immeuble de la 4e famille qui contient des locaux à usage autre que d'habitation, dans des conditions non prévues par l'article R. 111-1 du CCH, est rangé dans la catégorie des immeubles de grande hauteur (arrêté du 31/01/1986, art. 3) : voir l'audit IGH (classe GHZ).";
     alerteStyle = 'border-left:4px solid #E53E3E;background-color:#fff5f5;color:#c53030;';
     obligations.desenfumage  = 'Désenfumage mécanique obligatoire et indépendant par niveau (Extraction mécanique des circulations + soufflage de l\'escalier en surpression).';
     obligations.colonneSeche = 'Obligatoire (Colonne sèche DN65 en tube acier galvanisé testée à 16 bars).';
@@ -5970,6 +5995,7 @@ function evaluerReglesHabitation(){
     <div style="background:white;padding:20px;border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,0.05);font-family:sans-serif;${alerteStyle}margin-top:20px;">
       <h3 style="margin-top:0;font-size:15px;text-transform:uppercase;letter-spacing:0.5px">🏢 Classification : ${familleBatiment}</h3>
       <p style="margin:4px 0 12px 0;font-size:12px;opacity:0.8">Analyse réglementaire basée sur l'Arrêté du 31 janvier 1986 (Plancher bas à ${hplb.toFixed(2)} m).</p>
+      ${noteHabitation ? '<p style="margin:0 0 10px;font-size:12px;color:#92400e">⚠️ ' + noteHabitation + '</p>' : ''}
       <div style="background:rgba(255,255,255,0.7);padding:12px;border-radius:4px;font-size:12px;line-height:1.4">
         <div style="margin-bottom:8px"><strong>1. Désenfumage des circulations &amp; cages :</strong><br>${obligations.desenfumage}</div>
         <div style="margin-bottom:8px"><strong>2. Dispositif Colonnes Sèches :</strong><br>${obligations.colonneSeche}</div>
@@ -6411,29 +6437,35 @@ const INTERDIT = 'interdit';   // activité interdite à ce niveau : ce n'est ni
 // Une ligne = { sousSol, etages, global } ; null = pas de seuil chiffré dans cette case du tableau (« - »).
 // Le public reste en 5e catégorie tant que l'effectif est INFÉRIEUR au seuil : atteindre le seuil = 1er groupe.
 const REFERENTIEL_SEUILS_ERP = {
-  J:{statut:'a_valider', assujettissement:7, lignes:{
+  J:{statut:'valide', assujettissement:7, lignes:{
        ages:{libelle:"Structures d'accueil pour personnes âgées", residents:25, total:100},
        handicapes:{libelle:"Structures d'accueil pour personnes handicapées", residents:20, total:100}}},
-  L:{statut:'a_valider', lignes:{
+  L:{statut:'valide', lignes:{
        auditions:{libelle:"Salles d'auditions, de conférences, de réunions, de pari, réservées aux associations, de quartier, multimédia, polyvalentes", sousSol:100, etages:null, global:200},
        spectacle:{libelle:"Salles de spectacles, de projections (cirques non forains compris), cabarets", sousSol:20, etages:null, global:50}}},
-  M:{statut:'a_valider', lignes:{standard:{libelle:"Magasins de vente", sousSol:100, etages:100, global:200}}},
-  N:{statut:'a_valider', lignes:{standard:{libelle:"Restaurants ou débits de boissons", sousSol:100, etages:200, global:200}}},
-  O:{statut:'a_valider', lignes:{standard:{libelle:"Hôtels ou pensions de famille", sousSol:null, etages:null, global:100}}},
-  P:{statut:'a_valider', lignes:{standard:{libelle:"Salles de danse ou salles de jeux", sousSol:20, etages:100, global:120}}},
-  R:{statut:'a_valider', lignes:{
+  M:{statut:'valide', lignes:{standard:{libelle:"Magasins de vente", sousSol:100, etages:100, global:200}}},
+  N:{statut:'valide', lignes:{standard:{libelle:"Restaurants ou débits de boissons", sousSol:100, etages:200, global:200}}},
+  O:{statut:'valide', lignes:{standard:{libelle:"Hôtels ou pensions de famille", sousSol:null, etages:null, global:100}}},
+  P:{statut:'valide', lignes:{standard:{libelle:"Salles de danse ou salles de jeux", sousSol:20, etages:100, global:120}}},
+  R:{statut:'valide', lignes:{
        petite_enfance:{libelle:"Écoles maternelles, crèches, haltes-garderies, jardins d'enfants", sousSol:INTERDIT, etages:1, etagesNiveauUniqueEnEtage:20, global:100},
        autres:{libelle:"Autres établissements d'enseignement", sousSol:100, etages:100, global:200},
        sommeil:{libelle:"Établissements avec locaux réservés au sommeil", sousSol:null, etages:null, global:30}}},
-  S:{statut:'a_valider', lignes:{standard:{libelle:"Bibliothèques ou centres de documentation", sousSol:100, etages:100, global:200}}},
-  T:{statut:'a_valider', lignes:{standard:{libelle:"Salles d'expositions", sousSol:100, etages:100, global:200}}},
-  U:{statut:'a_valider', lignes:{
+  S:{statut:'valide', lignes:{standard:{libelle:"Bibliothèques ou centres de documentation", sousSol:100, etages:100, global:200}}},
+  T:{statut:'valide', lignes:{standard:{libelle:"Salles d'expositions", sousSol:100, etages:100, global:200}}},
+  U:{statut:'valide', lignes:{
        sans:{libelle:"Établissements de soins sans hébergement", sousSol:null, etages:null, global:100},
        avec:{libelle:"Établissements de soins avec hébergement", sousSol:null, etages:null, global:20}}},
-  V:{statut:'a_valider', lignes:{standard:{libelle:"Établissements de culte", sousSol:100, etages:200, global:300}}},
-  W:{statut:'a_valider', lignes:{standard:{libelle:"Administrations, banques, bureaux", sousSol:100, etages:100, global:200}}},
-  X:{statut:'a_valider', lignes:{standard:{libelle:"Établissements sportifs couverts", sousSol:100, etages:100, global:200}}},
-  Y:{statut:'a_valider', lignes:{standard:{libelle:"Musées", sousSol:100, etages:100, global:200}}},
+  V:{statut:'valide', lignes:{standard:{libelle:"Établissements de culte", sousSol:100, etages:200, global:300}}},
+  W:{statut:'valide', lignes:{standard:{libelle:"Administrations, banques, bureaux", sousSol:100, etages:100, global:200}}},
+  X:{statut:'valide', lignes:{standard:{libelle:"Établissements sportifs couverts", sousSol:100, etages:100, global:200}}},
+  Y:{statut:'valide', lignes:{standard:{libelle:"Musées", sousSol:100, etages:100, global:200}}},
+  // Types à seuil unique (ensemble des niveaux) : « - » dans les colonnes sous-sol et étages du tableau PE 2 §1.
+  OA:{statut:'valide', lignes:{standard:{libelle:"Hôtels-restaurants d'altitude", sousSol:null, etages:null, global:20}}},
+  // GA : le tableau parle de « gares aériennes » (seuil 200) ; la note (***) classe les gares souterraines et mixtes
+  // dans le 1er groupe quel que soit l'effectif : c'est une donnée d'entrée (natureGare), pas un seuil chiffré.
+  GA:{statut:'valide', lignes:{standard:{libelle:"Gares aériennes", sousSol:null, etages:null, global:200}}},
+  PA:{statut:'valide', lignes:{standard:{libelle:"Établissements de plein air", sousSol:null, etages:null, global:300}}},
 };
 // Type L : activités distinctes de la ligne « salles d'auditions… » et de la ligne « spectacles… » de PE 2 §1.
 // « polyvalente » n'est jamais une réponse finale : la nature de la salle (à dominante sportive ou autre) est à préciser.
@@ -6460,32 +6492,32 @@ const NOMS_LIGNES = {
 };
 function nomLigne(id){ return NOMS_LIGNES[id] || ('Type '+String(id).split('.')[0]); }
 
-// Types du tableau PE 2 §1 que l'outil ne traite pas : signalés « hors périmètre », jamais présentés comme conformes.
-const TYPES_HORS_PERIMETRE = { OA:"Hôtels-restaurants d'altitude (seuil 20)", GA:"Gares aériennes (seuil 200 ; gares souterraines et mixtes : 1er groupe quel que soit l'effectif)", PA:"Établissements de plein air (seuil 300)" };
+// Nature d'une gare (type GA) : PE 2 §1, note (***).
+const NATURES_GARE = { aerienne:"Gare aérienne", souterraine_mixte:"Gare souterraine ou mixte" };
 
 // Désenfumage d'un local accessible au public : surface au-delà de laquelle le désenfumage est exigé (STRICTEMENT supérieure).
 //  df7 : établissements du 1er groupe (article DF 7 §1) ; pe14 : 5e catégorie (article PE 14 §1) ;
 //  p14 : règle propre au type P (aggravation de DF 7, sans condition de surface).
 const REFERENTIEL_DESENFUMAGE = {
-  df7:{statut:'a_valider', article:'DF 7 §1', comparateur:'>', aerien:300, sousSol:100, aveugle:100},
-  pe14:{statut:'a_valider', article:'PE 14 §1', comparateur:'>', aerien:300, sousSol:100},
-  p14:{statut:'a_valider', article:'P 14 §2', sansSeuilSurface:true},
+  df7:{statut:'valide', article:'DF 7 §1', comparateur:'>', aerien:300, sousSol:100, aveugle:100},
+  pe14:{statut:'valide', article:'PE 14 §1', comparateur:'>', aerien:300, sousSol:100},
+  p14:{statut:'valide', article:'P 14 §2', sansSeuilSurface:true},
 };
 
 // Classes IGH : CCH R. 146-3 (définition, mesure de la hauteur) et R. 146-4 (classes). H = hauteur du plancher bas du
 // dernier niveau par rapport au sol le plus haut utilisable par les engins de secours (pas la hauteur du toit).
 // Comparateur : H STRICTEMENT supérieure à seuilMetres ; borneHaute (si présente) : H inférieure ou égale.
 const REFERENTIEL_IGH = {
-  GHA: {statut:'a_valider', libelle:"Immeubles à usage d'habitation", seuilMetres:50},
-  GHO: {statut:'a_valider', libelle:"Immeubles à usage d'hôtel", seuilMetres:28},
-  GHR: {statut:'a_valider', libelle:"Immeubles à usage d'enseignement", seuilMetres:28},
-  GHS: {statut:'a_valider', libelle:"Immeubles à usage de dépôt d'archives", seuilMetres:28},
-  GHTC:{statut:'a_valider', libelle:"Immeubles à usage de tour de contrôle", seuilMetres:28},
-  GHU: {statut:'a_valider', libelle:"Immeubles à usage sanitaire", seuilMetres:28},
-  GHW1:{statut:'a_valider', libelle:"Immeubles de bureaux répondant aux conditions du règlement (R. 122-4), 28 m < H ≤ 50 m", seuilMetres:28, borneHaute:50},
-  GHW2:{statut:'a_valider', libelle:"Immeubles à usage de bureaux, H > 50 m", seuilMetres:50},
-  GHZ: {statut:'a_valider', libelle:"Immeubles à usage principal d'habitation, 28 m < H ≤ 50 m, avec locaux autres non indépendants", seuilMetres:28, borneHaute:50},
-  ITGH:{statut:'a_valider', libelle:"Immeuble de très grande hauteur", seuilMetres:200},
+  GHA: {statut:'valide', libelle:"Immeubles à usage d'habitation", seuilMetres:50},
+  GHO: {statut:'valide', libelle:"Immeubles à usage d'hôtel", seuilMetres:28},
+  GHR: {statut:'valide', libelle:"Immeubles à usage d'enseignement", seuilMetres:28},
+  GHS: {statut:'valide', libelle:"Immeubles à usage de dépôt d'archives", seuilMetres:28},
+  GHTC:{statut:'valide', libelle:"Immeubles à usage de tour de contrôle", seuilMetres:28},
+  GHU: {statut:'valide', libelle:"Immeubles à usage sanitaire", seuilMetres:28},
+  GHW1:{statut:'valide', libelle:"Immeubles de bureaux répondant aux conditions du règlement (R. 122-4), 28 m < H ≤ 50 m", seuilMetres:28, borneHaute:50},
+  GHW2:{statut:'valide', libelle:"Immeubles à usage de bureaux, H > 50 m", seuilMetres:50},
+  GHZ: {statut:'valide', libelle:"Immeubles à usage principal d'habitation, 28 m < H ≤ 50 m, avec locaux autres non indépendants", seuilMetres:28, borneHaute:50},
+  ITGH:{statut:'valide', libelle:"Immeuble de très grande hauteur", seuilMetres:200},
 };
 function estGhw(classe){ return classe==='GHW1' || classe==='GHW2'; }
 
@@ -6499,6 +6531,7 @@ const LIBELLES_MANQUANTS = {
   surfaceSalleL:"superficie de la salle (m²)",
   hauteurSalleL:"hauteur sous plafond de la salle (m)",
   brancheR:"nature de l'établissement d'enseignement (petite enfance ou autres)",
+  natureGare:"nature de la gare (aérienne, ou souterraine / mixte)",
   effectifEtages:"effectif du public aux étages (saisir 0 s'il n'y en a pas)",
   effectifPublic:"effectif du public",
   surfaceLocal:"surface du local (m²)",
@@ -6527,6 +6560,13 @@ function lignesSeuilsApplicables(type, ctx){
   const ajouter = (t, cle)=>res.lignes.push({id:t+'.'+cle, type:t, cle:cle, seuils:REFERENTIEL_SEUILS_ERP[t].lignes[cle]});
   if(type==='J'){
     if(c.populationJ==='ages' || c.populationJ==='handicapes') ajouter('J', c.populationJ); else res.manquants.push('populationJ');
+    res.notes.push("Type J : le seuil d'assujettissement de 7 (PE 2 §1) n'est pas traité par l'outil (limite connue).");
+  } else if(type==='GA'){
+    // PE 2 §1, note (***) : les gares souterraines et mixtes sont classées au 1er groupe quel que soit l'effectif.
+    if(c.natureGare==='souterraine_mixte'){
+      res.premierGroupeDirect = {ligne:'GA.standard', texte:'Type GA : gare souterraine ou mixte — 1er groupe quel que soit l\'effectif (PE 2 §1, note ***)'};
+    } else if(c.natureGare==='aerienne') ajouter('GA', 'standard');
+    else res.manquants.push('natureGare');
   } else if(type==='L'){
     // Anciennes valeurs (v12) reprises : polyvalente_autre et polyvalente_sportive = « polyvalente » + nature.
     let a = c.activiteL, nature = c.naturePolyvalente;
@@ -6610,17 +6650,21 @@ function evaluerLigneSeuils(type, cle, seuils, eff, ctx){
 // sont sûrement sous leurs seuils ; sinon « indetermine ».
 function moteurGroupeErp(entree){
   const e = entree || {};
-  const sortie = {groupe:'indetermine', motifs:[], manquants:[], anomalies:[], notes:[], lignes:[], horsPerimetre:[], statutsValides:false};
+  const sortie = {groupe:'indetermine', motifs:[], manquants:[], anomalies:[], notes:[], lignes:[], statutsValides:false};
   const types = uniques((e.types||[]).filter(Boolean));
   if(!types.length){ sortie.manquants.push('type'); return sortie; }
   let un = false, indet = false;
   types.forEach(t=>{
-    if(TYPES_HORS_PERIMETRE[t]){ sortie.horsPerimetre.push(t); indet = true; sortie.notes.push('Type '+t+' : hors périmètre de l\'outil, aucun classement calculé ('+TYPES_HORS_PERIMETRE[t]+').'); return; }
     if(!REFERENTIEL_SEUILS_ERP[t]){ sortie.manquants.push('type'); indet = true; return; }
     const ap = lignesSeuilsApplicables(t, e.ctx);
     sortie.manquants.push.apply(sortie.manquants, ap.manquants);
     sortie.notes.push.apply(sortie.notes, ap.notes);
     if(ap.manquants.length) indet = true;
+    // Classement au 1er groupe sans condition d'effectif (gare souterraine ou mixte).
+    if(ap.premierGroupeDirect){
+      un = true;
+      sortie.motifs.push({type:t, ligne:ap.premierGroupeDirect.ligne, critere:'nature de la gare', seuil:null, valeur:null, texte:ap.premierGroupeDirect.texte});
+    }
     ap.lignes.forEach(l=>{
       const r = evaluerLigneSeuils(l.type, l.cle, l.seuils, e.eff||{}, e.ctx);
       sortie.lignes.push({id:l.id, etat:r.etat, criteres:r.criteres});
@@ -6754,6 +6798,16 @@ function moteurIgh(e){
   if(h>ref.seuilMetres) return fin('igh', classe+' : '+mesure+', supérieur à '+ref.seuilMetres+' m.');
   return fin('non_igh', classe+' : '+mesure+', pas supérieur à '+ref.seuilMetres+' m.');
 }
+// (6) Bâtiment d'habitation : famille selon la hauteur du plancher bas du logement le plus haut (arrêté du 31/01/1986, art. 3).
+// 3e famille : H ≤ 28 m ; 4e famille : 28 m < H ≤ 50 m ; au-delà de 50 m (H > 50 m) : immeuble de grande hauteur (CCH R. 146-3, classe GHA).
+// Comparateurs stricts : 28 m et 50 m exactement restent dans la famille inférieure.
+function moteurHabitationHauteur(hauteur){
+  const h = nombre(hauteur);
+  if(h===null) return {niveau:'indetermine', motif:'hauteur du plancher bas du logement le plus haut non renseignée'};
+  if(h>REFERENTIEL_IGH.GHA.seuilMetres) return {niveau:'igh', motif:'H = '+h+' m, supérieure à '+REFERENTIEL_IGH.GHA.seuilMetres+' m : immeuble de grande hauteur d\'habitation (GHA)'};
+  if(h>28) return {niveau:'quatrieme_famille', motif:'H = '+h+' m, supérieure à 28 m et au plus égale à '+REFERENTIEL_IGH.GHA.seuilMetres+' m : 4e famille'};
+  return {niveau:'jusqua_28', motif:'H = '+h+' m, au plus égale à 28 m : 1re, 2e ou 3e famille'};
+}
 // MOTEURS-REGLEMENTAIRES:FIN
 
 // ---------- Lecture de l'écran → données d'entrée des moteurs (le seul endroit qui lit l'état) ----------
@@ -6785,7 +6839,7 @@ function entreeGroupeErp(effPublicSaisi){
   const et  = nombre(p.effectifEtages);
   const ctx = {
     populationJ:p.populationJ||'', activiteL:p.activiteL||'', naturePolyvalente:p.naturePolyvalente||'', surfaceSalleL:p.surfaceSalleL, hauteurSalleL:p.hauteurSalleL,
-    brancheR:p.brancheR||'', niveauUniqueEnEtage:!!p.niveauUniqueEnEtageR, sommeil:!!(state.identification && state.identification.sommeil)
+    brancheR:p.brancheR||'', natureGare:p.natureGare||'', niveauUniqueEnEtage:!!p.niveauUniqueEnEtageR, sommeil:!!(state.identification && state.identification.sommeil)
   };
   let eff;
   if(effPublicSaisi!==undefined && effPublicSaisi!==null){
@@ -6832,7 +6886,7 @@ function getCategorieERP(effPublicSaisi){
     categorie:c.libelle, categorieAffichee:categorieAffichee, indeterminee:c.indeterminee, indicative:indicative,
     mention: indicative ? MENTION_A_VALIDER : '', couleur: c.indeterminee ? '#718096' : COULEURS_CATEGORIE[c.categorie],
     isPE: g.groupe==='5e', groupe:g.groupe, manquants:manquants, motifs:g.motifs, anomalies:g.anomalies,
-    notes:notes.concat(g.notes), horsPerimetre:g.horsPerimetre, statutsValides:g.statutsValides, recap:recapEffectifsErp(entree),
+    notes:notes.concat(g.notes), statutsValides:g.statutsValides, recap:recapEffectifsErp(entree),
     sommeilActif: !!(state.identification && state.identification.sommeil) && types.some(t=>['O','J','U','R'].includes(t))
   };
 }
@@ -7021,7 +7075,7 @@ function init(){
     const spec = ERP_TYPE_SPECIFICS[state.erpSubType];
     if(spec){
       const note = document.getElementById('erpTypeNote');
-      if(note) note.textContent = `${spec.icon} ${spec.name} — ${spec.points.length} points spécifiques ajoutés à la grille (source : samincendie.fr)`;
+      if(note) note.textContent = notePointsSpecifiques(spec);
       const sub = document.getElementById('tc-erp-sub');
       if(sub) sub.textContent = `11 familles — ${55+spec.points.length} points (type ${state.erpSubType})`;
     }
