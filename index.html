@@ -894,7 +894,7 @@ input[type="number"], input[type="text"], input[type="email"], input[type="tel"]
 if ('serviceWorker' in navigator) {
   try {
     // Doit rester égale à VERSION dans sw.js : le message n'apparaît que si le service worker actif est plus récent que la page.
-    const VERSION_PAGE = 'v22';
+    const VERSION_PAGE = 'v23';
     let bandeauAffiche = false;
     navigator.serviceWorker.addEventListener('message', e => {
       if (!e.data || e.data.type !== 'sw-active' || e.data.version === VERSION_PAGE || bandeauAffiche) return;
@@ -1934,18 +1934,18 @@ const AUDIT_DATA = {
       ]},
       {id:'e02',name:'Évacuation',points:[
         {id:'e02_01',label:'Nombre de dégagements conforme (UP selon effectif et type)',ref:'CO 38'},
-        {id:'e02_02',label:'Largeur des dégagements conforme (1 UP = 0,90 m ; 2 UP = 1,40 m)',ref:'CO 36'},
+        {id:'e02_02',label:'Largeur des dégagements conforme (1 UP = 0,90 m ; 2 UP = 1,40 m)',ref:'CO 35 / CO 36'},
         {id:'e02_03',label:'Portes CF à fermeture automatique sur dégagements',ref:'CO 47'},
         {id:'e02_04',label:'Balisage d\'évacuation conforme (BAES, panneaux selon NF X 08-003)',ref:'CO 42 / EC 9'},
         {id:'e02_05',label:'Éclairage de sécurité fonctionnel (autonomie ≥ 1 h)',ref:'EC 12'},
         {id:'e02_06',label:'Plans d\'évacuation affichés par niveau',ref:'MS 41 / MS 47 / O 21 §2'},
-        {id:'e02_08',label:'Exercices d\'évacuation annuels réalisés et consignés',ref:'MS 51'},
+        {id:'e02_08',label:'Exercices d\'instruction du personnel organisés et consignés au registre de sécurité',ref:'MS 51'},
       ]},
       {id:'e03',name:'Désenfumage',points:[
-        {id:'e03_01',label:'Zones de désenfumage identifiées et conformes au règlement',ref:'DF 1'},
-        {id:'e03_02',label:'Commandes de désenfumage accessibles et balisées',ref:'DF 6'},
-        {id:'e03_03',label:'Désenfumage mécanique conforme (débit, vitesse d\'extraction)',ref:'DF 8'},
-        {id:'e03_04',label:'Ouvrants de désenfumage naturel fonctionnels et manœuvrables',ref:'DF 5'},
+        {id:'e03_01',label:'Zones de désenfumage identifiées et conformes au règlement',ref:'DF 5 / DF 6 / DF 7'},
+        {id:'e03_02',label:'Commandes de désenfumage accessibles',ref:'IT 246 §3.6 / DF 3 §5'},
+        {id:'e03_03',label:'Désenfumage mécanique conforme (débit, vitesse des amenées d\'air < 5 m/s)',ref:'IT 246 §4 / DF 3'},
+        {id:'e03_04',label:'Ouvrants de désenfumage naturel fonctionnels et manœuvrables',ref:'IT 246 §3 / DF 10 §2'},
         {id:'e03_05',label:'Maintenance annuelle du désenfumage attestée',ref:'DF 10'},
       ]},
       {id:'e04',name:'Moyens de secours',points:[
@@ -2164,29 +2164,64 @@ const MATRICE_PRECONISATIONS = {
     preconisation: "Libérer en permanence la section de voie utilisable pour la mise en station des échelles aériennes (voie échelle) et en interdire le stationnement. Contrôler : longueur au moins égale à 10 m ; largeur libre de chaussée au moins égale à 4 m ; pente au plus égale à 10 % ; position permettant aux échelles d'atteindre un point d'accès (balcon, coursive) depuis lequel toutes les baies de la façade sont atteignables, deux points d'accès distants de 20 m au plus ; raccordement à la voie publique par une voie engins si la section n'est pas sur la voie publique ; en impasse : largeur 10 m avec chaussée libre de stationnement de 7 m au moins. Panneau de tonnage visible et permanence des conditions assurées (CO 2 §4)."
   },
   e02_01: {
-    statut: 'a_valider',
+    statut: 'valide', valide_le: '2026-11-10',
     source: "CO 35 §3 ; CO 37 §2 à §5 ; CO 38 ; PE 11 §3 et §5 (5e catégorie)",
     preconisation: "Mettre le nombre et la largeur des dégagements en conformité avec l'effectif admis. Calcul : à chaque niveau, cumuler l'effectif du niveau et ceux des niveaux situés au-dessus (niveaux en surélévation) ou en dessous (sous-sols) ; au rez-de-chaussée, retenir l'effectif total de l'établissement (CO 38 §2). Ajouter au public le personnel qui ne dispose pas de dégagements indépendants (CO 37 §2). Au-delà de 200 personnes, ne pas admettre de dégagement normal de moins de deux unités de passage (CO 35 §3). Sous-sol dont le point le plus bas est à plus de 2 m en contrebas et recevant plus de 100 personnes : calculer à partir d'un effectif arrondi à la centaine supérieure et majoré de 10 % par mètre au-delà de 2 m (CO 38). Établissement de 5e catégorie : appliquer les nombres et largeurs de PE 11 §3."
   },
   e02_02: {
-    statut: 'a_valider',
+    statut: 'valide', valide_le: '2026-11-10',
     source: "CO 35 §1 et §2 ; CO 36 §1 et §2 ; PE 11 §3 (5e catégorie)",
     preconisation: "Mettre la largeur des dégagements en conformité : elle se calcule en unités de passage de 0,60 m, portée à 0,90 m pour une unité et à 1,40 m pour deux ; une largeur intermédiaire ne compte que pour la largeur type immédiatement inférieure (1,60 m compte pour 2 UP, soit 1,40 m) ; aucun rétrécissement du cheminement d'évacuation (CO 35 §1 et §2). Supprimer toute saillie ou tout dépôt qui réduit la largeur réglementaire ; les aménagements fixes sont admis jusqu'à 1,10 m de hauteur s'ils ne dépassent pas 0,10 m de saillie (CO 36 §1). Au-delà de la largeur minimale, le mobilier en saillie (hors dépôts) n'est admis que s'il ne gêne pas la circulation, ne peut être ni déplacé ni renversé et ne gêne pas les portes à fermeture automatique ; jamais dans un escalier protégé (CO 36 §2). Aménagement dans un immeuble existant de 5e catégorie : 0,90 m peut être ramené à 0,80 m (PE 11 §3)."
   },
   e02_03: {
-    statut: 'a_valider',
+    statut: 'valide', valide_le: '2026-11-10',
     source: "CO 47 ; CO 34 §1 point 5 ; PE 11 §6 d (5e catégorie)",
     preconisation: "Pour toute porte résistant au feu maintenue ouverte pour l'exploitation : la mettre en conformité avec la norme relative aux portes à fermeture automatique (ferme-porte et dispositif de maintien en ouverture libéré au moment du sinistre, CO 34 §1 point 5), poser la plaque visible « Porte coupe-feu. Ne mettez pas d'obstacle à la fermeture. » et obtenir la fermeture dans les conditions de l'article MS 60 (CO 47). Assurer la fermeture simultanée de l'ensemble des portes, commandée par la détection automatique, lorsque l'établissement comporte des locaux de sommeil au-dessus du premier étage, lorsqu'il existe des portes d'isolement à fermeture automatique visées à CO 10, ou lorsque le type l'exige (CO 47). Escaliers encloisonnés de 5e catégorie : ferme-porte, ou fermeture asservie à une détection automatique sensible aux fumées et aux gaz si la porte doit rester ouverte (PE 11 §6 d)."
   },
   e02_04: {
-    statut: 'a_valider',
+    statut: 'valide', valide_le: '2026-11-10',
     source: "CO 42 ; CO 34 §2 ; PE 24 §2 (5e catégorie)",
     preconisation: "Rétablir un balisage lisible de jour et de nuit sur tous les cheminements d'évacuation, placé de façon que, de tout point accessible au public, au moins une indication soit visible, même en cas d'affluence, et à une hauteur différente de celle des autres indications (CO 42 §1). Utiliser des panneaux opaques ou transparents, lumineux, rectangulaires, conformes à la norme NF X 08-003 ; réserver au balisage des dégagements les signaux blancs sur fond vert (dont les flèches directionnelles) ; remplacer les signaux normalisés n° 50041, 50042 et 50044, interdits dans les ERP (CO 42 §2). Si le cheminement d'évacuation est compliqué par l'exploitation, porter une attention particulière au balisage (CO 34 §2 point 1 a). Éclairage de sécurité d'évacuation des escaliers, des circulations de plus de 10 m ou à cheminement compliqué et des salles de plus de 100 m² (PE 24 §2, 5e catégorie)."
   },
   e02_05: {
-    statut: 'a_valider',
+    statut: 'valide', valide_le: '2026-11-10',
     source: "PE 24 §2 (5e catégorie) ; EC 12 (texte non fourni)",
     preconisation: "Remettre en état l'éclairage de sécurité d'évacuation des escaliers, des circulations horizontales de plus de 10 m ou à cheminement compliqué et des salles de plus de 100 m² (PE 24 §2). Si l'éclairage est assuré par des blocs autonomes, ceux-ci doivent respecter l'article EC 12 (PE 24 §2)."
+  },
+  e02_06: {
+    statut: 'valide', valide_le: '2026-11-10',
+    source: "MS 47 ; O 21 §2 (type O) ; PE 27 §4 et §6 (5e catégorie)",
+    preconisation: "Afficher sur supports fixes et inaltérables, constamment mises à jour, des consignes conformes à la norme NF S 60-303 indiquant : les modalités d'alerte des sapeurs-pompiers ; les dispositions à prendre pour la sécurité du public et du personnel ; celles pour favoriser l'évacuation des personnes en situation de handicap ou leur évacuation différée ; la mise en œuvre des moyens de secours ; l'accueil et le guidage des sapeurs-pompiers (MS 47). Type O : apposer à chaque niveau, à proximité du cheminement habituel, un plan d'évacuation conforme à NF S 60-303 (O 21 §2). 5e catégorie : apposer à l'entrée un plan d'intervention (PE 27 §6)."
+  },
+  e02_08: {
+    statut: 'valide', valide_le: '2026-11-10',
+    source: "MS 51 ; U 47 §2 (type U) ; R 33 (type R)",
+    preconisation: "Organiser des exercices d'instruction du personnel sous la responsabilité de l'exploitant et porter leur date sur le registre de sécurité (MS 51). Exercices d'évacuation, selon le type : périodiques en type U (U 47 §2) ; pratiques, au cours de l'année scolaire, le premier dans le mois suivant la rentrée, de nuit si l'établissement a des locaux à sommeil, durée d'évacuation consignée au registre, en type R (R 33)."
+  },
+  e03_01: {
+    statut: 'a_valider',
+    source: "DF 2 ; DF 5 §1 et §4 ; DF 6 §1 et §2 ; DF 7 §1 ; IT 246 §7.1.2",
+    preconisation: "Identifier les volumes à désenfumer et mettre chaque zone en conformité. Circulations horizontales encloisonnées : désenfumage par balayage naturel ou mécanique obligatoire si elles font plus de 30 m, sont desservies par des escaliers en surpression, desservent des locaux à sommeil ou sont en sous-sol (DF 6 §1). Halls : traités comme des circulations, mais comme des locaux s'ils dépassent 300 m² ou si le désenfumage des circulations du niveau est exigé (DF 6 §2). Locaux : plus de 100 m² en sous-sol, plus de 300 m² en rez-de-chaussée et en étage, plus de 100 m² sans ouverture sur l'extérieur (DF 7 §1). Escaliers encloisonnés : balayage naturel ou mise en surpression, jamais d'extraction mécanique des fumées (DF 5 §1) ; désenfumage ou mise à l'abri obligatoire s'ils desservent plus de deux niveaux en sous-sol, parcs de stationnement exclus (DF 5 §4). Locaux de plus de 2 000 m² ou de plus de 60 m de long : cantons de 1 600 m² au plus, de 60 m de long au plus, de préférence d'au moins 1 000 m² (IT 246 §7.1.2). Tenir à jour le plan des évacuations de fumée, amenées d'air, réseaux, ventilateurs et commandes, avec sa note explicative (DF 2)."
+  },
+  e03_02: {
+    statut: 'a_valider',
+    source: "IT 246 §3.6.2, §3.6.3, §3.6.4 ; DF 3 §5 ; DF 4 §3",
+    preconisation: "Remettre en état les commandes de désenfumage : les commandes manuelles doivent ouvrir les exutoires, ouvrants ou volets de la zone concernée, avec ouverture simultanée des évacuations de fumée et des amenées d'air à partir du même organe quand ce sont des dispositifs actionnés de sécurité (IT 246 §3.6.2). SSI de catégorie A ou B : commandes manuelles uniquement depuis le CMSI (NF S 61-934). SSI de catégorie C, D ou E : dispositif de commande avec signalisation, de commandes manuelles regroupées ou de commande manuelle (NF S 61-938), ce dernier placé près de l'accès principal des volumes concernés (IT 246 §3.6.2). Si la réglementation impose une commande automatique par détection, la doubler par la commande manuelle de l'unité de commande manuelle centralisée du CMSI (IT 246 §3.6.3). Permettre le réarmement depuis le sol de la zone (IT 246 §3.6.4). Faire admettre à la marque NF les dispositifs de commande et les coffrets de relayage (DF 4 §3). Prévoir l'arrêt de la ventilation mécanique, VMC exceptée, à la mise en fonctionnement du désenfumage (DF 3 §5)."
+  },
+  e03_03: {
+    statut: 'a_valider',
+    source: "IT 246 §4.4, §4.6, §4.7, §4.8, §6.2, §7.2.3 ; DF 3 §3",
+    preconisation: "Mettre le désenfumage mécanique en conformité. Circulations encloisonnées : bouches d'amenée d'air et d'extraction alternées ; distance entre amenée et extraction de 15 m au plus en parcours rectiligne et de 10 m dans le cas contraire ; toute porte de local public à 5 m au plus d'une bouche ; amenées d'air à 1 m au plus du plancher ; extraction avec la partie basse à 1,80 m au moins du plancher, dans le tiers supérieur ; débit d'extraction d'au moins 0,5 m³/s par unité de passage, limité à 8 m³/s par circulation ; différence de pression entre escalier et circulation inférieure à 80 Pa, portes de l'escalier fermées (IT 246 §6.2). Locaux : débit horaire d'extraction d'au moins 12 fois le volume du canton, jamais inférieur à 1,5 m³/s par local (IT 246 §7.2.3). Amenées d'air : vitesse de passage inférieure à 5 m/s ; amenées naturelles dimensionnées pour la totalité du débit extrait ; amenées mécaniques à environ 0,6 fois le débit extrait (IT 246 §4.6.1). Ventilateurs dimensionnés au débit nominal augmenté de la fuite tolérable, de l'ordre de 20 % ; ventilateurs d'extraction capables de fonctionner une heure avec des fumées à 400 °C ; installés à l'extérieur ou dans un local technique à parois coupe-feu 1 h, porte coupe-feu 1/2 h avec ferme-porte ; état du sectionneur reporté au poste de sécurité ; mise en route avec une temporisation de 30 secondes au plus (IT 246 §4.7, §4.8). Conduits : débit de fuite total inférieur à 20 % du débit exigé au niveau le plus défavorisé (IT 246 §4.4). Alimentation électrique de sécurité conforme à NF S 61-940 (DF 3 §3)."
+  },
+  e03_04: {
+    statut: 'a_valider',
+    source: "IT 246 §3.2, §3.6.1, §3.6.2, §3.6.4, §3.9, §7.1.4 ; DF 10 §2",
+    preconisation: "Remettre en état les exutoires, ouvrants et volets de désenfumage naturel : conformes à la norme NF S 61-937 (IT 246 §3.6.1) ; aucune dimension d'ouverture inférieure à 0,20 m (IT 246 §3.2) ; commandes manuelles ouvrant simultanément les évacuations de fumée et les amenées d'air de la zone (IT 246 §3.6.2) ; réarmement possible depuis le sol (IT 246 §3.6.4). Locaux de 1 000 m² au plus : surface utile des évacuations de fumée égale à 1/200 de la superficie du local, et surface libre totale des amenées d'air au moins égale à la surface géométrique des évacuations (IT 246 §7.1.4). Les portes utilisées en amenée d'air peuvent être actionnées directement (IT 246 §3.9). Faire vérifier chaque année le fonctionnement des volets, exutoires et ouvrants (DF 10 §2)."
+  },
+  e03_05: {
+    statut: 'a_valider',
+    source: "DF 9 ; DF 10 §1, §2 et §3",
+    preconisation: "Faire vérifier les installations de désenfumage tous les ans, dans les conditions des articles GE 6 à GE 10 (DF 10 §1 et §2) : fonctionnement des commandes manuelles et automatiques ; des volets, exutoires et ouvrants ; fermeture des éléments mobiles de compartimentage qui participent au désenfumage ; arrêt de la ventilation de confort (DF 3 §5) ; fonctionnement des ventilateurs ; mesures de pression, de débit et de vitesse en désenfumage mécanique. Si l'installation comprend un désenfumage mécanique et un SSI de catégorie A ou B : vérifications tous les trois ans par un organisme agréé (DF 10 §3). Faire effectuer périodiquement par un personnel compétent l'entretien des sources de sécurité (EL 18), l'entretien courant des éléments mécaniques et électriques selon les prescriptions des constructeurs et l'entretien du système de sécurité (MS 68, notice du constructeur) ; règles d'exploitation et de maintenance : MS 69 et NF S 61-933 (DF 9)."
   }
 };
 
