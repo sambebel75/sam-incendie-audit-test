@@ -894,7 +894,7 @@ input[type="number"], input[type="text"], input[type="email"], input[type="tel"]
 if ('serviceWorker' in navigator) {
   try {
     // Doit rester égale à VERSION dans sw.js : le message n'apparaît que si le service worker actif est plus récent que la page.
-    const VERSION_PAGE = 'v20';
+    const VERSION_PAGE = 'v21';
     let bandeauAffiche = false;
     navigator.serviceWorker.addEventListener('message', e => {
       if (!e.data || e.data.type !== 'sw-active' || e.data.version === VERSION_PAGE || bandeauAffiche) return;
@@ -1927,9 +1927,9 @@ const AUDIT_DATA = {
       {id:'e01',name:'Accessibilité des secours',points:[
         {id:'e01_01',label:'Voie utilisable par les engins de secours accessible et dégagée',ref:'CO 2'},
         {id:'e01_02',label:'Signalisation et adressage de l\'établissement visibles',ref:'DECI'},
-        {id:'e01_03',label:'Colonne sèche ou humide accessible (si multi-niveaux)',ref:'MS 18 / PE 26 §2'},
+        {id:'e01_03',label:'Colonne sèche ou humide accessible (N/A si aucun plancher bas à plus de 18 m)',ref:'MS 18 / PE 26 §2'},
         {id:'e01_04',label:'Points d\'eau à moins de 200 m (poteaux ou bouches)',ref:'DECI'},
-        {id:'e01_05',label:'Boîte NOVABOX ou dispositif de remise de clés aux secours',ref:'SDIS'},
+        {id:'e01_05',label:'Boîte à clés sécurisée ou dispositif de remise de clés aux secours',ref:'SDIS'},
         {id:'e01_06',label:'Aire de mise en station pompiers libre et dégagée',ref:'CO 2'},
       ]},
       {id:'e02',name:'Évacuation',points:[
@@ -2126,6 +2126,52 @@ const ERP_TYPE_SPECIFICS = {
 function notePointsSpecifiques(spec){
   if(!spec.points.length) return `${spec.icon} ${spec.name} — seuil de classement PE 2 §1 intégré ; aucun point spécifique ajouté à la grille`;
   return `${spec.icon} ${spec.name} — ${spec.points.length} points spécifiques ajoutés à la grille (source : samincendie.fr)`;
+}
+
+// ==================== MATRICE DES PRECONISATIONS ====================
+// Texte de préconisation par point de la grille (clé = identifiant du point). Utilisé par le plan d actions et le compte rendu
+// quand l auditeur n a rien saisi. Seules les entrées de statut 'valide' sont affichées : une entrée 'a_valider' reste ignorée.
+// Chaque entrée porte sa source réglementaire, affichée sous le texte. Le texte et les chiffres sont validés par l expert (SSIAP 3).
+// Domaine e01 validé le 10/11/2026. Domaines suivants : brouillons à valider ligne par ligne avant ajout.
+const MATRICE_PRECONISATIONS = {
+  e01_01: {
+    statut: 'valide', valide_le: '2026-11-10',
+    source: "CO 2 §1 et §4 ; desserte : CO 1 §3",
+    preconisation: "Rétablir en permanence la voie utilisable par les engins de secours : supprimer tout obstacle et tout stationnement sur la chaussée. Contrôler ses caractéristiques : chaussée de 3 m, bandes de stationnement exclues (largeur exigée de 8 à 12 m) ou de 6 m (largeur exigée supérieure ou égale à 12 m) ; hauteur libre 3,50 m ; pente inférieure à 15 % ; rayon intérieur au moins égal à 11 m avec surlargeur S = 15/R si R est inférieur à 50 m ; force portante calculée pour 160 kN (90 kN maximum par essieu). Poser ou remettre en état le panneau de limite de tonnage, visible en toutes circonstances."
+  },
+  e01_02: {
+    statut: 'valide', valide_le: '2026-11-10',
+    source: "Arrêté municipal / recommandation SDIS",
+    preconisation: "S'assurer que l'adresse est visible depuis la voie publique et signalée sur le bâtiment (arrêté municipal / recommandation SDIS)."
+  },
+  e01_03: {
+    statut: 'valide', valide_le: '2026-11-10', a_revoir_le: '2027-06-01',
+    source: "MS 18 à MS 24 (MS 18 : rédaction en vigueur jusqu'au 01/06/2027) ; PE 26 §2",
+    preconisation: "Vérifier d'abord que l'obligation s'applique : plancher bas d'un étage à plus de 18 m du niveau de la voie accessible aux engins (MS 18 §1, rédaction en vigueur jusqu'au 01/06/2027, avec locaux à risques importants dans ces étages ; PE 26 §2 en 5e catégorie, dans les escaliers protégés). Si oui et colonne absente : installer une colonne sèche conforme aux normes françaises (MS 18 §2). Si elle existe, contrôler : raccords d'alimentation accessibles aux sapeurs-pompiers, signalés avec une pancarte indiquant l'escalier desservi, sur la façade la plus proche des bouches ou poteaux d'incendie, à 60 m au plus (MS 19) ; prises d'incendie dans les cages d'escalier (MS 20) ; dispositif de vidange et de purge d'air (MS 21). Colonne en charge (humide) : alimentation de 60 m³/h sous 4,5 à 8,5 bars pendant au moins 1 h (MS 23 §1) et réalimentation par deux orifices de 65 mm à moins de 60 m d'un poteau (MS 24 §1)."
+  },
+  e01_04: {
+    statut: 'a_valider',
+    source: "MS 5 à MS 7",
+    preconisation: "Faire évaluer les moyens en eau avec le service départemental d'incendie et de secours (MS 6 §1). Si les prises d'eau publiques sont trop éloignées ou de débit insuffisant, installer des bouches ou poteaux d'incendie normalisés, ou un point d'eau utilisable en permanence (MS 5). Contrôler que chaque point d'eau est facilement accessible en permanence, signalé selon la norme française et situé à 5 m au plus du bord de la chaussée ou de l'aire de stationnement des engins (MS 7)."
+  },
+  e01_05: {
+    statut: 'valide', valide_le: '2026-11-10',
+    source: "Prescriptions du SDIS local",
+    preconisation: "Installer un dispositif de remise des clés sécurisé (type boîte à clés) accessible aux sapeurs-pompiers, conformément aux prescriptions du SDIS local."
+  },
+  e01_06: {
+    statut: 'valide', valide_le: '2026-11-10',
+    source: "CO 2 §2 et §4 ; desserte : CO 1 §3 a ; CO 3 §2 et §3",
+    preconisation: "Libérer en permanence la section de voie utilisable pour la mise en station des échelles aériennes (voie échelle) et en interdire le stationnement. Contrôler : longueur au moins égale à 10 m ; largeur libre de chaussée au moins égale à 4 m ; pente au plus égale à 10 % ; position permettant aux échelles d'atteindre un point d'accès (balcon, coursive) depuis lequel toutes les baies de la façade sont atteignables, deux points d'accès distants de 20 m au plus ; raccordement à la voie publique par une voie engins si la section n'est pas sur la voie publique ; en impasse : largeur 10 m avec chaussée libre de stationnement de 7 m au moins. Panneau de tonnage visible et permanence des conditions assurées (CO 2 §4)."
+  }
+};
+
+// Entrée validée de la matrice pour un point, ou null (absente, non validée ou sans texte). Fonction pure.
+function matriceValidee(matrice, id){
+  const m = matrice && Object.prototype.hasOwnProperty.call(matrice, id) ? matrice[id] : null;
+  if(!m || m.statut !== 'valide') return null;
+  if(typeof m.preconisation !== 'string' || m.preconisation.trim() === '') return null;
+  return m;
 }
 
 // Domaines à fort impact (20% → 80% du risque)
@@ -3020,7 +3066,11 @@ function buildPrintCompteRendu(){
       <td style="text-align:center"><span style="background:${priColors[s.priorite]||'#999'};color:#fff;padding:2px 6px;border-radius:10px;font-size:10px;font-weight:700">${s.priorite||'—'}</span></td>
       <td style="font-size:10px;color:#555">${p.ref}</td>
       <td style="font-size:11px">${s.constat||'<em style="color:#ccc">Non renseigné</em>'}</td>
-      <td style="font-size:11px">${s.preconisation||'<em style="color:#ccc">Non renseignée</em>'}</td>
+      <td style="font-size:11px">${(()=>{
+        if(typeof s.preconisation === 'string' && s.preconisation.trim() !== '') return s.preconisation;
+        const m = matriceValidee(MATRICE_PRECONISATIONS, p.id);
+        return m ? m.preconisation + (m.source ? `<div style="margin-top:3px;font-size:9px;color:#888">Source : ${m.source}</div>` : '') : '<em style="color:#ccc">Non renseignée</em>';
+      })()}</td>
     </tr>`;
   }).join('');
 
@@ -5193,6 +5243,7 @@ function compilerActionsPlan(entree){
     pointsNotes++;
     if(note > 3) return;
     const p = points[id] || {};
+    const m = matriceValidee(e.matrice, id);
     // Texte de remplacement (aucune préconisation saisie) : renvoie à l exigence du point. Repli générique si la référence ou le libellé manque.
     const libelle = typeof p.label === 'string' ? p.label.trim() : '';
     const parDefaut = (p.ref && libelle)
@@ -5203,7 +5254,9 @@ function compilerActionsPlan(entree){
       domaine: typeof p.domaine === 'number' ? p.domaine : 100000, ordre: typeof p.ordre === 'number' ? p.ordre : 100000,
       pareto: niveauPareto(e.typeAudit, p.domId, note),
       constat: texteSaisi(s.constat) || "Écart constaté au référentiel réglementaire (Note " + note + "/5).",
-      preconisation: texteSaisi(s.preconisation) || parDefaut
+      // ordre : texte de l auditeur, puis matrice validée (avec sa source), puis renvoi à la référence du point
+      preconisation: texteSaisi(s.preconisation) || (m ? m.preconisation : parDefaut),
+      source: (!texteSaisi(s.preconisation) && m && m.source) ? m.source : ''
     });
   });
   (e.alertes || []).forEach(a => {
@@ -5277,7 +5330,7 @@ function renderPlan() {
     }
 
     const plan = compilerActionsPlan({
-        scores: state.scores, points: pointsGrille, alertes: alertes, typeAudit: state.auditType,
+        scores: state.scores, points: pointsGrille, alertes: alertes, typeAudit: state.auditType, matrice: MATRICE_PRECONISATIONS,
         u43: state.auditType === 'erp' && typePrincipal === "U", filtre: currentPlanFilter
     });
     const actionsCompilees = plan.actions;
@@ -5326,7 +5379,7 @@ function renderPlan() {
                     </span>
                 </td>
                 <td style="padding: 10px; font-size: 12px; color: #2d3748; font-weight: 500;">${action.pareto ? `<div>${badgeParetoHtml(action.pareto)}</div>` : ''}${action.constat}</td>
-                <td style="padding: 10px; font-size: 12px; color: #4a5568; line-height: 1.4;">${action.preconisation}</td>
+                <td style="padding: 10px; font-size: 12px; color: #4a5568; line-height: 1.4;">${action.preconisation}${action.source ? `<div style="margin-top: 4px; font-size: 10px; color: #718096;">Source : ${action.source}</div>` : ''}</td>
                 <td style="padding: 10px; text-align: center; white-space: nowrap;">
                     <span class="echeance-badge ${echClass}">${ech.label}${ech.depasse?' ⚠️':''}</span>
                 </td>
