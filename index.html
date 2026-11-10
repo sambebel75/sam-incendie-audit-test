@@ -893,7 +893,7 @@ input[type="number"], input[type="text"], input[type="email"], input[type="tel"]
 if ('serviceWorker' in navigator) {
   try {
     // Doit rester égale à VERSION dans sw.js : le message n'apparaît que si le service worker actif est plus récent que la page.
-    const VERSION_PAGE = 'v13';
+    const VERSION_PAGE = 'v14';
     let bandeauAffiche = false;
     navigator.serviceWorker.addEventListener('message', e => {
       if (!e.data || e.data.type !== 'sw-active' || e.data.version === VERSION_PAGE || bandeauAffiche) return;
@@ -5699,6 +5699,22 @@ function majPrecisionSeuil(cle, valeur, genre, rendreEncore){
   if(rendreEncore) rendrePrecisionsSeuils(true);
   rafraichirApresPrecision();
 }
+// Remise à zéro du seul bloc « Précisions » : champs vides (donnée non renseignée, jamais 0 par défaut).
+// L'effectif RDC, le sous-sol et la case « Locaux à sommeil » (onglet Identification) ne sont pas touchés.
+function reinitialiserPrecisionsSeuils(sansConfirmation){
+  if(!sansConfirmation && typeof confirm==='function' && !confirm("Remettre à zéro toutes les précisions du bloc (étages, personnel, nature du type, activité) ?")) return false;
+  if(!state.techniqueErp) state.techniqueErp = {};
+  state.techniqueErp.seuils = {};
+  rendrePrecisionsSeuils(true);
+  rafraichirApresPrecision();
+  return true;
+}
+// La molette ne doit jamais changer une valeur saisie : un champ numérique actif perd le focus dès qu'on fait défiler la page.
+function bloquerMolettePourChampNumerique(e){
+  const t = e && e.target;
+  if(t && t.tagName==='INPUT' && t.type==='number' && document.activeElement===t) t.blur();
+}
+document.addEventListener('wheel', bloquerMolettePourChampNumerique, {passive:true});
 function rafraichirApresPrecision(){
   if(typeof executerCalculCO36==='function') executerCalculCO36();
   if(typeof evaluerObligationDesenfumage==='function') evaluerObligationDesenfumage();
@@ -5718,7 +5734,7 @@ function rendrePrecisionsSeuils(forcer){
   const val = k => (p[k]===null || p[k]===undefined) ? '' : echapperAttr(p[k]);
   const stylePlace = 'width:100%;padding:6px;margin-top:4px;box-sizing:border-box';
   const nb = (k, label, aide) => `<label style="font-size:12px;color:#4a5568;font-weight:bold">${label}<br>
-      <input type="number" min="0" value="${val(k)}" placeholder="${aide||''}" style="${stylePlace}" oninput="majPrecisionSeuil('${k}',this.value,'nombre')"></label>`;
+      <input type="number" min="0" value="${val(k)}" placeholder="${aide||''}" style="${stylePlace}" onwheel="this.blur()" oninput="majPrecisionSeuil('${k}',this.value,'nombre')"></label>`;
   const choix = (k, label, options, rendre) => `<label style="font-size:12px;color:#4a5568;font-weight:bold">${label}<br>
       <select style="${stylePlace}" onchange="majPrecisionSeuil('${k}',this.value,'texte'${rendre?',true':''})">
         ${options.map(o=>`<option value="${o[0]}"${(p[k]||'')===o[0]?' selected':''}>${o[1]}</option>`).join('')}
@@ -5754,7 +5770,10 @@ function rendrePrecisionsSeuils(forcer){
       <p style="margin:0 0 6px;font-size:11px;color:#718096">Sans ces données, le groupe ERP reste « indéterminé » : l'outil ne conclut ni 5e catégorie ni 1er groupe. La case « Locaux à sommeil » est dans l'onglet Identification (déterminante pour les types R et U).</p>
       <p style="margin:0 0 10px;font-size:11px;color:#92400e"><strong>Attention :</strong> le champ « étages » ne reçoit que le public qui se trouve aux étages, pas l'effectif total. Le total est « Effectif à évacuer » ci-dessus, ou RDC + sous-sol + étages. Un seuil propre aux étages ou au sous-sol peut suffire à classer en 1er groupe (PE 2 §1).</p>
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px">${champs}</div>
-      <p style="margin:10px 0 0;font-size:11px;color:#92400e">Types ${horsPerimetre} : hors périmètre de l'outil, aucun classement calculé (ils ne sont pas proposés).</p>
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-top:10px">
+        <p style="margin:0;font-size:11px;color:#92400e">Types ${horsPerimetre} : hors périmètre de l'outil, aucun classement calculé (ils ne sont pas proposés).</p>
+        <button type="button" id="btn-raz-precisions" onclick="reinitialiserPrecisionsSeuils()" title="Vide les précisions de ce bloc. L'effectif, les sous-sols et la case « Locaux à sommeil » ne changent pas." style="font-size:12px;padding:5px 10px;border:1px solid #cbd5e0;border-radius:6px;background:#fff;color:#4a5568;cursor:pointer">Remettre les précisions à zéro</button>
+      </div>
     </div>`;
 }
 // Cases propres au type P (désenfumage, P 14 §2) : visibles seulement pour ce type, valeurs restaurées depuis le dossier.
@@ -6788,7 +6807,8 @@ function recapEffectifsErp(entree){
   if(entree.types.some(x=>['J','O','R','U'].includes(x))) t += ` · locaux à sommeil : ${c.sommeil ? 'oui' : 'non'}`;
   return t;
 }
-const COULEURS_CATEGORIE = {1:'#9B2C2C', 2:'#E53E3E', 3:'#ED8936', 4:'#68D391', 5:'#48BB78'};
+// 5e catégorie = vert ; toute catégorie du 1er groupe (1re à 4e) = rouge ou orange, jamais vert.
+const COULEURS_CATEGORIE = {1:'#9B2C2C', 2:'#C53030', 3:'#E53E3E', 4:'#C05621', 5:'#48BB78'};
 // Groupe ERP + catégorie pour l'affichage. Catégorie « indicative » tant que les lignes de seuils ne sont pas validées.
 function getCategorieERP(effPublicSaisi){
   const entree = entreeGroupeErp(effPublicSaisi);
@@ -6804,8 +6824,9 @@ function getCategorieERP(effPublicSaisi){
   const indicative = !c.indeterminee && !g.statutsValides && !(pub>300);
   const manquants = c.indeterminee ? uniques(c.manquants.concat(g.manquants)) : [];
   let categorieAffichee = c.libelle;
+  if(!c.indeterminee && g.groupe==='1er') categorieAffichee = c.libelle + ' (1er groupe)';
   if(c.indeterminee) categorieAffichee = 'Catégorie indéterminée (donnée manquante)';
-  else if(indicative) categorieAffichee = c.libelle + ' — indicative';
+  else if(indicative) categorieAffichee = categorieAffichee + ' — indicative';
   const types = entree.types;
   return {
     categorie:c.libelle, categorieAffichee:categorieAffichee, indeterminee:c.indeterminee, indicative:indicative,
