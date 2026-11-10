@@ -894,7 +894,7 @@ input[type="number"], input[type="text"], input[type="email"], input[type="tel"]
 if ('serviceWorker' in navigator) {
   try {
     // Doit rester égale à VERSION dans sw.js : le message n'apparaît que si le service worker actif est plus récent que la page.
-    const VERSION_PAGE = 'v18';
+    const VERSION_PAGE = 'v19';
     let bandeauAffiche = false;
     navigator.serviceWorker.addEventListener('message', e => {
       if (!e.data || e.data.type !== 'sw-active' || e.data.version === VERSION_PAGE || bandeauAffiche) return;
@@ -5162,66 +5162,84 @@ function setPlanFilter(f){
   renderPlan();
 }
 
+// Compilation du plan d'actions : fonction pure (testée), aucune lecture de l'écran ni de l'état.
+// entree = { scores, points:{ id:{ref, domaine, ordre} }, alertes:[{id, ref, priorite, constat, preconisation}], u43:boolean, filtre:'all'|'p1'|'p1p2' }
+// Règles : note 1 à 3 = écart ; note 0 (retirée), absente, NA ou texte = point non noté, aucune action ;
+// tri P1 puis P2 puis P3, puis note croissante, puis domaine de la grille ; constat et préconisation de l auditeur prioritaires.
+function compilerActionsPlan(entree){
+  const e = entree || {};
+  const scores = e.scores || {};
+  const points = e.points || {};
+  const RANG = {P1:1, P2:2, P3:3};
+  const actions = [];
+  let pointsNotes = 0;
+  const texteSaisi = v => (typeof v === 'string' && v.trim() !== '') ? v.trim() : '';
+  Object.keys(scores).forEach(id => {
+    const s = scores[id];
+    if(!s) return;
+    const note = parseInt(s.note, 10);
+    if(!(note >= 1 && note <= 5)) return;
+    pointsNotes++;
+    if(note > 3) return;
+    const p = points[id] || {};
+    actions.push({
+      id: id, ref: p.ref || id, priorite: RANG[s.priorite] ? s.priorite : "P2", note: note,
+      domaine: typeof p.domaine === 'number' ? p.domaine : 100000, ordre: typeof p.ordre === 'number' ? p.ordre : 100000,
+      constat: texteSaisi(s.constat) || "Écart constaté au référentiel réglementaire (Note " + note + "/5).",
+      preconisation: texteSaisi(s.preconisation) || "Procéder immédiatement à la mise en conformité de l'équipement ou de la consigne technique."
+    });
+  });
+  (e.alertes || []).forEach(a => {
+    actions.push({ id: a.id, ref: a.ref || a.id, priorite: RANG[a.priorite] ? a.priorite : "P1", note: null, domaine: -1, ordre: 0, constat: a.constat, preconisation: a.preconisation });
+  });
+  // Type U, Art. U 43 : SSI de catégorie A. L entrée de l auditeur (point u_02_01) est conservée et complétée, jamais écrasée.
+  const ssi = scores.u_02_01 ? parseInt(scores.u_02_01.note, 10) : NaN;
+  if(e.u43 && ssi >= 1 && ssi <= 3){
+    const a = actions.find(x => x.id === 'u_02_01');
+    if(a){
+      const rappel = "Remettre immédiatement en état de marche le SSI de catégorie A. La DAI en chambre/circulation doit commander instantanément le compartimentage (Art. U 44) et le désenfumage mécanique (Art. U 30).";
+      const saisiPreco = texteSaisi(scores.u_02_01.preconisation);
+      a.priorite = "P1";
+      a.ref = a.ref + " · Art. U 43";
+      if(!texteSaisi(scores.u_02_01.constat)) a.constat = "Défaut majeur d'asservissement ou absence d'un Système de Sécurité Incendie (SSI) de Catégorie A fonctionnel.";
+      a.preconisation = saisiPreco ? saisiPreco + " — Rappel réglementaire (Art. U 43) : " + rappel : rappel;
+    }
+  }
+  const noteTri = a => a.note === null ? 0 : a.note;
+  actions.sort((a, b) => RANG[a.priorite] - RANG[b.priorite] || noteTri(a) - noteTri(b) || a.domaine - b.domaine || a.ordre - b.ordre || String(a.id).localeCompare(String(b.id)));
+  const garde = e.filtre === 'p1' ? (a => a.priorite === 'P1') : (e.filtre === 'p1p2' ? (a => a.priorite !== 'P3') : (() => true));
+  const visibles = actions.filter(garde);
+  let message = 'liste';
+  if(actions.length === 0) message = pointsNotes > 0 ? 'conforme' : 'aucune_note';
+  else if(visibles.length === 0) message = 'filtre';
+  return { actions: visibles, total: actions.length, pointsNotes: pointsNotes, message: message };
+}
+
 function renderPlan() {
     const conteneurPlan = document.getElementById('panel-plan-target');
     if (!conteneurPlan) return;
 
-    let actionsCompilees = [];
-
-    // 1. Extraction anomalies grille (Notes 1, 2, 3)
-    if (state.scores) {
-        Object.keys(state.scores).forEach(pointId => {
-            const scorePt = state.scores[pointId];
-            if (scorePt && scorePt.note !== undefined) {
-                const note = parseInt(scorePt.note, 10);
-                if (!isNaN(note) && note < 4 && scorePt.note !== "NA") {
-                    actionsCompilees.push({
-                        id: pointId,
-                        priorite: scorePt.priorite || "P2",
-                        constat: scorePt.constat || `Écart constaté au référentiel réglementaire (Note ${note}/5).`,
-                        preconisation: scorePt.preco || "Procéder immédiatement à la mise en conformité de l'équipement ou de la consigne technique."
-                    });
-                }
-            }
-        });
-    }
-
-    // 2. Alerte Rupture de Seuil ERP (Bascule 1er Groupe) : seulement quand le moteur est sûr (voir alertesRuptureSeuil)
     const typePrincipal = state.erpSubType || "M";
+
+    // Référence réglementaire (p.ref) et ordre des domaines : lus dans la grille affichée
+    const pointsGrille = {};
+    getAuditData().domains.forEach((d, i) => d.points.forEach((p, j) => { pointsGrille[p.id] = { ref: p.ref, domaine: i, ordre: j }; }));
+
+    // Alertes calculées : rupture de seuil ERP (seulement quand le moteur est sûr, voir alertesRuptureSeuil) et alertes IGH
+    const alertes = [];
     if (state.auditType === 'erp') {
-        alertesRuptureSeuil().forEach(a => actionsCompilees.push(a));
+        alertesRuptureSeuil().forEach(a => alertes.push(a));
     }
 
-    // 3. Type U : Injection alerte SSI Catégorie A (Art. U 43) si point u_02_01 défaillant
-    if (state.auditType === 'erp' && typePrincipal === "U") {
-        const scoreSSI = state.scores ? state.scores['u_02_01'] : null;
-        const noteSSI = scoreSSI ? parseInt(scoreSSI.note, 10) : null;
-        if (noteSSI !== null && !isNaN(noteSSI) && noteSSI < 4) {
-            const indexExiste = actionsCompilees.findIndex(a => a.id === 'u_02_01');
-            const entreeP1 = {
-                id: "Art. U 43 (Prioritaire)",
-                priorite: "P1",
-                constat: indexExiste !== -1
-                    ? "Défaut majeur d'asservissement ou absence d'un Système de Sécurité Incendie (SSI) de Catégorie A fonctionnel."
-                    : "Établissement de soins de Type U non doté d'un SSI de Catégorie A réglementaire en zone de locaux à sommeil.",
-                preconisation: "Remettre immédiatement en état de marche le SSI de catégorie A. La DAI en chambre/circulation doit commander instantanément le compartimentage (Art. U 44) et le désenfumage mécanique (Art. U 30)."
-            };
-            if (indexExiste !== -1) {
-                actionsCompilees[indexExiste] = entreeP1;
-            } else {
-                actionsCompilees.push(entreeP1);
-            }
-        }
-    }
-
-    // 4. Alerte Extincteur sur Roues IGH GHW (Art. GH 52)
+    // Alerte Extincteur sur Roues IGH GHW (Art. GH 52)
     if (state.auditType === 'igh') {
         const classeIghActive = state.igh ? (state.igh.classeIgh || "") : "";
         const surface = parseFloat(state.desenfumage ? state.desenfumage.surfaceLocal : 0) || 0;
         const aRisqueSpecial = state.desenfumage ? !!state.desenfumage.presenceRisqueSpecial : false;
         if (estGhw(classeIghActive) && (aRisqueSpecial || surface > 1000)) {
-            actionsCompilees.push({
+            alertes.push({
                 id: "IGH-GHW-EXT-01",
+                ref: "GH 52",
                 priorite: "P1",
                 constat: `Absence d'un moyen d'extinction lourd sur roues dans un compartiment de classe ${classeIghActive.replace("GHW","GHW ")} (Surface : ${surface} m² ou Risques Spéciaux présents).`,
                 preconisation: "Doter obligatoirement la circulation ou le local d'un extincteur sur roues de 50 litres d'eau pulvérisée ou de 25 kg de poudre polyvalente ABC (Conforme à l'Article GH 52)."
@@ -5232,7 +5250,7 @@ function renderPlan() {
         if (hauteurH2O > 50) {
             const nbSimul = nbColonnesH2O >= 2 ? 2 : 1;
             const volumeTheorique = nbSimul * 60 * 0.5;
-            actionsCompilees.push({
+            alertes.push({
                 id: "IGH-H2O-GH50",
                 priorite: "P2",
                 constat: `Exigence de réserve de coupure d'eau pour colonnes humides DN100 (Hauteur : ${hauteurH2O} m > 50m).`,
@@ -5241,20 +5259,36 @@ function renderPlan() {
         }
     }
 
-    // 4. Tri : P1 → P2 → P3
-    actionsCompilees.sort((a, b) => a.priorite.localeCompare(b.priorite));
+    const plan = compilerActionsPlan({
+        scores: state.scores, points: pointsGrille, alertes: alertes,
+        u43: state.auditType === 'erp' && typePrincipal === "U", filtre: currentPlanFilter
+    });
+    const actionsCompilees = plan.actions;
 
-    // 5. Filtre actif
-    if (currentPlanFilter === 'p1') actionsCompilees = actionsCompilees.filter(a => a.priorite === 'P1');
-    else if (currentPlanFilter === 'p1p2') actionsCompilees = actionsCompilees.filter(a => a.priorite !== 'P3');
-
-    // 6. Stats par priorité (toujours sur données brutes avant filtre → recalc)
-    // 7. Rendu IHM
-    if (actionsCompilees.length === 0) {
+    // Rendu IHM : trois messages distincts, jamais de conclusion de conformité hors du cas « points notés, aucun écart »
+    if (plan.message === 'conforme') {
         conteneurPlan.innerHTML = `
             <div style="padding: 30px; text-align: center; color: #48BB78; font-family: sans-serif; background: #f0fff4; border: 1px solid #c6f6d5; border-radius: 4px;">
                 <strong>🎉 Aucun écart critique identifié</strong><br>
                 L'ensemble des exigences analysées atteint ou dépasse le niveau de référence règlementaire (Notes ≥ 4/5).
+            </div>
+        `;
+        return;
+    }
+    if (plan.message === 'aucune_note') {
+        conteneurPlan.innerHTML = `
+            <div style="padding: 30px; text-align: center; color: #4a5568; font-family: sans-serif; background: #f7fafc; border: 1px solid #e2e8f0; border-radius: 4px;">
+                <strong>Aucun point noté pour le moment</strong><br>
+                Le plan d'actions se construit à partir des notes saisies dans la grille (notes de 1 à 3 sur 5 = écart). Aucune conclusion de conformité n'est tirée tant qu'aucun point n'est noté.
+            </div>
+        `;
+        return;
+    }
+    if (plan.message === 'filtre') {
+        conteneurPlan.innerHTML = `
+            <div style="padding: 30px; text-align: center; color: #4a5568; font-family: sans-serif; background: #f7fafc; border: 1px solid #e2e8f0; border-radius: 4px;">
+                <strong>Aucun résultat pour ce filtre</strong><br>
+                Le plan compte ${plan.total} action${plan.total > 1 ? 's' : ''} au total : choisissez « Tous &lt; 4/5 » pour ${plan.total > 1 ? 'les' : 'la'} afficher.
             </div>
         `;
         return;
@@ -5267,7 +5301,7 @@ function renderPlan() {
         const echClass = ech.depasse ? 'ech-p1' : (action.priorite==='P1'?'ech-p1':action.priorite==='P2'?'ech-p2':'ech-p3');
         lignesTableau += `
             <tr style="border-bottom: 1px solid #e2e8f0; page-break-inside: avoid;">
-                <td style="padding: 10px; font-family: monospace; font-size: 11px; color: #718096;">${action.id}</td>
+                <td style="padding: 10px; font-family: monospace; font-size: 11px; color: #718096;">${action.ref}</td>
                 <td style="padding: 10px; text-align: center;">
                     <span style="display: inline-block; padding: 2px 6px; background: ${action.priorite === "P1" ? '#E53E3E' : action.priorite==='P2'?'#ED8936':'#F6C90E'}; color: ${action.priorite==='P3'?'#333':'white'}; font-size: 10px; font-weight: bold; border-radius: 3px;">
                         ${action.priorite}
@@ -5816,7 +5850,7 @@ function alertesRuptureSeuil(){
   const suffixe = g.statutsValides ? '' : ` Seuil indicatif — ${MENTION_A_VALIDER}.`;
   const sousSolSeul = g.motifs.length>0 && g.motifs.every(m=>m.critere==='sous-sol');
   return [{
-    id: sousSolSeul ? 'R-CCH-02' : 'R-CCH-01', priorite:'P1',
+    id: sousSolSeul ? 'R-CCH-02' : 'R-CCH-01', ref: sousSolSeul ? 'PE 2 §1 · CO 39' : 'PE 2 §1', priorite:'P1',
     constat: `Rupture de seuil de la 5e catégorie — ${g.motifs.map(m=>m.texte).join(' ; ')}.` + suffixe,
     preconisation: sousSolSeul ? 'Application des dispositions générales CO 39. Escalier montant isolé obligatoire.'
                               : 'Déposer un dossier complet de mise en conformité en préfecture. Planifier le passage obligatoire de la Commission de Sécurité.'
