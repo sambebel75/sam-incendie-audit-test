@@ -894,7 +894,7 @@ input[type="number"], input[type="text"], input[type="email"], input[type="tel"]
 if ('serviceWorker' in navigator) {
   try {
     // Doit rester égale à VERSION dans sw.js : le message n'apparaît que si le service worker actif est plus récent que la page.
-    const VERSION_PAGE = 'v19';
+    const VERSION_PAGE = 'v20';
     let bandeauAffiche = false;
     navigator.serviceWorker.addEventListener('message', e => {
       if (!e.data || e.data.type !== 'sw-active' || e.data.version === VERSION_PAGE || bandeauAffiche) return;
@@ -2134,15 +2134,25 @@ const HIGH_IMPACT_DOMAINS = {
   habitation: new Set(['h02','h03','h04','h05'])
 };
 
-function isParetoPoint(p){
+// Niveau Pareto d'un point : fonction pure. 'crit' = note 1 ou 2, 'high' = note 3, uniquement dans un domaine à fort impact ; sinon null.
+function niveauPareto(typeAudit, domaineId, note){
+  const n = parseInt(note, 10);
+  if(!(n >= 1 && n <= 3)) return null;
+  const hid = HIGH_IMPACT_DOMAINS[typeAudit];
+  if(!hid || !hid.has(domaineId)) return null;
+  return n <= 2 ? 'crit' : 'high';
+}
+
+// Un point ne porte pas son domaine : l'identifiant du domaine est passé par l'appelant (la grille le connaît).
+function isParetoPoint(p, domaineId){
   const s = state.scores[p.id];
-  if(!s || !s.note || s.note >= 4) return null;
-  const domId = p.domain?.id || '';
-  const hid = HIGH_IMPACT_DOMAINS[state.auditType];
-  const inHigh = hid && hid.has(domId);
-  if(inHigh && s.note <= 2) return 'crit';
-  if(inHigh && s.note === 3) return 'high';
-  return null;
+  return niveauPareto(state.auditType, domaineId, s ? s.note : 0);
+}
+
+function badgeParetoHtml(niveau, enLigne){
+  if(!niveau) return '';
+  const style = enLigne ? '' : ' style="margin:0 0 4px 0"';
+  return `<span class="pareto-badge${niveau === 'crit' ? ' pareto-badge-crit' : ''}"${style} title="Domaine à fort impact : ${niveau === 'crit' ? 'écart critique (note 1 ou 2)' : 'écart à traiter (note 3)'}">⚡ Prioritaire</span>`;
 }
 
 // ==================== STATE ====================
@@ -4889,15 +4899,16 @@ function renderDomainPoints(data, idx){
         <div class="prog-bar-wrap" style="width:240px"><div class="prog-bar" style="width:${pct}%"></div></div>
       </div>
     </div>
-    ${domain.points.map((p,pi)=>renderPointCard(p,pi,idx,ctx)).join('')}
+    ${domain.points.map((p,pi)=>renderPointCard(p,pi,idx,ctx,domain.id)).join('')}
     <div style="display:flex;justify-content:space-between;margin-top:16px;padding-bottom:20px">
       ${idx>0?`<button class="btn" onclick="selectDomain(${idx-1})">← Domaine précédent</button>`:'<span></span>'}
       ${idx<data.domains.length-1?`<button class="btn btn-accent" onclick="selectDomain(${idx+1})">Domaine suivant →</button>`:'<button class="btn btn-accent" onclick="showTab(3)">Voir la synthèse →</button>'}
     </div>`;
 }
 
-function renderPointCard(p,pi,domIdx,ctx){
+function renderPointCard(p,pi,domIdx,ctx,domaineId){
   const s = state.scores[p.id] || {};
+  const paretoHtml = badgeParetoHtml(isParetoPoint(p, domaineId), true);
   const note = s.note || 0;
   const isNC = note > 0 && note < 4;
   const hasDetail = note > 0;
@@ -4921,7 +4932,7 @@ function renderPointCard(p,pi,domIdx,ctx){
   return `<div class="point-card${hasDetail?' scored':''}${isNC?' nc':''}${naPoint?' na-point':''}" id="card_${p.id}">
     <div class="point-top">
       <div class="point-num">${pi+1}.</div>
-      <div class="point-label">${p.label} ${naBadgeHtml}</div>
+      <div class="point-label">${p.label} ${naBadgeHtml}${paretoHtml}</div>
       ${(()=>{const u=lienArticle(p.ref);return u?`<a class="point-ref-link" href="${u}" target="_blank" rel="noopener">${p.ref}</a>`:`<span class="point-ref">${p.ref}</span>`;})()}
     </div>
     ${naReasonHtml}
@@ -5182,15 +5193,21 @@ function compilerActionsPlan(entree){
     pointsNotes++;
     if(note > 3) return;
     const p = points[id] || {};
+    // Texte de remplacement (aucune préconisation saisie) : renvoie à l exigence du point. Repli générique si la référence ou le libellé manque.
+    const libelle = typeof p.label === 'string' ? p.label.trim() : '';
+    const parDefaut = (p.ref && libelle)
+      ? "Se mettre en conformité avec " + p.ref + " : « " + libelle + " »"
+      : "Procéder à la mise en conformité du point concerné.";
     actions.push({
       id: id, ref: p.ref || id, priorite: RANG[s.priorite] ? s.priorite : "P2", note: note,
       domaine: typeof p.domaine === 'number' ? p.domaine : 100000, ordre: typeof p.ordre === 'number' ? p.ordre : 100000,
+      pareto: niveauPareto(e.typeAudit, p.domId, note),
       constat: texteSaisi(s.constat) || "Écart constaté au référentiel réglementaire (Note " + note + "/5).",
-      preconisation: texteSaisi(s.preconisation) || "Procéder immédiatement à la mise en conformité de l'équipement ou de la consigne technique."
+      preconisation: texteSaisi(s.preconisation) || parDefaut
     });
   });
   (e.alertes || []).forEach(a => {
-    actions.push({ id: a.id, ref: a.ref || a.id, priorite: RANG[a.priorite] ? a.priorite : "P1", note: null, domaine: -1, ordre: 0, constat: a.constat, preconisation: a.preconisation });
+    actions.push({ id: a.id, ref: a.ref || a.id, priorite: RANG[a.priorite] ? a.priorite : "P1", note: null, domaine: -1, ordre: 0, pareto: null, constat: a.constat, preconisation: a.preconisation });
   });
   // Type U, Art. U 43 : SSI de catégorie A. L entrée de l auditeur (point u_02_01) est conservée et complétée, jamais écrasée.
   const ssi = scores.u_02_01 ? parseInt(scores.u_02_01.note, 10) : NaN;
@@ -5223,7 +5240,7 @@ function renderPlan() {
 
     // Référence réglementaire (p.ref) et ordre des domaines : lus dans la grille affichée
     const pointsGrille = {};
-    getAuditData().domains.forEach((d, i) => d.points.forEach((p, j) => { pointsGrille[p.id] = { ref: p.ref, domaine: i, ordre: j }; }));
+    getAuditData().domains.forEach((d, i) => d.points.forEach((p, j) => { pointsGrille[p.id] = { ref: p.ref, label: p.label, domId: d.id, domaine: i, ordre: j }; }));
 
     // Alertes calculées : rupture de seuil ERP (seulement quand le moteur est sûr, voir alertesRuptureSeuil) et alertes IGH
     const alertes = [];
@@ -5260,7 +5277,7 @@ function renderPlan() {
     }
 
     const plan = compilerActionsPlan({
-        scores: state.scores, points: pointsGrille, alertes: alertes,
+        scores: state.scores, points: pointsGrille, alertes: alertes, typeAudit: state.auditType,
         u43: state.auditType === 'erp' && typePrincipal === "U", filtre: currentPlanFilter
     });
     const actionsCompilees = plan.actions;
@@ -5295,6 +5312,7 @@ function renderPlan() {
     }
 
     const dateAuditBase = state.identification?.date || '';
+    const nbPareto = actionsCompilees.filter(a => a.pareto).length;
     let lignesTableau = "";
     actionsCompilees.forEach(action => {
         const ech = dateEcheance(action.priorite, dateAuditBase);
@@ -5307,7 +5325,7 @@ function renderPlan() {
                         ${action.priorite}
                     </span>
                 </td>
-                <td style="padding: 10px; font-size: 12px; color: #2d3748; font-weight: 500;">${action.constat}</td>
+                <td style="padding: 10px; font-size: 12px; color: #2d3748; font-weight: 500;">${action.pareto ? `<div>${badgeParetoHtml(action.pareto)}</div>` : ''}${action.constat}</td>
                 <td style="padding: 10px; font-size: 12px; color: #4a5568; line-height: 1.4;">${action.preconisation}</td>
                 <td style="padding: 10px; text-align: center; white-space: nowrap;">
                     <span class="echeance-badge ${echClass}">${ech.label}${ech.depasse?' ⚠️':''}</span>
@@ -5349,7 +5367,7 @@ function renderPlan() {
 
         <div class="print-report-wrapper">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;" class="no-print">
-                <h3 style="margin: 0; color: #2d3748; font-size: 15px;">🎯 Plan d'Actions Règlementaires (${actionsCompilees.length} lignes d'écarts)</h3>
+                <h3 style="margin: 0; color: #2d3748; font-size: 15px;">🎯 Plan d'Actions Règlementaires (${actionsCompilees.length} lignes d'écarts${nbPareto ? ` dont ${nbPareto} ⚡ prioritaire${nbPareto > 1 ? 's' : ''}` : ''})</h3>
                 <button onclick="window.print();" style="cursor: pointer; padding: 6px 14px; background: #E53E3E; color: white; border: none; border-radius: 4px; font-weight: bold; font-size: 12px;">
                     🖨️ Imprimer le Rapport PDF
                 </button>
