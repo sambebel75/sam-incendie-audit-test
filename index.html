@@ -894,7 +894,7 @@ input[type="number"], input[type="text"], input[type="email"], input[type="tel"]
 if ('serviceWorker' in navigator) {
   try {
     // Doit rester égale à VERSION dans sw.js : le message n'apparaît que si le service worker actif est plus récent que la page.
-    const VERSION_PAGE = 'v25';
+    const VERSION_PAGE = 'v26';
     let bandeauAffiche = false;
     navigator.serviceWorker.addEventListener('message', e => {
       if (!e.data || e.data.type !== 'sw-active' || e.data.version === VERSION_PAGE || bandeauAffiche) return;
@@ -2250,23 +2250,23 @@ const MATRICE_PRECONISATIONS = {
   },
   e06_01: {
     statut: 'valide', valide_le: '2026-11-11', redige_par: 'expert',
-    source: "CO 21",
-    preconisation: "Vérifier la règle du C+D (CO 21) et s'assurer du recoupement des façades pour limiter la propagation du feu entre les niveaux."
+    source: "CO 21 §1 à §3 ; CO 24 §1 c",
+    preconisation: "Vérifier la règle du C + D (CO 21 §3) : C + D ≥ 1,00 m si la masse combustible mobilisable M ≤ 80 MJ/m², C + D ≥ 1,30 m si M est supérieure à 80 MJ/m². Elle s'applique aux façades des bâtiments comportant des locaux réservés au sommeil au-dessus du 1er étage, à celles des bâtiments dont le plancher bas du dernier niveau est à plus de 8 m et qui sont divisés en secteurs (CO 24 §2) ou en compartiments (CO 25), aux parties de façade au droit des planchers hauts des locaux à risques importants et des planchers d'isolement avec un tiers ; elle n'est pas exigée si l'établissement occupe la totalité du bâtiment et est entièrement équipé d'un système d'extinction automatique du type sprinkleur ou d'un SSI de catégorie A. Éviter le passage rapide des flammes ou des gaz chauds d'un étage à l'autre par la jonction façade-plancher (CO 21 §1) et, si les éléments de la façade comportent des vides susceptibles de créer un effet de cheminée, recouper ces vides tous les deux niveaux par des matériaux de catégorie M 0 (CO 21 §2). Vérifier le recoupement des circulations horizontales de grande longueur encloisonnées, tous les 25 à 30 m, par des parois et blocs-portes PF de degré 1/2 h munis d'un ferme-porte (CO 24 §1 c)."
   },
   e06_02: {
     statut: 'valide', valide_le: '2026-11-11', redige_par: 'expert',
-    source: "CO 47",
-    preconisation: "Équiper les portes des locaux à risques de ferme-portes automatiques (CO 47) et vérifier leur résistance au feu (CF)."
+    source: "CO 47 ; CO 28",
+    preconisation: "Mettre les portes résistant au feu maintenues ouvertes pour l'exploitation en conformité avec la norme visant les portes à fermeture automatique, avec une plaque signalétique bien visible en position d'ouverture, en lettres blanches sur fond rouge ou inversement : « Porte coupe-feu. — Ne mettez pas d'obstacle à la fermeture. » (CO 47 §1 et §2). Obtenir la fermeture de chaque porte dans les conditions de l'article MS 60 (CO 47 §3). Asservir à la détection automatique la fermeture simultanée de ces portes dans l'ensemble du bâtiment lorsque l'établissement comporte des locaux de sommeil au-dessus du premier étage, lorsqu'il existe des portes d'isolement à fermeture automatique (CO 10 §1) ou lorsque le type l'impose (CO 47 §4). Portes des locaux à risques : communication avec les autres locaux CF de degré 1 h pour un local à risques importants, ouverture vers la sortie, avec ferme-porte (CO 28 §1) ; blocs-portes CF de degré 1/2 h équipés d'un ferme-porte pour un local à risques moyens (CO 28 §2)."
   },
   e06_03: {
     statut: 'valide', valide_le: '2026-11-11', redige_par: 'expert',
     source: "EL 10",
-    preconisation: "Calfeutrer tous les passages de câbles et de gaines avec des matériaux coupe-feu certifiés (EL 10) pour maintenir l'étanchéité du compartimentage."
+    preconisation: "Obturer les traversées de parois par les canalisations électriques de façon à ne pas diminuer le degré coupe-feu de la paroi (EL 10)."
   },
   e06_04: {
     statut: 'valide', valide_le: '2026-11-11', redige_par: 'expert',
     source: "CO 27 / CO 28",
-    preconisation: "Classer les locaux à risques selon CO 27 et les isoler par des parois coupe-feu (CO 28)."
+    preconisation: "Classer les locaux selon leur risque (CO 27) puis les isoler selon leur classement (CO 28). Local à risques importants : planchers hauts et parois CF de degré 2 h ; communication avec les autres locaux CF de degré 1 h, ouverture vers la sortie, portes munies de ferme-porte ; pas de communication directe avec les locaux et dégagements accessibles au public ; façades établies suivant la section V ; conduits et gaines selon CO 32 et CO 33 (CO 28 §1). Local à risques moyens : façades comme ci-dessus ; isolé des locaux et dégagements accessibles au public par des planchers hauts et parois CF de degré 1 h avec blocs-portes CF de degré 1/2 h équipés d'un ferme-porte ; conduits selon CO 31 (CO 28 §2)."
   },
   e06_05: {
     statut: 'a_valider', a_revoir_le: '2027-06-01',
