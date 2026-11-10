@@ -894,7 +894,7 @@ input[type="number"], input[type="text"], input[type="email"], input[type="tel"]
 if ('serviceWorker' in navigator) {
   try {
     // Doit rester égale à VERSION dans sw.js : le message n'apparaît que si le service worker actif est plus récent que la page.
-    const VERSION_PAGE = 'v24';
+    const VERSION_PAGE = 'v25';
     let bandeauAffiche = false;
     navigator.serviceWorker.addEventListener('message', e => {
       if (!e.data || e.data.type !== 'sw-active' || e.data.version === VERSION_PAGE || bandeauAffiche) return;
@@ -1967,7 +1967,7 @@ const AUDIT_DATA = {
         {id:'e06_02',label:'Portes CF à fermeture automatique sur locaux à risques',ref:'CO 28'},
         {id:'e06_03',label:'Passages de câbles et gaines rebouchés (masse coupe-feu)',ref:'EL 10 §4 / CO 31 §4'},
         {id:'e06_04',label:'Locaux à risques isolés (archives, chaufferie, stockage)',ref:'CO 27 / CO 28'},
-        {id:'e06_05',label:'Compartimentage interne conforme au règlement ERP spécifique',ref:'Type ERP',expert_note:'L\'article particulier du type (ex. W3 → 800 m², R6 → 600 m²) prime sur l\'article général CO25. La solution la moins onéreuse peut être le fractionnement par portes CF à fermeture automatique plutôt que des cloisons lourdes.'},
+        {id:'e06_05',label:'Compartimentage interne conforme au règlement ERP spécifique',ref:'CO 25 / art. du type (ex. W 3, R 6)',expert_note:'L\'article particulier du type (ex. W3 → 800 m², R6 → 600 m²) prime sur l\'article général CO25. La solution la moins onéreuse peut être le fractionnement par portes CF à fermeture automatique plutôt que des cloisons lourdes.'},
       ]},
       {id:'e07',name:'Gestion / Exploitation',points:[
         {id:'e07_01',label:'Registre de sécurité ERP à jour, signé et disponible',ref:'R. 143-44 CCH'},
@@ -2226,7 +2226,7 @@ const MATRICE_PRECONISATIONS = {
   e04_01: {
     statut: 'valide', valide_le: '2026-11-11',
     source: "MS 38 / MS 39",
-    preconisation: "Installer des extincteurs adaptés aux risques (eau pulvérisée pour les feux secs, CO2 pour l'électrique) à raison d'un minimum de 1 appareil pour 200 m², avec un minimum de 2 appareils par niveau. Vérifier leur signalisation et leur accessibilité."
+    preconisation: "Installer des extincteurs adaptés aux risques (eau pulvérisée pour les feux secs, CO2 pour l'électrique) à raison d'un minimum de 1 appareil pour 200 m², avec un minimum de 2 appareils par niveau. Vérifier leur signalisation et leur accessibilité. 5e catégorie : voir PE 26 §1 (1 appareil pour 300 m²)"
   },
   e04_02: {
     statut: 'a_valider',
@@ -2247,6 +2247,31 @@ const MATRICE_PRECONISATIONS = {
     statut: 'a_valider',
     source: "MS 25 §1 à §4 ; MS 73 §1, §2 et §4 ; M 26 a (type M)",
     preconisation: "Si un système d'extinction automatique du type sprinkleur est exigé : le faire conforme aux normes françaises homologuées et réalisé par des entreprises spécialisées et dûment qualifiées (MS 25 §4) ; isoler la partie protégée de la partie non protégée dans les conditions des locaux à risques particuliers (MS 25 §2) ; ne pas aménager ni exploiter les locaux d'une façon qui s'oppose au fonctionnement du système (MS 25 §3). Faire vérifier le système avant mise en service par une personne ou un organisme agréé (MS 73 §1), puis tous les trois ans par une personne ou un organisme agréé (MS 73 §2). La vérification triennale comprend l'examen de l'adéquation du système avec les classes de risque au vu du dossier technique et une visite du site, l'examen des conditions de maintenance et d'exploitation, et des essais sur le démarrage et le débit des pompes et sur les dispositifs d'alarme dédiés (MS 73 §4). Exemple type M : installation d'extinction automatique à eau appropriée aux risques dans les locaux de vente de plus de 3 000 m² (M 26 a)."
+  },
+  e06_01: {
+    statut: 'valide', valide_le: '2026-11-11', redige_par: 'expert',
+    source: "CO 21",
+    preconisation: "Vérifier la règle du C+D (CO 21) et s'assurer du recoupement des façades pour limiter la propagation du feu entre les niveaux."
+  },
+  e06_02: {
+    statut: 'valide', valide_le: '2026-11-11', redige_par: 'expert',
+    source: "CO 47",
+    preconisation: "Équiper les portes des locaux à risques de ferme-portes automatiques (CO 47) et vérifier leur résistance au feu (CF)."
+  },
+  e06_03: {
+    statut: 'valide', valide_le: '2026-11-11', redige_par: 'expert',
+    source: "EL 10",
+    preconisation: "Calfeutrer tous les passages de câbles et de gaines avec des matériaux coupe-feu certifiés (EL 10) pour maintenir l'étanchéité du compartimentage."
+  },
+  e06_04: {
+    statut: 'valide', valide_le: '2026-11-11', redige_par: 'expert',
+    source: "CO 27 / CO 28",
+    preconisation: "Classer les locaux à risques selon CO 27 et les isoler par des parois coupe-feu (CO 28)."
+  },
+  e06_05: {
+    statut: 'a_valider', a_revoir_le: '2027-06-01',
+    source: "CO 25 §1 et §2 ; CO 26 §1 ; art. du type (W 3 §2, R 6, S 3 §2, X 4, J 11)",
+    preconisation: "Mettre le compartimentage en conformité avec l'article CO 25 et l'article du type, lorsque le type autorise les compartiments (CO 25 §2). Chaque niveau comporte au moins deux compartiments de capacité d'accueil du même ordre ; un compartiment peut s'étendre sur deux niveaux si sa superficie ne dépasse pas la moyenne (CO 25 §2 a). Parois verticales, façades exclues : coupe-feu de degré 1/2 h pour une structure sans exigence ou stable 1/2 h ; 1 h pour 1 h ; 1 h 1/2 pour 1 h 1/2 (CO 25 §2 b). Issues judicieusement réparties, proportionnées à l'effectif maximal (CO 38), dont une de deux unités de passage au moins au-delà de 100 personnes, débouchant à l'extérieur ou sur un dégagement protégé par un bloc-porte pare-flammes 1/2 h à ferme-porte (CO 25 §2 c) ; deux dispositifs de communication au plus entre compartiments, sur les circulations principales ; communication par bloc-porte en va-et-vient pare-flammes du degré de la paroi, ou par sas (CO 25 §2 c et d) ; circulations matérialisées (CO 25 §2 e) ; compartiment désenfumé (CO 25 §2 f). Parois construites de plancher à plancher (CO 26 §1). Surface maximale fixée par le type : par exemple 800 m² (type W, W 3 §2), 600 m² (type R, R 6 ; type J, J 11), 1 200 m² (type S, S 3 §2), 1 600 m² (type X, X 4)."
   }
 };
 
