@@ -894,7 +894,7 @@ input[type="number"], input[type="text"], input[type="email"], input[type="tel"]
 if ('serviceWorker' in navigator) {
   try {
     // Doit rester égale à VERSION dans sw.js : le message n'apparaît que si le service worker actif est plus récent que la page.
-    const VERSION_PAGE = 'v26';
+    const VERSION_PAGE = 'v27';
     let bandeauAffiche = false;
     navigator.serviceWorker.addEventListener('message', e => {
       if (!e.data || e.data.type !== 'sw-active' || e.data.version === VERSION_PAGE || bandeauAffiche) return;
@@ -1965,7 +1965,7 @@ const AUDIT_DATA = {
       {id:'e06',name:'Compartimentage / Isolement',points:[
         {id:'e06_01',label:'Recoupements de façades conformes (allèges, trumeaux)',ref:'CO 21 / CO 22'},
         {id:'e06_02',label:'Portes CF à fermeture automatique sur locaux à risques',ref:'CO 28'},
-        {id:'e06_03',label:'Passages de câbles et gaines rebouchés (masse coupe-feu)',ref:'EL 10 §4 / CO 31 §4'},
+        {id:'e06_03',label:'Passages de câbles et gaines rebouchés (masse coupe-feu)',ref:'EL 10 §4'},
         {id:'e06_04',label:'Locaux à risques isolés (archives, chaufferie, stockage)',ref:'CO 27 / CO 28'},
         {id:'e06_05',label:'Compartimentage interne conforme au règlement ERP spécifique',ref:'CO 25 / art. du type (ex. W 3, R 6)',expert_note:'L\'article particulier du type (ex. W3 → 800 m², R6 → 600 m²) prime sur l\'article général CO25. La solution la moins onéreuse peut être le fractionnement par portes CF à fermeture automatique plutôt que des cloisons lourdes.'},
       ]},
@@ -2251,7 +2251,7 @@ const MATRICE_PRECONISATIONS = {
   e06_01: {
     statut: 'valide', valide_le: '2026-11-11', redige_par: 'expert',
     source: "CO 21 §1 à §3 ; CO 24 §1 c",
-    preconisation: "Vérifier la règle du C + D (CO 21 §3) : C + D ≥ 1,00 m si la masse combustible mobilisable M ≤ 80 MJ/m², C + D ≥ 1,30 m si M est supérieure à 80 MJ/m². Elle s'applique aux façades des bâtiments comportant des locaux réservés au sommeil au-dessus du 1er étage, à celles des bâtiments dont le plancher bas du dernier niveau est à plus de 8 m et qui sont divisés en secteurs (CO 24 §2) ou en compartiments (CO 25), aux parties de façade au droit des planchers hauts des locaux à risques importants et des planchers d'isolement avec un tiers ; elle n'est pas exigée si l'établissement occupe la totalité du bâtiment et est entièrement équipé d'un système d'extinction automatique du type sprinkleur ou d'un SSI de catégorie A. Éviter le passage rapide des flammes ou des gaz chauds d'un étage à l'autre par la jonction façade-plancher (CO 21 §1) et, si les éléments de la façade comportent des vides susceptibles de créer un effet de cheminée, recouper ces vides tous les deux niveaux par des matériaux de catégorie M 0 (CO 21 §2). Vérifier le recoupement des circulations horizontales de grande longueur encloisonnées, tous les 25 à 30 m, par des parois et blocs-portes PF de degré 1/2 h munis d'un ferme-porte (CO 24 §1 c)."
+    preconisation: "Façades : vérifier la règle du C + D (CO 21 §3) : C + D ≥ 1,00 m si la masse combustible mobilisable M ≤ 80 MJ/m², C + D ≥ 1,30 m si M est supérieure à 80 MJ/m². Elle s'applique aux façades des bâtiments comportant des locaux réservés au sommeil au-dessus du 1er étage, à celles des bâtiments dont le plancher bas du dernier niveau est à plus de 8 m et qui sont divisés en secteurs (CO 24 §2) ou en compartiments (CO 25), aux parties de façade au droit des planchers hauts des locaux à risques importants et des planchers d'isolement avec un tiers ; elle n'est pas exigée si l'établissement occupe la totalité du bâtiment et est entièrement équipé d'un système d'extinction automatique du type sprinkleur ou d'un SSI de catégorie A. Éviter le passage rapide des flammes ou des gaz chauds d'un étage à l'autre par la jonction façade-plancher (CO 21 §1). Recouper, lorsque applicable, les vides de façade susceptibles de créer un effet de cheminée tous les deux niveaux par des matériaux de catégorie M 0 (CO 21 §2, dans les deux premiers cas visés au §3 a : locaux de sommeil au-dessus du 1er étage ; bâtiment de plus de 8 m divisé en secteurs ou en compartiments). Mesure distincte, de cloisonnement des circulations et non de façade : recouper les circulations horizontales de grande longueur encloisonnées tous les 25 à 30 m par des parois et blocs-portes PF de degré 1/2 h munis d'un ferme-porte (CO 24 §1 c)."
   },
   e06_02: {
     statut: 'valide', valide_le: '2026-11-11', redige_par: 'expert',
@@ -2260,8 +2260,8 @@ const MATRICE_PRECONISATIONS = {
   },
   e06_03: {
     statut: 'valide', valide_le: '2026-11-11', redige_par: 'expert',
-    source: "EL 10",
-    preconisation: "Obturer les traversées de parois par les canalisations électriques de façon à ne pas diminuer le degré coupe-feu de la paroi (EL 10)."
+    source: "EL 10 §4",
+    preconisation: "Obturer intérieurement et extérieurement les traversées de parois par les canalisations électriques, conformément à l'article 527.2 de la NF C 15-100 : 2002 et ses amendements, afin de ne pas diminuer le degré de résistance au feu prescrit pour la paroi (EL 10 §4)."
   },
   e06_04: {
     statut: 'valide', valide_le: '2026-11-11', redige_par: 'expert',
