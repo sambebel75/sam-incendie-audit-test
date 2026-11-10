@@ -894,7 +894,7 @@ input[type="number"], input[type="text"], input[type="email"], input[type="tel"]
 if ('serviceWorker' in navigator) {
   try {
     // Doit rester égale à VERSION dans sw.js : le message n'apparaît que si le service worker actif est plus récent que la page.
-    const VERSION_PAGE = 'v21';
+    const VERSION_PAGE = 'v22';
     let bandeauAffiche = false;
     navigator.serviceWorker.addEventListener('message', e => {
       if (!e.data || e.data.type !== 'sw-active' || e.data.version === VERSION_PAGE || bandeauAffiche) return;
@@ -1928,7 +1928,7 @@ const AUDIT_DATA = {
         {id:'e01_01',label:'Voie utilisable par les engins de secours accessible et dégagée',ref:'CO 2'},
         {id:'e01_02',label:'Signalisation et adressage de l\'établissement visibles',ref:'DECI'},
         {id:'e01_03',label:'Colonne sèche ou humide accessible (N/A si aucun plancher bas à plus de 18 m)',ref:'MS 18 / PE 26 §2'},
-        {id:'e01_04',label:'Points d\'eau à moins de 200 m (poteaux ou bouches)',ref:'DECI'},
+        {id:'e01_04',label:'Points d\'eau (poteaux ou bouches) accessibles et signalés selon les prescriptions du SDIS local',ref:'DECI'},
         {id:'e01_05',label:'Boîte à clés sécurisée ou dispositif de remise de clés aux secours',ref:'SDIS'},
         {id:'e01_06',label:'Aire de mise en station pompiers libre et dégagée',ref:'CO 2'},
       ]},
@@ -1953,7 +1953,6 @@ const AUDIT_DATA = {
         {id:'e04_02',label:'Vérification annuelle extincteurs attestée',ref:'MS 73'},
         {id:'e04_03',label:'RIA présents et conformes (si requis selon type ERP)',ref:'MS 14'},
         {id:'e04_04',label:'Vérification annuelle RIA attestée',ref:'MS 73'},
-        {id:'e04_05',label:'Colonne sèche/humide présente et conforme',ref:'MS 18',na_if:{minNiveaux:2},expert_note:'Colonne sèche applicable si bâtiment ≥ R+1 (CO 46). Colonne humide si ≥ R+4 ou hauteur > 18 m (CO 47). Non requis pour bâtiment de plain-pied ou RDC seul.'},
         {id:'e04_06',label:'Sprinklers ou extinction automatique (si requis)',ref:'Type ERP',na_if:{maxCat:3},expert_note:'L\'article particulier du type ERP peut atténuer l\'obligation de sprinklers de l\'article général (ex. type M avec séparation CF). Vérifier l\'article particulier avant tout chiffrage.'},
       ]},
       {id:'e05',name:'Installations électriques',points:[
@@ -2150,7 +2149,7 @@ const MATRICE_PRECONISATIONS = {
     preconisation: "Vérifier d'abord que l'obligation s'applique : plancher bas d'un étage à plus de 18 m du niveau de la voie accessible aux engins (MS 18 §1, rédaction en vigueur jusqu'au 01/06/2027, avec locaux à risques importants dans ces étages ; PE 26 §2 en 5e catégorie, dans les escaliers protégés). Si oui et colonne absente : installer une colonne sèche conforme aux normes françaises (MS 18 §2). Si elle existe, contrôler : raccords d'alimentation accessibles aux sapeurs-pompiers, signalés avec une pancarte indiquant l'escalier desservi, sur la façade la plus proche des bouches ou poteaux d'incendie, à 60 m au plus (MS 19) ; prises d'incendie dans les cages d'escalier (MS 20) ; dispositif de vidange et de purge d'air (MS 21). Colonne en charge (humide) : alimentation de 60 m³/h sous 4,5 à 8,5 bars pendant au moins 1 h (MS 23 §1) et réalimentation par deux orifices de 65 mm à moins de 60 m d'un poteau (MS 24 §1)."
   },
   e01_04: {
-    statut: 'a_valider',
+    statut: 'valide', valide_le: '2026-11-10',
     source: "MS 5 à MS 7",
     preconisation: "Faire évaluer les moyens en eau avec le service départemental d'incendie et de secours (MS 6 §1). Si les prises d'eau publiques sont trop éloignées ou de débit insuffisant, installer des bouches ou poteaux d'incendie normalisés, ou un point d'eau utilisable en permanence (MS 5). Contrôler que chaque point d'eau est facilement accessible en permanence, signalé selon la norme française et situé à 5 m au plus du bord de la chaussée ou de l'aire de stationnement des engins (MS 7)."
   },
@@ -2163,7 +2162,38 @@ const MATRICE_PRECONISATIONS = {
     statut: 'valide', valide_le: '2026-11-10',
     source: "CO 2 §2 et §4 ; desserte : CO 1 §3 a ; CO 3 §2 et §3",
     preconisation: "Libérer en permanence la section de voie utilisable pour la mise en station des échelles aériennes (voie échelle) et en interdire le stationnement. Contrôler : longueur au moins égale à 10 m ; largeur libre de chaussée au moins égale à 4 m ; pente au plus égale à 10 % ; position permettant aux échelles d'atteindre un point d'accès (balcon, coursive) depuis lequel toutes les baies de la façade sont atteignables, deux points d'accès distants de 20 m au plus ; raccordement à la voie publique par une voie engins si la section n'est pas sur la voie publique ; en impasse : largeur 10 m avec chaussée libre de stationnement de 7 m au moins. Panneau de tonnage visible et permanence des conditions assurées (CO 2 §4)."
+  },
+  e02_01: {
+    statut: 'a_valider',
+    source: "CO 35 §3 ; CO 37 §2 à §5 ; CO 38 ; PE 11 §3 et §5 (5e catégorie)",
+    preconisation: "Mettre le nombre et la largeur des dégagements en conformité avec l'effectif admis. Calcul : à chaque niveau, cumuler l'effectif du niveau et ceux des niveaux situés au-dessus (niveaux en surélévation) ou en dessous (sous-sols) ; au rez-de-chaussée, retenir l'effectif total de l'établissement (CO 38 §2). Ajouter au public le personnel qui ne dispose pas de dégagements indépendants (CO 37 §2). Au-delà de 200 personnes, ne pas admettre de dégagement normal de moins de deux unités de passage (CO 35 §3). Sous-sol dont le point le plus bas est à plus de 2 m en contrebas et recevant plus de 100 personnes : calculer à partir d'un effectif arrondi à la centaine supérieure et majoré de 10 % par mètre au-delà de 2 m (CO 38). Établissement de 5e catégorie : appliquer les nombres et largeurs de PE 11 §3."
+  },
+  e02_02: {
+    statut: 'a_valider',
+    source: "CO 35 §1 et §2 ; CO 36 §1 et §2 ; PE 11 §3 (5e catégorie)",
+    preconisation: "Mettre la largeur des dégagements en conformité : elle se calcule en unités de passage de 0,60 m, portée à 0,90 m pour une unité et à 1,40 m pour deux ; une largeur intermédiaire ne compte que pour la largeur type immédiatement inférieure (1,60 m compte pour 2 UP, soit 1,40 m) ; aucun rétrécissement du cheminement d'évacuation (CO 35 §1 et §2). Supprimer toute saillie ou tout dépôt qui réduit la largeur réglementaire ; les aménagements fixes sont admis jusqu'à 1,10 m de hauteur s'ils ne dépassent pas 0,10 m de saillie (CO 36 §1). Au-delà de la largeur minimale, le mobilier en saillie (hors dépôts) n'est admis que s'il ne gêne pas la circulation, ne peut être ni déplacé ni renversé et ne gêne pas les portes à fermeture automatique ; jamais dans un escalier protégé (CO 36 §2). Aménagement dans un immeuble existant de 5e catégorie : 0,90 m peut être ramené à 0,80 m (PE 11 §3)."
+  },
+  e02_03: {
+    statut: 'a_valider',
+    source: "CO 47 ; CO 34 §1 point 5 ; PE 11 §6 d (5e catégorie)",
+    preconisation: "Pour toute porte résistant au feu maintenue ouverte pour l'exploitation : la mettre en conformité avec la norme relative aux portes à fermeture automatique (ferme-porte et dispositif de maintien en ouverture libéré au moment du sinistre, CO 34 §1 point 5), poser la plaque visible « Porte coupe-feu. Ne mettez pas d'obstacle à la fermeture. » et obtenir la fermeture dans les conditions de l'article MS 60 (CO 47). Assurer la fermeture simultanée de l'ensemble des portes, commandée par la détection automatique, lorsque l'établissement comporte des locaux de sommeil au-dessus du premier étage, lorsqu'il existe des portes d'isolement à fermeture automatique visées à CO 10, ou lorsque le type l'exige (CO 47). Escaliers encloisonnés de 5e catégorie : ferme-porte, ou fermeture asservie à une détection automatique sensible aux fumées et aux gaz si la porte doit rester ouverte (PE 11 §6 d)."
+  },
+  e02_04: {
+    statut: 'a_valider',
+    source: "CO 42 ; CO 34 §2 ; PE 24 §2 (5e catégorie)",
+    preconisation: "Rétablir un balisage lisible de jour et de nuit sur tous les cheminements d'évacuation, placé de façon que, de tout point accessible au public, au moins une indication soit visible, même en cas d'affluence, et à une hauteur différente de celle des autres indications (CO 42 §1). Utiliser des panneaux opaques ou transparents, lumineux, rectangulaires, conformes à la norme NF X 08-003 ; réserver au balisage des dégagements les signaux blancs sur fond vert (dont les flèches directionnelles) ; remplacer les signaux normalisés n° 50041, 50042 et 50044, interdits dans les ERP (CO 42 §2). Si le cheminement d'évacuation est compliqué par l'exploitation, porter une attention particulière au balisage (CO 34 §2 point 1 a). Éclairage de sécurité d'évacuation des escaliers, des circulations de plus de 10 m ou à cheminement compliqué et des salles de plus de 100 m² (PE 24 §2, 5e catégorie)."
+  },
+  e02_05: {
+    statut: 'a_valider',
+    source: "PE 24 §2 (5e catégorie) ; EC 12 (texte non fourni)",
+    preconisation: "Remettre en état l'éclairage de sécurité d'évacuation des escaliers, des circulations horizontales de plus de 10 m ou à cheminement compliqué et des salles de plus de 100 m² (PE 24 §2). Si l'éclairage est assuré par des blocs autonomes, ceux-ci doivent respecter l'article EC 12 (PE 24 §2)."
   }
+};
+
+// Points retirés de la grille (identifiant : motif). Un dossier enregistré peut encore contenir leur note : elle est conservée
+// dans les données, mais le plan d actions l ignore.
+const POINTS_RETIRES = {
+  e04_05: "doublon de e01_03 (colonne sèche ou humide), retiré en v22"
 };
 
 // Entrée validée de la matrice pour un point, ou null (absente, non validée ou sans texte). Fonction pure.
@@ -5238,6 +5268,8 @@ function compilerActionsPlan(entree){
   Object.keys(scores).forEach(id => {
     const s = scores[id];
     if(!s) return;
+    // point retiré de la grille : sa note reste dans le dossier enregistré, mais ni le plan ni le compteur ne le reprennent
+    if(e.retires && Object.prototype.hasOwnProperty.call(e.retires, id)) return;
     const note = parseInt(s.note, 10);
     if(!(note >= 1 && note <= 5)) return;
     pointsNotes++;
@@ -5330,7 +5362,7 @@ function renderPlan() {
     }
 
     const plan = compilerActionsPlan({
-        scores: state.scores, points: pointsGrille, alertes: alertes, typeAudit: state.auditType, matrice: MATRICE_PRECONISATIONS,
+        scores: state.scores, points: pointsGrille, alertes: alertes, typeAudit: state.auditType, matrice: MATRICE_PRECONISATIONS, retires: POINTS_RETIRES,
         u43: state.auditType === 'erp' && typePrincipal === "U", filtre: currentPlanFilter
     });
     const actionsCompilees = plan.actions;
