@@ -894,7 +894,7 @@ input[type="number"], input[type="text"], input[type="email"], input[type="tel"]
 if ('serviceWorker' in navigator) {
   try {
     // Doit rester égale à VERSION dans sw.js : le message n'apparaît que si le service worker actif est plus récent que la page.
-    const VERSION_PAGE = 'v23';
+    const VERSION_PAGE = 'v24';
     let bandeauAffiche = false;
     navigator.serviceWorker.addEventListener('message', e => {
       if (!e.data || e.data.type !== 'sw-active' || e.data.version === VERSION_PAGE || bandeauAffiche) return;
@@ -1953,7 +1953,7 @@ const AUDIT_DATA = {
         {id:'e04_02',label:'Vérification annuelle extincteurs attestée',ref:'MS 73'},
         {id:'e04_03',label:'RIA présents et conformes (si requis selon type ERP)',ref:'MS 14'},
         {id:'e04_04',label:'Vérification annuelle RIA attestée',ref:'MS 73'},
-        {id:'e04_06',label:'Sprinklers ou extinction automatique (si requis)',ref:'Type ERP',na_if:{maxCat:3},expert_note:'L\'article particulier du type ERP peut atténuer l\'obligation de sprinklers de l\'article général (ex. type M avec séparation CF). Vérifier l\'article particulier avant tout chiffrage.'},
+        {id:'e04_06',label:'Sprinklers ou extinction automatique (si requis)',ref:'MS 25 / MS 73 §4 / art. du type',na_if:{maxCat:3},expert_note:'Vérifier les dispositions particulières du type (ex: M 26) pour les dérogations éventuelles.'},
       ]},
       {id:'e05',name:'Installations électriques',points:[
         {id:'e05_01',label:'Vérification électrique annuelle ou périodique réalisée',ref:'EL 19'},
@@ -2222,6 +2222,31 @@ const MATRICE_PRECONISATIONS = {
     statut: 'a_valider',
     source: "DF 9 ; DF 10 §1, §2 et §3",
     preconisation: "Faire vérifier les installations de désenfumage tous les ans, dans les conditions des articles GE 6 à GE 10 (DF 10 §1 et §2) : fonctionnement des commandes manuelles et automatiques ; des volets, exutoires et ouvrants ; fermeture des éléments mobiles de compartimentage qui participent au désenfumage ; arrêt de la ventilation de confort (DF 3 §5) ; fonctionnement des ventilateurs ; mesures de pression, de débit et de vitesse en désenfumage mécanique. Si l'installation comprend un désenfumage mécanique et un SSI de catégorie A ou B : vérifications tous les trois ans par un organisme agréé (DF 10 §3). Faire effectuer périodiquement par un personnel compétent l'entretien des sources de sécurité (EL 18), l'entretien courant des éléments mécaniques et électriques selon les prescriptions des constructeurs et l'entretien du système de sécurité (MS 68, notice du constructeur) ; règles d'exploitation et de maintenance : MS 69 et NF S 61-933 (DF 9)."
+  },
+  e04_01: {
+    statut: 'valide', valide_le: '2026-11-11',
+    source: "MS 38 / MS 39",
+    preconisation: "Installer des extincteurs adaptés aux risques (eau pulvérisée pour les feux secs, CO2 pour l'électrique) à raison d'un minimum de 1 appareil pour 200 m², avec un minimum de 2 appareils par niveau. Vérifier leur signalisation et leur accessibilité."
+  },
+  e04_02: {
+    statut: 'a_valider',
+    source: "MS 73 §2 ; MS 74 ; MS 75",
+    preconisation: "Faire vérifier tous les extincteurs au moins une fois par an (MS 73 §2) et classer au registre de sécurité les rapports, attestations et documents remis après chaque examen ou intervention (MS 75). Permettre aux commissions de sécurité le contrôle efficace des moyens de secours, avec le personnel compétent et le matériel nécessaires aux essais (MS 74)."
+  },
+  e04_03: {
+    statut: 'a_valider',
+    source: "MS 14 à MS 17 ; M 26 (type M)",
+    preconisation: "Si des robinets d'incendie armés sont exigés par l'article du type, les installer ou les remettre en conformité : diamètre nominal DN 19/6, DN 25/8 ou DN 33/12, numérotés en série unique (MS 14) ; placés à l'intérieur des bâtiments, le plus près possible et à l'extérieur des locaux à protéger, en nombre et emplacements tels que toute la surface des locaux soit efficacement atteinte, et tout point des locaux à risques importants battu par deux jets de lance au moins ; armoires ou coffrets signalés et sans dispositif de condamnation (MS 15) ; alimentés par une canalisation d'eau en pression desservie par les conduites publiques, ou exceptionnellement par réservoirs élevés ou sous pression (MS 16) ; pression minimale de fonctionnement de 2,5 bars au robinet le plus défavorisé, avec un manomètre à robinets à trois voies près de ce robinet (MS 17). Exemple type M : RIA DN 19/6 ou 25/8 exigés dans les locaux de vente de plus de 3 000 m² (un jet de lance) et dans les établissements de 1re, 2e et 3e catégorie jusqu'à 3 000 m² (deux jets de lance) (M 26)."
+  },
+  e04_04: {
+    statut: 'a_valider',
+    source: "MS 72 ; MS 73 §2 ; MS 75",
+    preconisation: "Faire vérifier les robinets d'incendie armés au moins une fois par an (MS 73 §2) et classer au registre de sécurité les rapports et attestations remis après chaque examen ou intervention (MS 75). Maintenir les appareils en permanence en bon état de fonctionnement, avec pancartes indicatrices de manœuvre à proximité (MS 72)."
+  },
+  e04_06: {
+    statut: 'a_valider',
+    source: "MS 25 §1 à §4 ; MS 73 §1, §2 et §4 ; M 26 a (type M)",
+    preconisation: "Si un système d'extinction automatique du type sprinkleur est exigé : le faire conforme aux normes françaises homologuées et réalisé par des entreprises spécialisées et dûment qualifiées (MS 25 §4) ; isoler la partie protégée de la partie non protégée dans les conditions des locaux à risques particuliers (MS 25 §2) ; ne pas aménager ni exploiter les locaux d'une façon qui s'oppose au fonctionnement du système (MS 25 §3). Faire vérifier le système avant mise en service par une personne ou un organisme agréé (MS 73 §1), puis tous les trois ans par une personne ou un organisme agréé (MS 73 §2). La vérification triennale comprend l'examen de l'adéquation du système avec les classes de risque au vu du dossier technique et une visite du site, l'examen des conditions de maintenance et d'exploitation, et des essais sur le démarrage et le débit des pompes et sur les dispositifs d'alarme dédiés (MS 73 §4). Exemple type M : installation d'extinction automatique à eau appropriée aux risques dans les locaux de vente de plus de 3 000 m² (M 26 a)."
   }
 };
 
