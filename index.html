@@ -893,7 +893,7 @@ input[type="number"], input[type="text"], input[type="email"], input[type="tel"]
 if ('serviceWorker' in navigator) {
   try {
     // Doit rester égale à VERSION dans sw.js : le message n'apparaît que si le service worker actif est plus récent que la page.
-    const VERSION_PAGE = 'v16';
+    const VERSION_PAGE = 'v17';
     let bandeauAffiche = false;
     navigator.serviceWorker.addEventListener('message', e => {
       if (!e.data || e.data.type !== 'sw-active' || e.data.version === VERSION_PAGE || bandeauAffiche) return;
@@ -3070,6 +3070,8 @@ const ESSAI_ACTIVITES = [
   ['Y', 'Musée'],
   ['S', 'Bibliothèque, centre de documentation'],
   ['T', "Salle d'exposition"],
+  ['OA', "Hôtel-restaurant d'altitude"],
+  ['PA', 'Établissement de plein air'],
 ];
 
 const ESSAI_CATEGORIES = [
@@ -5774,12 +5776,12 @@ function rendrePrecisionsSeuils(forcer){
         <input type="checkbox"${p.niveauUniqueEnEtageR?' checked':''} onchange="majPrecisionSeuil('niveauUniqueEnEtageR',this.checked,'coche')">&nbsp;L'établissement ne comporte qu'un seul niveau situé en étage</label>`;
     }
   }
-  champs += nb('effectifEtages', 'Public présent aux ÉTAGES seulement (niveaux au-dessus du RDC)', '0 si aucun');
+  champs += nb('effectifEtages', 'Public présent aux ÉTAGES seulement (niveaux au-dessus du RDC)', 'vide = personne aux étages');
   champs += nb('personnelNonIndependant', "Personnel n'occupant pas de locaux indépendants", 'pour la catégorie');
   cible.innerHTML = `<div style="background:#f7fafc;padding:15px;border-radius:6px;border:1px solid #e2e8f0;margin-bottom:16px;font-family:sans-serif">
       <h4 style="margin:0 0 4px 0;color:#4a5568;font-size:14px">Précisions pour les seuils (PE 2 §1) et la catégorie (R. 143-19)</h4>
       <p style="margin:0 0 6px;font-size:11px;color:#718096">Sans ces données, le groupe ERP reste « indéterminé » : l'outil ne conclut ni 5e catégorie ni 1er groupe. La case « Locaux à sommeil » est dans l'onglet Identification (déterminante pour les types R et U).</p>
-      <p style="margin:0 0 10px;font-size:11px;color:#92400e"><strong>Attention :</strong> le champ « étages » ne reçoit que le public qui se trouve aux étages, pas l'effectif total. Le total est « Effectif à évacuer » ci-dessus, ou RDC + sous-sol + étages. Un seuil propre aux étages ou au sous-sol peut suffire à classer en 1er groupe (PE 2 §1).</p>
+      <p style="margin:0 0 10px;font-size:11px;color:#92400e"><strong>Attention :</strong> le champ « étages » ne reçoit que le public qui se trouve aux étages, pas l'effectif total. Laissez-le vide s'il n'y a personne aux étages (compté 0). Le total est « Effectif à évacuer » ci-dessus, ou RDC + sous-sol + étages. Un seuil propre aux étages ou au sous-sol peut suffire à classer en 1er groupe (PE 2 §1).</p>
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px">${champs}</div>
       <div style="display:flex;justify-content:flex-end;align-items:center;flex-wrap:wrap;gap:8px;margin-top:10px">
         <button type="button" id="btn-raz-precisions" onclick="reinitialiserPrecisionsSeuils()" title="Vide les précisions de ce bloc. L'effectif, les sous-sols et la case « Locaux à sommeil » ne changent pas." style="font-size:12px;padding:5px 10px;border:1px solid #cbd5e0;border-radius:6px;background:#fff;color:#4a5568;cursor:pointer">Remettre les précisions à zéro</button>
@@ -6422,8 +6424,7 @@ const REFERENTIEL_HABITATION_DOMAINS = [
 // Six sujets séparés : (1) lignes de seuils applicables, (2) groupe ERP (5e catégorie ou 1er groupe), (3) catégorie,
 // (4) désenfumage d'un local, (5) qualification IGH, (6) conditions techniques (dans les fonctions d'affichage).
 // Chaque tableau porte un statut : 'a_valider' tant qu'une ligne n'a pas été validée par un expert certifié en
-// sécurité incendie, puis 'valide'. Les tableaux doivent rester égaux à la fiche
-// sam-incendie-audit/validation/fiche-validation-seuils.json (test tests/seuils.test.js).
+// sécurité incendie, puis 'valide'. Les tableaux doivent rester égaux à la fiche de validation de l'expert (test tests/seuils.test.js).
 const MENTION_A_VALIDER = 'À VALIDER par un expert certifié en sécurité incendie';
 const INTERDIT = 'interdit';   // activité interdite à ce niveau : ce n'est ni 0 ni une valeur chiffrée
 
@@ -6813,16 +6814,19 @@ function entreeGroupeErp(effPublicSaisi){
   const df = state.desenfumage || {};
   const rdc = parseInt(state.effectifRdc,10) || 0;
   const ss  = parseInt(df.effectifSousSol,10) || 0;
-  const et  = nombre(p.effectifEtages);
+  // Champ « étages » vide = personne aux étages : saisie facultative. Le moteur reçoit 0 ; la glue garde la trace
+  // (etagesNonSaisi) : trace conservée pour affichage et pour signaler la limite.
+  const etSaisi = nombre(p.effectifEtages);
+  const et  = etSaisi===null ? 0 : etSaisi;
   const ctx = {
     populationJ:p.populationJ||'', activiteL:p.activiteL||'', naturePolyvalente:p.naturePolyvalente||'', surfaceSalleL:p.surfaceSalleL, hauteurSalleL:p.hauteurSalleL,
     brancheR:p.brancheR||'', niveauUniqueEnEtage:!!p.niveauUniqueEnEtageR, sommeil:!!(state.identification && state.identification.sommeil)
   };
   let eff;
   if(effPublicSaisi!==undefined && effPublicSaisi!==null){
-    eff = {global:Number(effPublicSaisi)||0, globalExact:true, sousSol:ss, etages:et, rdc:null, saisiCalculette:true};
+    eff = {global:Number(effPublicSaisi)||0, globalExact:true, sousSol:ss, etages:et, rdc:null, saisiCalculette:true, etagesNonSaisi:etSaisi===null};
   } else {
-    eff = {global:rdc+ss+(et===null?0:et), globalExact:et!==null, sousSol:ss, etages:et, rdc:rdc, saisiCalculette:false};
+    eff = {global:rdc+ss+et, globalExact:true, sousSol:ss, etages:et, rdc:rdc, saisiCalculette:false, etagesNonSaisi:etSaisi===null};
   }
   eff.residents = p.residentsJ;
   eff.totalJ = p.effectifTotalJ;
@@ -6831,7 +6835,7 @@ function entreeGroupeErp(effPublicSaisi){
 // Phrase qui dit à l'écran QUELS effectifs et quelles options ont servi au calcul (pour que chacun puisse le vérifier).
 function recapEffectifsErp(entree){
   const e = entree.eff, c = entree.ctx;
-  const et = (e.etages===null || e.etages===undefined) ? 'non saisi' : e.etages;
+  const et = e.etagesNonSaisi ? '0 (non saisi)' : ((e.etages===null || e.etages===undefined) ? 'non saisi' : e.etages);
   let t = e.saisiCalculette
     ? `Effectif saisi (ensemble des niveaux) : ${e.global} · sous-sol : ${e.sousSol} · étages : ${et}`
     : `RDC ${e.rdc} + sous-sol ${e.sousSol} + étages ${et} = ensemble des niveaux : ${e.global}${e.globalExact ? '' : ' (au minimum)'}`;
@@ -6847,7 +6851,10 @@ function getCategorieERP(effPublicSaisi){
   const pub = (effPublicSaisi!==undefined && effPublicSaisi!==null) ? nombre(effPublicSaisi) : entree.eff.global;
   const c = moteurCategorie({groupe:g.groupe, effectifPublic:pub, personnel:precisionsSeuils().personnelNonIndependant, manquantsGroupe:g.manquants});
   const notes = c.notes.slice();
-  if(!c.indeterminee && !entree.eff.globalExact && c.categorie<=4 && g.groupe==='1er') notes.push("Effectif du public aux étages non saisi : catégorie calculée au minimum.");
+  if(entree.eff.etagesNonSaisi && !c.indeterminee){
+    if(g.groupe==='5e') notes.push("Public aux étages non saisi : compté 0. S'il y a du public aux étages, saisissez-le : un seuil propre aux étages peut classer l'établissement en 1er groupe (PE 2 §1).");
+    else if(g.groupe==='1er' && !entree.eff.saisiCalculette && c.categorie<=4) notes.push("Public aux étages non saisi : compté 0, la catégorie est calculée au minimum.");
+  }
   if(entree.eff.saisiCalculette){
     const parties = (entree.eff.sousSol||0) + (entree.eff.etages||0);
     if(parties > entree.eff.global) notes.push("Incohérence : la calculette indique "+entree.eff.global+" personnes pour l'ensemble des niveaux, mais sous-sol + étages = "+parties+". Les champs sous-sol et étages comptent le public de ces niveaux, ils font partie de l'effectif total.");
