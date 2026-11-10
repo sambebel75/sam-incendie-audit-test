@@ -1,9 +1,9 @@
 const PREFIX = 'sam-incendie-';
-const VERSION = 'v17';
+const VERSION = 'v18';
 const CACHE = PREFIX + VERSION;
 const CHART_URL = 'https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js';
 const COEUR = ['./index.html', './manifest.json'];
-const COMPLEMENTS = ['./icons/icon-192.png', './icons/icon-512.png', './icons/icon-512-maskable.png', CHART_URL];
+const COMPLEMENTS = ['./icons/icon-192.png', './icons/icon-512.png', './icons/icon-512-maskable.png', './icons/apple-touch-icon.png', './icons/favicon-32x32.png', CHART_URL];
 // Réseau lent mais pas coupé : au-delà de ce délai on sert la copie en cache (qui reste mise à jour en arrière-plan).
 const DELAI_RESEAU_MS = 8000;
 
