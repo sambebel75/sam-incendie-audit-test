@@ -894,7 +894,7 @@ input[type="number"], input[type="text"], input[type="email"], input[type="tel"]
 if ('serviceWorker' in navigator) {
   try {
     // Doit rester égale à VERSION dans sw.js : le message n'apparaît que si le service worker actif est plus récent que la page.
-    const VERSION_PAGE = 'v30';
+    const VERSION_PAGE = 'v31';
     let bandeauAffiche = false;
     navigator.serviceWorker.addEventListener('message', e => {
       if (!e.data || e.data.type !== 'sw-active' || e.data.version === VERSION_PAGE || bandeauAffiche) return;
@@ -1933,13 +1933,13 @@ const AUDIT_DATA = {
         {id:'e01_06',label:'Aire de mise en station pompiers libre et dégagée',ref:'CO 2'},
       ]},
       {id:'e02',name:'Évacuation',points:[
-        {id:'e02_01',label:'Nombre de dégagements conforme (UP selon effectif et type)',ref:'CO 38'},
-        {id:'e02_02',label:'Largeur des dégagements conforme (1 UP = 0,90 m ; 2 UP = 1,40 m)',ref:'CO 35 / CO 36'},
+        {id:'e02_01',label:'Nombre de dégagements conforme (UP selon effectif et type)',ref:'CO 36 / CO 38'},
+        {id:'e02_02',label:'Largeur des dégagements conforme (1 UP = 0,90 m ; 2 UP = 1,40 m)',ref:'CO 36 / CO 37'},
         {id:'e02_03',label:'Portes CF à fermeture automatique sur dégagements',ref:'CO 47'},
         {id:'e02_04',label:'Balisage d\'évacuation conforme (BAES, panneaux selon NF X 08-003)',ref:'CO 42 / EC 9'},
         {id:'e02_05',label:'Éclairage de sécurité fonctionnel (autonomie ≥ 1 h)',ref:'EC 7 / EC 13 à EC 15'},
         {id:'e02_06',label:'Plans d\'évacuation et plan d\'intervention affichés',ref:'MS 41 / MS 47 / O 21 §2'},
-        {id:'e02_08',label:'Exercices d\'instruction du personnel organisés et consignés au registre de sécurité',ref:'MS 51'},
+        {id:'e02_08',label:'Formation et exercices du personnel réalisés, date portée au registre de sécurité (J : au moins 1 fois par semestre ; R : dans l\'année scolaire)',ref:'MS 48 §1 / MS 51 / J 39 §2 / R 33'},
       ]},
       {id:'e03',name:'Désenfumage',points:[
         {id:'e03_01',label:'Zones de désenfumage identifiées et conformes au règlement',ref:'DF 5 / DF 6 / DF 7'},
@@ -1984,14 +1984,10 @@ const AUDIT_DATA = {
         {id:'e08_04',label:'Report d\'alarme au PC sécurité / poste gardien fonctionnel',ref:'MS 66'},
       ]},
       {id:'e09',name:'Formation du personnel',points:[
-        {id:'e09_01',label:'Formation et exercices du personnel réalisés, date portée au registre de sécurité (J : au moins 1 fois par semestre ; R : dans l\'année scolaire)',ref:'MS 48 §1 / MS 51 / J 39 §2 / R 33'},
-        {id:'e09_02',label:'Équipiers de Première Intervention (EPI) formés et opérationnels',ref:'MS 46 / MS 48'},
-        {id:'e09_03',label:'SSIAP présent si requis (selon type et catégorie ERP)',ref:'D. 2009-1685',na_if:{maxCat:3},expert_note:'L\'obligation SSIAP dépend du type, de la catégorie ET de la présence de locaux à sommeil. Certains types (W, M sans sommeil) peuvent n\'exiger qu\'un EPI interne sans SSIAP. L\'article particulier prime sur le décret 2009-1685 en cas de contradiction.'},
+        {id:'e09_03',label:'SSIAP présent si requis (selon type et catégorie ERP)',ref:'MS 46 / MS 48 §2 / art. du type',na_if:{maxCat:3},expert_note:'L\'obligation SSIAP dépend du type, de la catégorie ET de la présence de locaux à sommeil. Certains types (W, M sans sommeil) peuvent n\'exiger qu\'un EPI interne sans SSIAP. L\'article particulier prime sur le décret 2009-1685 en cas de contradiction.'},
       ]},
       {id:'e10',name:'Stockage / Dégagements',points:[
         {id:'e10_01',label:'Dégagements libres de tout stockage (couloirs, escaliers, halls)',ref:'CO 37'},
-        {id:'e10_02',label:'Locaux à risques particuliers identifiés et isolés selon leur classement',ref:'CO 27 / CO 28'},
-        {id:'e10_03',label:'Zones de stockage conformes, isolées et signalées',ref:'CO 27 / CO 28'},
       ]},
     ]
   }
@@ -2113,7 +2109,7 @@ const ERP_TYPE_SPECIFICS = {
     {id:'u_01_01',label:"Chaque niveau abritant des locaux à sommeil est-il divisé en au moins deux compartiments isolés (EI 60 / Portes E 30-C) ?",ref:'Art. U 10'},
     {id:'u_01_02',label:"Les circulations horizontales desservant des locaux à sommeil font-elles au moins 1,40 m de largeur libre (2 UP non atténué) ?",ref:'Art. U 17'},
     {id:'u_01_03',label:"Les zones de circulation menant aux zones de transfert horizontal sont-elles entièrement libres et sans obstacles fixes ?",ref:'Art. U 18'},
-    {id:'u_02_01',label:"L'établissement est-il doté d'un SSI de Catégorie A fonctionnel avec Détection Automatique Incendie (DAI) généralisée ?",ref:'Art. U 43'},
+    {id:'u_02_01',label:"L'établissement est-il doté d'un SSI de Catégorie A fonctionnel avec Détection Automatique Incendie (DAI) généralisée ?",ref:'Art. U 44'},
     {id:'u_02_02',label:"La détection d'une tête optique en circulation ou en chambre déclenche-t-elle le passage en position de sécurité des portes coupe-feu ?",ref:'Art. U 44'},
     {id:'u_02_03',label:"Existe-t-il une commande manuelle de désenfumage mécanique par compartiment au Poste de Sécurité ?",ref:'Art. U 32'},
   ]},
@@ -2163,13 +2159,13 @@ const MATRICE_PRECONISATIONS = {
   },
   e02_01: {
     statut: 'valide', valide_le: '2026-11-10',
-    source: "CO 35 §3 ; CO 37 §2 à §5 ; CO 38 ; PE 11 §3 et §5 (5e catégorie)",
-    preconisation: "Mettre le nombre et la largeur des dégagements en conformité avec l'effectif admis. Calcul : à chaque niveau, cumuler l'effectif du niveau et ceux des niveaux situés au-dessus (niveaux en surélévation) ou en dessous (sous-sols) ; au rez-de-chaussée, retenir l'effectif total de l'établissement (CO 38 §2). Ajouter au public le personnel qui ne dispose pas de dégagements indépendants (CO 37 §2). Au-delà de 200 personnes, ne pas admettre de dégagement normal de moins de deux unités de passage (CO 35 §3). Sous-sol dont le point le plus bas est à plus de 2 m en contrebas et recevant plus de 100 personnes : calculer à partir d'un effectif arrondi à la centaine supérieure et majoré de 10 % par mètre au-delà de 2 m (CO 38). Établissement de 5e catégorie : appliquer les nombres et largeurs de PE 11 §3."
+    source: "CO 36 ; CO 38 ; PE 11 §3 et §5 (5e catégorie)",
+    preconisation: "Mettre le nombre et la largeur des dégagements en conformité avec l'effectif admis. Calcul : à chaque niveau, cumuler l'effectif du niveau et ceux des niveaux situés au-dessus (niveaux en surélévation) ou en dessous (sous-sols) ; au rez-de-chaussée, retenir l'effectif total de l'établissement (CO 38 §2). Ajouter au public le personnel qui ne dispose pas de dégagements indépendants (CO 36). Au-delà de 200 personnes, ne pas admettre de dégagement normal de moins de deux unités de passage (CO 36). Sous-sol dont le point le plus bas est à plus de 2 m en contrebas et recevant plus de 100 personnes : calculer à partir d'un effectif arrondi à la centaine supérieure et majoré de 10 % par mètre au-delà de 2 m (CO 38). Établissement de 5e catégorie : appliquer les nombres et largeurs de PE 11 §3."
   },
   e02_02: {
     statut: 'valide', valide_le: '2026-11-10',
-    source: "CO 35 §1 et §2 ; CO 36 §1 et §2 ; PE 11 §3 (5e catégorie)",
-    preconisation: "Mettre la largeur des dégagements en conformité : elle se calcule en unités de passage de 0,60 m, portée à 0,90 m pour une unité et à 1,40 m pour deux ; une largeur intermédiaire ne compte que pour la largeur type immédiatement inférieure (1,60 m compte pour 2 UP, soit 1,40 m) ; aucun rétrécissement du cheminement d'évacuation (CO 35 §1 et §2). Supprimer toute saillie ou tout dépôt qui réduit la largeur réglementaire ; les aménagements fixes sont admis jusqu'à 1,10 m de hauteur s'ils ne dépassent pas 0,10 m de saillie (CO 36 §1). Au-delà de la largeur minimale, le mobilier en saillie (hors dépôts) n'est admis que s'il ne gêne pas la circulation, ne peut être ni déplacé ni renversé et ne gêne pas les portes à fermeture automatique ; jamais dans un escalier protégé (CO 36 §2). Aménagement dans un immeuble existant de 5e catégorie : 0,90 m peut être ramené à 0,80 m (PE 11 §3)."
+    source: "CO 36 ; CO 37 §1 et §2 ; PE 11 §3 (5e catégorie)",
+    preconisation: "Mettre la largeur des dégagements en conformité : elle se calcule en unités de passage de 0,60 m, portée à 0,90 m pour une unité et à 1,40 m pour deux ; une largeur intermédiaire ne compte que pour la largeur type immédiatement inférieure (1,60 m compte pour 2 UP, soit 1,40 m) ; aucun rétrécissement du cheminement d'évacuation (CO 36). Supprimer toute saillie ou tout dépôt qui réduit la largeur réglementaire ; les aménagements fixes sont admis jusqu'à 1,10 m de hauteur s'ils ne dépassent pas 0,10 m de saillie (CO 37 §1). Au-delà de la largeur minimale, le mobilier en saillie (hors dépôts) n'est admis que s'il ne gêne pas la circulation, ne peut être ni déplacé ni renversé et ne gêne pas les portes à fermeture automatique ; jamais dans un escalier protégé (CO 37 §2). Aménagement dans un immeuble existant de 5e catégorie : 0,90 m peut être ramené à 0,80 m (PE 11 §3)."
   },
   e02_03: {
     statut: 'valide', valide_le: '2026-11-10',
@@ -2193,8 +2189,8 @@ const MATRICE_PRECONISATIONS = {
   },
   e02_08: {
     statut: 'valide', valide_le: '2026-11-10',
-    source: "MS 51 ; U 47 §2 (type U) ; R 33 (type R)",
-    preconisation: "Organiser des exercices d'instruction du personnel sous la responsabilité de l'exploitant et porter leur date sur le registre de sécurité (MS 51). Exercices d'évacuation, selon le type : périodiques en type U (U 47 §2) ; pratiques, au cours de l'année scolaire, le premier dans le mois suivant la rentrée, de nuit si l'établissement a des locaux à sommeil, durée d'évacuation consignée au registre, en type R (R 33)."
+    source: "MS 48 §1 ; MS 51 ; MS 67 §3 ; MS 72 §1 ; J 39 ; U 47 §2 (type U) ; R 33 (type R) ; PE 27 §2 c et §5",
+    preconisation: "Organiser des exercices d'instruction du personnel sous la responsabilité de l'exploitant et porter leur date sur le registre de sécurité (MS 51). Exercices d'évacuation, selon le type : périodiques en type U (U 47 §2) ; pratiques, au cours de l'année scolaire, le premier dans le mois suivant la rentrée, de nuit si l'établissement a des locaux à sommeil, durée d'évacuation consignée au registre, en type R (R 33). Faire donner au personnel une formation conduite à l'initiative et sous la responsabilité de l'exploitant (MS 48 §1). Informer le personnel de la caractéristique et de la signification du signal sonore d'alarme générale, cette information pouvant être complétée par des exercices périodiques d'évacuation (MS 67 §3 ; PE 27 §2 c). Initier le personnel à la mise en œuvre des appareils d'extinction et d'alerte, cette information étant maintenue dans le temps (MS 72 §1). Type J : informer tout le personnel des dangers d'un incendie et des consignes, et organiser des exercices pratiques au moins une fois par semestre (J 39 §1 et §2). 5e catégorie : instruire le personnel sur la conduite à tenir en cas d'incendie et l'entraîner à la manœuvre des moyens de secours (PE 27 §5)."
   },
   e03_01: {
     statut: 'a_valider',
@@ -2263,8 +2259,8 @@ const MATRICE_PRECONISATIONS = {
   },
   e06_04: {
     statut: 'valide', valide_le: '2026-11-11', redige_par: 'expert',
-    source: "CO 27 / CO 28",
-    preconisation: "Classer les locaux selon leur risque (CO 27) puis les isoler selon leur classement (CO 28). Local à risques importants : planchers hauts et parois CF de degré 2 h ; communication avec les autres locaux CF de degré 1 h, ouverture vers la sortie, portes munies de ferme-porte ; pas de communication directe avec les locaux et dégagements accessibles au public ; façades établies suivant la section V ; conduits et gaines selon CO 32 et CO 33 (CO 28 §1). Local à risques moyens : façades comme ci-dessus ; isolé des locaux et dégagements accessibles au public par des planchers hauts et parois CF de degré 1 h avec blocs-portes CF de degré 1/2 h équipés d'un ferme-porte ; conduits selon CO 31 (CO 28 §2)."
+    source: "CO 27 / CO 28 ; CO 26 §2 ; EL 5 §3",
+    preconisation: "Classer les locaux selon leur risque (CO 27) puis les isoler selon leur classement (CO 28). Local à risques importants : planchers hauts et parois CF de degré 2 h ; communication avec les autres locaux CF de degré 1 h, ouverture vers la sortie, portes munies de ferme-porte ; pas de communication directe avec les locaux et dégagements accessibles au public ; façades établies suivant la section V ; conduits et gaines selon CO 32 et CO 33 (CO 28 §1). Local à risques moyens : façades comme ci-dessus ; isolé des locaux et dégagements accessibles au public par des planchers hauts et parois CF de degré 1 h avec blocs-portes CF de degré 1/2 h équipés d'un ferme-porte ; conduits selon CO 31 (CO 28 §2). Les listes de locaux à risques particuliers sont fixées par les chapitres techniques et par le type, et peuvent être complétées après avis de la commission de sécurité dans chaque cas particulier (CO 27 §2). Recouper les combles inaccessibles et l'intervalle entre plancher et plafond suspendu, sauf protection par un réseau fixe d'extinction automatique à eau ou situation dans un compartiment (CO 26 §2). Locaux de service électrique : isolement selon EL 5 §3."
   },
   e06_05: {
     statut: 'a_valider', a_revoir_le: '2027-06-01',
@@ -2303,8 +2299,8 @@ const MATRICE_PRECONISATIONS = {
   },
   e07_02: {
     statut: 'valide', valide_le: '2026-11-11', redige_par: 'expert',
-    source: "MS 46 ; MS 48 §1 et §2",
-    preconisation: "Désigner un responsable de la sécurité incendie et du personnel formé (SSIAP) selon la catégorie et le type de l'établissement (MS 46). Pendant la présence du public, composer le service de sécurité incendie, selon le type, la catégorie et les caractéristiques de l'établissement, de personnes désignées par l'exploitant et entraînées à la manœuvre des moyens de secours et à l'évacuation du public, d'agents de sécurité incendie dont la qualification est définie à l'article MS 48, de sapeurs-pompiers d'un service public de secours, ou d'une combinaison de ces possibilités déterminée après avis de la commission compétente (MS 46 §1 a à d). Lorsque le service est assuré par des agents de sécurité incendie : au moins trois personnes présentes simultanément, dont un chef d'équipe, l'effectif étant adapté à l'importance de l'établissement ; le chef d'équipe et un agent au moins ne sont pas distraits de leurs missions spécifiques ; les autres agents peuvent être employés à des tâches de maintenance technique mais restent en liaison permanente avec le poste de sécurité ; placer le service sous la direction d'un chef de service de sécurité incendie spécifiquement affecté lorsque les dispositions particulières le prévoient (MS 46 §1). Missions du service : connaître et faire appliquer les consignes en cas d'incendie, notamment pour l'évacuation des personnes en situation de handicap ; prendre éventuellement, sous l'autorité de l'exploitant, les premières mesures de sécurité ; assurer la vacuité et la permanence des cheminements d'évacuation jusqu'à la voie publique ; diriger les secours en attendant les sapeurs-pompiers ; veiller au bon fonctionnement du matériel de protection contre l'incendie, en effectuer ou en faire effectuer les essais et l'entretien ; organiser des rondes, y compris dans les locaux non occupés (MS 46 §2). Faire donner aux personnes désignées une formation conduite à l'initiative et sous la responsabilité de l'exploitant, et faire vérifier la qualification des agents de sécurité incendie dans les conditions définies par arrêté ministériel (MS 48 §1 et §2). En atténuation, une convention annexée au registre de sécurité peut organiser le service de sécurité lors de manifestations ou d'activités dans les établissements autres que ceux de la 1re catégorie, sans hébergement, disposant d'une alarme générale ne nécessitant pas de surveillance humaine et dont l'effectif total n'excède pas 300 personnes (MS 46 §3)."
+    source: "MS 46 ; MS 48 §1 et §2 ; M 29 ; U 43 ; PE 27 §5",
+    preconisation: "Désigner un responsable de la sécurité incendie et du personnel formé (SSIAP) selon la catégorie et le type de l'établissement (MS 46). Pendant la présence du public, composer le service de sécurité incendie, selon le type, la catégorie et les caractéristiques de l'établissement, de personnes désignées par l'exploitant et entraînées à la manœuvre des moyens de secours et à l'évacuation du public, d'agents de sécurité incendie dont la qualification est définie à l'article MS 48, de sapeurs-pompiers d'un service public de secours, ou d'une combinaison de ces possibilités déterminée après avis de la commission compétente (MS 46 §1 a à d). Lorsque le service est assuré par des agents de sécurité incendie : au moins trois personnes présentes simultanément, dont un chef d'équipe, l'effectif étant adapté à l'importance de l'établissement ; le chef d'équipe et un agent au moins ne sont pas distraits de leurs missions spécifiques ; les autres agents peuvent être employés à des tâches de maintenance technique mais restent en liaison permanente avec le poste de sécurité ; placer le service sous la direction d'un chef de service de sécurité incendie spécifiquement affecté lorsque les dispositions particulières le prévoient (MS 46 §1). Missions du service : connaître et faire appliquer les consignes en cas d'incendie, notamment pour l'évacuation des personnes en situation de handicap ; prendre éventuellement, sous l'autorité de l'exploitant, les premières mesures de sécurité ; assurer la vacuité et la permanence des cheminements d'évacuation jusqu'à la voie publique ; diriger les secours en attendant les sapeurs-pompiers ; veiller au bon fonctionnement du matériel de protection contre l'incendie, en effectuer ou en faire effectuer les essais et l'entretien ; organiser des rondes, y compris dans les locaux non occupés (MS 46 §2). Faire donner aux personnes désignées une formation conduite à l'initiative et sous la responsabilité de l'exploitant, et faire vérifier la qualification des agents de sécurité incendie dans les conditions définies par arrêté ministériel (MS 48 §1 et §2). En atténuation, une convention annexée au registre de sécurité peut organiser le service de sécurité lors de manifestations ou d'activités dans les établissements autres que ceux de la 1re catégorie, sans hébergement, disposant d'une alarme générale ne nécessitant pas de surveillance humaine et dont l'effectif total n'excède pas 300 personnes (MS 46 §3). Exemples : type M, établissements de moins de 4 000 personnes : agents désignés par l'exploitant et entraînés à la manœuvre des moyens de secours et à l'évacuation (M 29 §1) ; type M au-delà de 4 000 personnes : agents de sécurité incendie (M 29 §2) ; type U de 2e catégorie : employés spécialement désignés et entraînés, au nombre de 3 au minimum en permanence, celui qui surveille le SSI étant titulaire du diplôme d'agent de sécurité incendie (U 43 b) ; 5e catégorie : personnel instruit sur la conduite à tenir en cas d'incendie et entraîné à la manœuvre des moyens de secours (PE 27 §5)."
   },
   e07_03: {
     statut: 'a_valider',
@@ -2345,6 +2341,16 @@ const MATRICE_PRECONISATIONS = {
     statut: 'a_valider',
     source: "MS 50 §2 à §4 ; MS 61 b et c ; MS 66 §1 à §5",
     preconisation: "Alarme restreinte : signal sonore et visuel distinct de l'alarme générale, destiné au poste de sécurité incendie, à la direction, au gardien ou au personnel désigné, qui l'exploite (vérifie s'il s'agit d'un déclenchement intempestif ou d'un sinistre et, dans ce cas, déclenche immédiatement l'alarme générale) (MS 61 b et c). Équipements d'alarme des types 1 et 2 : tableau de signalisation installé à un emplacement non accessible au public et surveillé pendant les heures d'exploitation, visible du personnel de surveillance, à organes de commande et de signalisation aisément accessibles ; report de l'alarme restreinte limité à une distance permettant au personnel de se rendre rapidement au tableau (MS 66 §1). Déclencheur manuel ou détecteur automatique : alarme restreinte immédiate au tableau (MS 66 §2) ; alarme générale automatique après une temporisation réglable de cinq minutes au maximum (MS 66 §3) ; commande manuelle permettant de déclencher immédiatement l'alarme générale, par zone de diffusion (MS 66 §4) ; temporisation admise seulement si un personnel qualifié peut exploiter immédiatement l'alarme restreinte, et adaptée ou annulée si les conditions d'exploitation changent (MS 66 §5). Poste de sécurité : accès aisé, relié au centre de secours par un moyen de transmission rapide et sûr, recevant les alarmes restreintes, occupé en permanence par une personne au moins quand le service est assuré par des agents de sécurité incendie, avec les commandes manuelles des dispositifs d'alarme et de désenfumage mécanique (MS 50 §2 à §4)."
+  },
+  e09_03: {
+    statut: 'a_valider',
+    source: "MS 46 §1 ; MS 48 §2 ; M 29 §2 à §4 ; L 14 ; U 43 a",
+    preconisation: "Faire assurer le service de sécurité incendie par des agents de sécurité incendie lorsque les dispositions particulières du type l'exigent, au nombre de trois au moins présents simultanément, dont un chef d'équipe, l'effectif étant adapté à l'importance de l'établissement, et faire vérifier leur qualification dans les conditions définies par arrêté ministériel (MS 46 §1 ; MS 48 §2). Exemples : type M, au-delà de 4 000 personnes, surveillance par des agents de sécurité incendie (M 29 §2) ; dans les centres commerciaux et magasins de vente, de 4 001 à 6 000 personnes, 3 agents dont 1 SSIAP 2, puis 4 agents de 6 001 à 9 000, jusqu'à 11 agents dont 1 SSIAP 2 au-delà de 27 000 ; au-delà de 9 000 personnes, chef de service de sécurité incendie et d'assistance à personnes (SSIAP 3) en plus (M 29 §3 et §4) ; type L, 1re catégorie de plus de 3 000 personnes : 1 SSIAP 2 et 2 SSIAP 1, majorés d'un SSIAP 1 à partir de 6 000 personnes par fraction supplémentaire de 3 000 ; 1re catégorie de 1 501 à 3 000 personnes : 1 SSIAP 1 (L 14) ; type U, 1re catégorie : agents de sécurité (U 43 a)."
+  },
+  e10_01: {
+    statut: 'a_valider',
+    source: "CO 37 §1 et §2 ; CO 34 §1 et §2 ; PE 11 §1 ; EL 11 §6",
+    preconisation: "Maintenir les dégagements libres : aucun dépôt, aucun matériel, aucun objet ne doit faire obstacle à la circulation des personnes (PE 11 §1, 5e catégorie). Aucune saillie ou dépôt ne doit réduire la largeur réglementaire des dégagements ; les aménagements fixes sont admis jusqu'à 1,10 m de hauteur s'ils ne font pas saillie de plus de 0,10 m (CO 37 §1). Au-delà de la largeur minimale, le mobilier en saillie, à l'exclusion des dépôts, n'est admis que s'il ne gêne pas la circulation rapide, ne peut être ni déplacé ni renversé et ne gêne pas les portes à fermeture automatique, et jamais dans un escalier protégé (CO 37 §2). Les tableaux et appareils d'utilisation installés dans les dégagements respectent CO 37 (EL 11 §6). Ne pas placer de marches isolées dans les circulations principales (CO 34 §2). Les cheminements d'évacuation ne doivent pas permettre d'hésiter sur la direction à suivre, y compris dans les zones de circulation non délimitées par un cloisonnement (CO 34 §1). Les halls sont des dégagements au sens de CO 34 §1."
   }
 };
 
@@ -2353,7 +2359,11 @@ const MATRICE_PRECONISATIONS = {
 const POINTS_RETIRES = {
   e04_05: "doublon de e01_03 (colonne sèche ou humide), retiré en v22",
   e07_06: "fusionné dans e02_06 (plans et consignes), retiré en v29",
-  e08_05: "fusionné dans e08_02 (entretien et vérification du SSI), retiré en v30"
+  e08_05: "fusionné dans e08_02 (entretien et vérification du SSI), retiré en v30",
+  e09_01: "fusionné dans e02_08 (formation et exercices du personnel), retiré en v31",
+  e09_02: "fusionné dans e07_02 (personnel désigné et formé), retiré en v31",
+  e10_02: "fusionné dans e06_04 (locaux à risques), retiré en v31",
+  e10_03: "fusionné dans e06_04 (locaux à risques et stockage), retiré en v31"
 };
 
 // Entrée validée de la matrice pour un point, ou null (absente, non validée ou sans texte). Fonction pure.
@@ -5454,17 +5464,17 @@ function compilerActionsPlan(entree){
   (e.alertes || []).forEach(a => {
     actions.push({ id: a.id, ref: a.ref || a.id, priorite: RANG[a.priorite] ? a.priorite : "P1", note: null, domaine: -1, ordre: 0, pareto: null, constat: a.constat, preconisation: a.preconisation });
   });
-  // Type U, Art. U 43 : SSI de catégorie A. L entrée de l auditeur (point u_02_01) est conservée et complétée, jamais écrasée.
+  // Type U, Art. U 44 : SSI de catégorie A. L entrée de l auditeur (point u_02_01) est conservée et complétée, jamais écrasée.
   const ssi = scores.u_02_01 ? parseInt(scores.u_02_01.note, 10) : NaN;
   if(e.u43 && ssi >= 1 && ssi <= 3){
     const a = actions.find(x => x.id === 'u_02_01');
     if(a){
-      const rappel = "Remettre immédiatement en état de marche le SSI de catégorie A. La DAI en chambre/circulation doit commander instantanément le compartimentage et le déverrouillage éventuel des portes (Art. U 44 §3) et le désenfumage mécanique (Art. U 30).";
+      const rappel = "Remettre immédiatement en état de marche le SSI de catégorie A. La détection automatique en chambre ou en circulation doit commander automatiquement, sans temporisation (MS 60 §1), le compartimentage de la zone, le déverrouillage éventuel des portes et le désenfumage prévu (Art. U 44 §3).";
       const saisiPreco = texteSaisi(scores.u_02_01.preconisation);
       a.priorite = "P1";
-      a.ref = a.ref + " · Art. U 43";
+      a.ref = a.ref + " · Art. U 44";
       if(!texteSaisi(scores.u_02_01.constat)) a.constat = "Défaut majeur d'asservissement ou absence d'un Système de Sécurité Incendie (SSI) de Catégorie A fonctionnel.";
-      a.preconisation = saisiPreco ? saisiPreco + " — Rappel réglementaire (Art. U 43) : " + rappel : rappel;
+      a.preconisation = saisiPreco ? saisiPreco + " — Rappel réglementaire (Art. U 44) : " + rappel : rappel;
     }
   }
   const noteTri = a => a.note === null ? 0 : a.note;
@@ -6608,7 +6618,7 @@ function rafraichirChampsSpecifiquesIdentification() {
                     <div>• <strong>Art. U 10 :</strong> Chaque niveau à sommeil divisé en ≥ 2 compartiments EI 60 / E 30-C.</div>
                     <div>• <strong>Art. U 17 :</strong> Circulations à sommeil ≥ 1,40 m de largeur libre (2 UP).</div>
                     <div>• <strong>Art. U 30 :</strong> Désenfumage mécanique obligatoire des circulations communes.</div>
-                    <div>• <strong>Art. U 43 :</strong> SSI Catégorie A avec DAI généralisée obligatoire.</div>
+                    <div>• <strong>Art. U 44 :</strong> SSI Catégorie A avec DAI généralisée obligatoire.</div>
                 </div>
             </div>`;
     }
