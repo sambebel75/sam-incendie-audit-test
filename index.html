@@ -894,7 +894,7 @@ input[type="number"], input[type="text"], input[type="email"], input[type="tel"]
 if ('serviceWorker' in navigator) {
   try {
     // Doit rester égale à VERSION dans sw.js : le message n'apparaît que si le service worker actif est plus récent que la page.
-    const VERSION_PAGE = 'v28';
+    const VERSION_PAGE = 'v29';
     let bandeauAffiche = false;
     navigator.serviceWorker.addEventListener('message', e => {
       if (!e.data || e.data.type !== 'sw-active' || e.data.version === VERSION_PAGE || bandeauAffiche) return;
@@ -1970,12 +1970,11 @@ const AUDIT_DATA = {
         {id:'e06_05',label:'Compartimentage interne conforme au règlement ERP spécifique',ref:'CO 25 / art. du type (ex. W 3, R 6)',expert_note:'L\'article particulier du type (ex. W3 → 800 m², R6 → 600 m²) prime sur l\'article général CO25. La solution la moins onéreuse peut être le fractionnement par portes CF à fermeture automatique plutôt que des cloisons lourdes.'},
       ]},
       {id:'e07',name:'Gestion / Exploitation',points:[
-        {id:'e07_01',label:'Registre de sécurité ERP à jour, signé et disponible',ref:'R. 143-44 CCH'},
-        {id:'e07_02',label:'Responsable sécurité (RS) ou SSIAP nommé et formé',ref:'MS 46'},
-        {id:'e07_03',label:'Avis favorable de la commission de sécurité en cours',ref:'GE 4'},
-        {id:'e07_04',label:'Date de la prochaine visite de commission programmée',ref:'GE 4'},
-        {id:'e07_05',label:'Contrats de maintenance de tous les équipements de sécurité',ref:'MS 73'},
-        {id:'e07_06',label:'Plans et consignes affichés, conception selon NF X 08-070 (norme volontaire)',ref:'MS 41 / MS 47 / PE 27 §4 et §6'},
+        {id:'e07_01',label:'Registre de sécurité tenu à jour',ref:'R. 143-44 CCH'},
+        {id:'e07_02',label:'Personnel formé et responsable sécurité désigné',ref:'MS 46'},
+        {id:'e07_03',label:'Dernier avis de la commission de sécurité (favorable / défavorable)',ref:'GE 4'},
+        {id:'e07_04',label:'Suivi de la programmation de la prochaine visite de la commission',ref:'GE 4'},
+        {id:'e07_05',label:'Contrats de maintenance en cours pour les équipements le nécessitant (SSI, désenfumage, extincteurs)',ref:'MS 73'},
         {id:'e07_08',label:'Non-conformités antérieures levées et consignées au registre',ref:'R. 143-44 CCH'},
       ]},
       {id:'e08',name:'SSI / Détection incendie',points:[
@@ -2190,8 +2189,8 @@ const MATRICE_PRECONISATIONS = {
   },
   e02_06: {
     statut: 'valide', valide_le: '2026-11-10',
-    source: "MS 47 ; O 21 §2 (type O) ; PE 27 §4 et §6 (5e catégorie)",
-    preconisation: "Afficher sur supports fixes et inaltérables, constamment mises à jour, des consignes conformes à la norme NF S 60-303 indiquant : les modalités d'alerte des sapeurs-pompiers ; les dispositions à prendre pour la sécurité du public et du personnel ; celles pour favoriser l'évacuation des personnes en situation de handicap ou leur évacuation différée ; la mise en œuvre des moyens de secours ; l'accueil et le guidage des sapeurs-pompiers (MS 47). Type O : apposer à chaque niveau, à proximité du cheminement habituel, un plan d'évacuation conforme à NF S 60-303 (O 21 §2). 5e catégorie : apposer à l'entrée un plan d'intervention (PE 27 §6)."
+    source: "MS 41 ; MS 47 ; O 21 §2 (type O) ; PE 27 §4 et §6 (5e catégorie)",
+    preconisation: "Afficher les plans d'évacuation et les consignes de sécurité (MS 41 / MS 47) dans les zones accessibles au public et au personnel. Afficher sur supports fixes et inaltérables, constamment mises à jour, des consignes conformes à la norme NF S 60-303 indiquant : les modalités d'alerte des sapeurs-pompiers ; les dispositions à prendre pour la sécurité du public et du personnel ; celles pour favoriser l'évacuation des personnes en situation de handicap ou leur évacuation différée ; la mise en œuvre des moyens de secours ; l'accueil et le guidage des sapeurs-pompiers (MS 47). Type O : apposer à chaque niveau, à proximité du cheminement habituel, un plan d'évacuation conforme à NF S 60-303 (O 21 §2). 5e catégorie : apposer à l'entrée un plan d'intervention (PE 27 §6)."
   },
   e02_08: {
     statut: 'valide', valide_le: '2026-11-10',
@@ -2297,13 +2296,44 @@ const MATRICE_PRECONISATIONS = {
     statut: 'a_valider',
     source: "EL 7 ; EL 8 §2 et §3 ; EL 12 à EL 18 ; DF 3 §3",
     preconisation: "1. Alimentation et sources de sécurité. Alimenter les installations de sécurité, éclairage de sécurité excepté, par une alimentation électrique de sécurité conforme à NF S 61-940 (EL 12 §1). Une dérivation issue directement du tableau principal n'est admise que lorsque le règlement admet l'absence de groupe électrogène : désenfumage mécanique des 1re et 2e catégories dont la puissance totale des moteurs d'extraction des deux zones les plus contraignantes est inférieure à 10 kW, désenfumage mécanique des 3e et 4e catégories, secours en eau et pompes d'exhaure sauf dispositions aggravantes (EL 12 §1) ; le tableau principal est alors dans un local de service électrique isolé selon EL 5 §3 b, la dérivation est protégée sélectivement et, en schéma TN ou TT, un contrôleur permanent d'isolement surveille les équipements mis en œuvre seulement en cas de sinistre, comme les ventilateurs de désenfumage (EL 14). Temps de commutation maximal de dix secondes sauf dispositions aggravantes ; groupe électrogène de remplacement utilisable comme source de sécurité s'il est conforme à NF E 37-312 et de puissance suffisante pour démarrer et faire fonctionner tous les équipements de sécurité, même en cas de défaillance de l'un des groupes ; pour le désenfumage, puissance suffisante pour les deux zones les plus contraignantes (EL 13 §2 et §3 ; DF 3 §3). Groupes électrogènes dans un local de service électrique isolé selon EL 5 §3 a, locaux moteurs largement ventilés sur l'extérieur (EL 7). Batteries qui alimentent des installations de sécurité : local de service électrique isolé selon EL 5 §3 b, réservé aux batteries, ventilé ; coupure de l'alimentation du chargeur signalée au tableau de sécurité (EL 8 §2 et §3). Tableau de sécurité : local de service électrique affecté à ce seul usage et isolé selon EL 5 §3 b, circuits identifiés de manière sûre et durable, éléments minimaux de EL 15 §5 ; signalisation de la coupure des chargeurs reportée au poste de sécurité (EL 15 §1 à §3 et §5). 2. Circuits de sécurité. Canalisations de catégorie CR 1 depuis la source de sécurité ou le tableau principal jusqu'aux appareils terminaux ; dérivations, jonctions et enveloppes satisfaisant à l'essai au fil incandescent à 960 °C (NF EN 60695-2-11) ; locaux à risques particuliers traversés seulement par les canalisations destinées à alimenter leurs propres appareils ; câbles distincts de ceux de l'alimentation normale-remplacement ; chaque circuit protégé de sorte qu'un incident n'interrompe pas les autres circuits de sécurité de la même source ; canalisations des ventilateurs de désenfumage protégées contre les courts-circuits seulement et dimensionnées pour 1,5 fois le courant nominal des moteurs (EL 16 §1 à §3). Schéma de liaison à la terre de type IT, ou TN avec groupe électrogène, sélectivité totale et contrôleur permanent d'isolement pour les équipements qui ne fonctionnent qu'en cas de sinistre (EL 16 §4) ; ces dispositions ne sont pas exigées avec une dérivation issue du tableau principal (EL 16 §5). Reporter au poste de sécurité la coupure des dispositifs de charge et les défauts d'isolement signalés par les contrôleurs permanents (EL 17). 3. Entretien des groupes électrogènes de sécurité. Entretien régulier et essais selon la périodicité minimale suivante : tous les quinze jours, vérification du niveau d'huile, d'eau et de combustible, du dispositif de réchauffage du moteur et de l'état de la source utilisée pour le démarrage (batterie ou air comprimé) ; tous les mois, en plus, essai de démarrage automatique avec une charge d'au moins 50 % de la puissance du groupe et fonctionnement avec cette charge pendant au moins trente minutes. Consigner les interventions et leurs résultats dans un registre d'entretien tenu à la disposition de la commission de sécurité (EL 18 §4). Maintenir les installations en bon état de fonctionnement et réparer dès leur constatation les défectuosités et les défauts d'isolement (EL 18 §1)."
+  },
+  e07_01: {
+    statut: 'a_valider',
+    source: "R. 143-44 ; GE 3 §2 et §3 ; GE 10 ; MS 51 ; MS 52 §1 ; MS 58 §4 ; MS 68 ; MS 75 ; EC 13 ; EC 14 §3 ; EL 18 §4",
+    preconisation: "Tenir un registre de sécurité sur lequel sont reportés les renseignements indispensables à la bonne marche du service de sécurité, notamment : l'état du personnel chargé du service d'incendie ; les consignes générales et particulières établies en cas d'incendie, y compris les consignes d'évacuation prenant en compte les différents types de handicap ; les dates des contrôles et vérifications et les observations auxquelles ils ont donné lieu ; les dates des travaux d'aménagement et de transformation, leur nature et les noms des entrepreneurs et, s'il y a lieu, de l'architecte ou du technicien chargé de les surveiller (R. 143-44 ; GE 3 §3). Y consigner : la date des exercices d'instruction du personnel (MS 51) ; la date, le nom du vérificateur et l'objet de chaque vérification faite par un technicien compétent, avec un relevé annexé (GE 10) ; le contrat et la notice d'entretien de la détection (MS 58 §4) et la preuve du contrat ou des consignes d'entretien du SSI (MS 68) ; la notice de maintenance de l'éclairage de sécurité et ses opérations d'entretien et de vérification (EC 13, EC 14 §3) ; le registre d'entretien des groupes électrogènes de sécurité (EL 18 §4) ; le dossier technique des installations avec le rapport des examens et essais avant mise en service et tous les documents, rapports et attestations remis après chaque examen ou intervention (MS 75). Faire assurer la mise à jour du registre par l'exploitant ou son représentant présent pendant la présence du public (MS 52 §1). Être en mesure de le présenter à la commission de sécurité, avec les dossiers de renseignements à jour et les rapports des vérifications techniques (GE 3 §2 et §3)."
+  },
+  e07_02: {
+    statut: 'valide', valide_le: '2026-11-11', redige_par: 'expert',
+    source: "MS 46",
+    preconisation: "Désigner un responsable de la sécurité incendie et du personnel formé (SSIAP) selon la catégorie et le type de l'établissement (MS 46)."
+  },
+  e07_03: {
+    statut: 'a_valider',
+    source: "R. 143-38 à R. 143-42 ; GE 3 §1 ; GE 5 ; MS 74",
+    preconisation: "Disposer de l'autorisation d'ouverture délivrée par le maire par arrêté après avis de la commission de sécurité ; l'établissement est visité avant toute ouverture et avant la réouverture après une fermeture de plus de dix mois (R. 143-38, R. 143-39 ; GE 3 §1). Afficher de façon apparente, près de l'entrée principale, l'avis relatif au contrôle de la sécurité (type, catégorie, effectif maximal du public autorisé, date de la visite de réception, date de l'autorisation d'ouverture), rempli par l'exploitant sous sa responsabilité et visé par l'autorité qui a délivré l'autorisation (GE 5). Assister à chaque visite de la commission ou s'y faire représenter par une personne qualifiée ; le maire notifie le procès-verbal et sa décision (R. 143-42). Permettre le contrôle efficace des moyens de secours, avec le personnel compétent et le matériel nécessaires aux essais (MS 74). Donner suite aux observations de la commission (R. 143-41). Conserver le procès-verbal de la dernière visite, qui porte l'avis de la commission, favorable ou défavorable (R. 143-42)."
+  },
+  e07_04: {
+    statut: 'valide', valide_le: '2026-11-11', redige_par: 'expert',
+    source: "GE 4",
+    preconisation: "Suivre le calendrier des visites de la commission de sécurité (GE 4). Programmer les actions correctives avant la prochaine visite."
+  },
+  e07_05: {
+    statut: 'a_valider',
+    source: "MS 58 §3 et §4 ; MS 68 ; MS 69 ; MS 72 §1 ; MS 73 §2 ; GE 8 §2 ; DF 9 ; DF 10 ; EL 18 §4",
+    preconisation: "Faire entretenir tous les appareils et dispositifs d'extinction et d'alerte pour les maintenir en permanence en bon état de fonctionnement, et initier le personnel à leur mise en œuvre (MS 72 §1). S'assurer de l'existence des moyens nécessaires à l'entretien et à la maintenance : techniciens désignés, contrats d'entretien, notices, livrets d'entretien (GE 8 §2). Système de sécurité incendie : entretien par un technicien compétent habilité par l'établissement ou par l'installateur de chaque équipement ou son représentant habilité ; contrat d'entretien obligatoire pour les SSI de catégories A et B ; le contrat ou les consignes écrites précisent la périodicité des interventions et prévoient la réparation rapide ou l'échange des éléments défaillants, et la preuve de leur existence est transcrite au registre de sécurité (MS 68). Détection automatique d'incendie : contrat d'entretien avec un installateur qualifié incluant les essais fonctionnels de MS 56 §3, annexé au registre avec la notice (MS 58 §3 et §4). Sprinkleurs et SSI A et B : vérification tous les trois ans par une personne ou un organisme agréé (MS 73 §2). Groupes électrogènes de sécurité : entretien régulier et essais (EL 18 §4). Exploitant : contrôle hebdomadaire du fonctionnement de l'alarme et des alimentations de sécurité, stock de petites fournitures de rechange (MS 69). Désenfumage : faire effectuer périodiquement par un personnel compétent l'entretien des sources de sécurité (EL 18), l'entretien courant des éléments mécaniques et électriques selon les prescriptions des constructeurs et l'entretien du système de sécurité (MS 68), puis les vérifications annuelles de DF 10 (DF 9 ; DF 10). Extincteurs : vérification au moins une fois par an (MS 73 §2)."
+  },
+  e07_08: {
+    statut: 'a_valider',
+    source: "R. 143-44 3° et 4° ; GE 8 §2 ; GE appendice §2.3 ; EL 18 §1 ; MS 69",
+    preconisation: "Lever les non-conformités constatées lors des vérifications techniques et des visites de la commission de sécurité, et reporter au registre de sécurité les dates des contrôles et vérifications, les observations auxquelles ils ont donné lieu, et les dates, la nature et les intervenants des travaux de remise en conformité (R. 143-44 3° et 4°). Prendre toutes dispositions pour remédier aux anomalies relevées par les vérificateurs, dont les observations sont listées en une série numérotée, avec localisation, dans le rapport de vérification (GE 8 §2 ; GE appendice §2.3). Réparer dès leur constatation les défectuosités et les défauts d'isolement des installations électriques (EL 18 §1) et faire effectuer sous la responsabilité de l'exploitant les remises en état le plus rapidement possible (MS 69). Se conformer aux prescriptions du procès-verbal notifié par le maire (R. 143-41, R. 143-42)."
   }
 };
 
 // Points retirés de la grille (identifiant : motif). Un dossier enregistré peut encore contenir leur note : elle est conservée
 // dans les données, mais le plan d actions l ignore.
 const POINTS_RETIRES = {
-  e04_05: "doublon de e01_03 (colonne sèche ou humide), retiré en v22"
+  e04_05: "doublon de e01_03 (colonne sèche ou humide), retiré en v22",
+  e07_06: "fusionné dans e02_06 (plans et consignes), retiré en v29"
 };
 
 // Entrée validée de la matrice pour un point, ou null (absente, non validée ou sans texte). Fonction pure.
