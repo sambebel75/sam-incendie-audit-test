@@ -893,7 +893,7 @@ input[type="number"], input[type="text"], input[type="email"], input[type="tel"]
 if ('serviceWorker' in navigator) {
   try {
     // Doit rester égale à VERSION dans sw.js : le message n'apparaît que si le service worker actif est plus récent que la page.
-    const VERSION_PAGE = 'v33';
+    const VERSION_PAGE = 'v34';
     let bandeauAffiche = false;
     navigator.serviceWorker.addEventListener('message', e => {
       if (!e.data || e.data.type !== 'sw-active' || e.data.version === VERSION_PAGE || bandeauAffiche) return;
@@ -1129,7 +1129,7 @@ a.essai-btn{display:inline-flex;align-items:center;justify-content:center;text-d
   #rapport-client .rc-synthese{border:1pt solid #cbd5e0;border-radius:3mm;padding:5mm 6mm;background:#f7fafc;break-inside:avoid}
   #rapport-client .rc-synthese h2{font-size:11pt;text-transform:uppercase;letter-spacing:.6pt;margin:0 0 4mm;color:#2d3748;border:0;padding:0}
   #rapport-client .rc-kpis{display:flex;gap:5mm}
-  #rapport-client .rc-kpi{flex:1;background:#fff;border:.5pt solid #e2e8f0;border-radius:2mm;padding:4mm 2mm;text-align:center;display:flex;flex-direction:column;gap:1mm}
+  #rapport-client .rc-kpi{flex:1;background:#fff;border:.5pt solid #e2e8f0;border-radius:2mm;padding:4mm 2mm;text-align:center;display:flex;flex-direction:column;justify-content:center;gap:1mm}
   #rapport-client .rc-kpi-val{font-size:22pt;font-weight:800;line-height:1.1}
   #rapport-client .rc-kpi-lib{font-size:8.5pt;color:#4a5568;text-transform:uppercase;letter-spacing:.4pt}
   #rapport-client .rc-vert{color:#2f855a}
@@ -1148,18 +1148,20 @@ a.essai-btn{display:inline-flex;align-items:center;justify-content:center;text-d
   #rapport-client .rc-table tr{break-inside:avoid;page-break-inside:avoid}
   #rapport-client .rc-c-ref{width:14%}
   #rapport-client .rc-c-constat{width:18%}
-  #rapport-client .rc-table-pareto .rc-c-preco{width:60%}
-  #rapport-client .rc-table-complet .rc-c-preco{width:46%}
-  #rapport-client .rc-c-prio{width:8%}
+  #rapport-client .rc-table-pareto .rc-c-preco{width:58%}
+  #rapport-client .rc-table-complet .rc-c-preco{width:44%}
+  #rapport-client .rc-c-prio{width:10%}
   #rapport-client .rc-c-ech{width:14%}
   #rapport-client .rc-ref{font-family:Consolas,"Courier New",monospace;font-size:8.5pt;color:#4a5568}
   #rapport-client .rc-pareto{display:inline-block;margin-top:1.5mm;padding:.5mm 1.2mm;white-space:nowrap;background:#fef3c7;border:.5pt solid #f59e0b;border-radius:1mm;font-family:"Segoe UI",Arial,sans-serif;font-size:7pt;font-weight:700;color:#92400e}
   #rapport-client .rc-pareto-crit{background:#fee2e2;border-color:#f87171;color:#991b1b}
   #rapport-client .rc-source{margin-top:1.2mm;font-size:7pt;color:#718096}
-  #rapport-client .rc-prio{display:inline-block;min-width:8mm;padding:.8mm 2mm;border-radius:1.5mm;color:#fff;font-weight:700;font-size:8.5pt;text-align:center}
-  #rapport-client .rc-prio-p1{background:#c53030}
-  #rapport-client .rc-prio-p2{background:#dd6b20}
-  #rapport-client .rc-prio-p3{background:#d69e2e;color:#1a202c}
+  #rapport-client .rc-prio{display:inline-flex;flex-direction:column;align-items:center;gap:.3mm;min-width:12mm;padding:1mm 1.2mm;border-radius:1.5mm;border:.6pt solid;font-weight:700;line-height:1.15;text-align:center}
+  #rapport-client .rc-prio-ico{font-size:12pt;font-family:"Segoe UI Emoji","Apple Color Emoji","Noto Color Emoji",sans-serif}
+  #rapport-client .rc-prio-lib{font-size:6.8pt;text-transform:uppercase;letter-spacing:.2pt}
+  #rapport-client .rc-prio-p1{background:#fee2e2;border-color:#f87171;color:#991b1b}
+  #rapport-client .rc-prio-p2{background:#ffedd5;border-color:#fb923c;color:#9a3412}
+  #rapport-client .rc-prio-p3{background:#dbeafe;border-color:#60a5fa;color:#1e40af}
   #rapport-client .rc-centre{text-align:center}
   #rapport-client .rc-echeance{white-space:nowrap;font-size:8.5pt}
   #rapport-client .rc-depasse{color:#c53030;font-weight:700}
@@ -1172,6 +1174,26 @@ a.essai-btn{display:inline-flex;align-items:center;justify-content:center;text-d
   #rapport-client .rc-photos img{width:56mm;height:42mm;object-fit:cover;border:.5pt solid #cbd5e0;display:block}
   #rapport-client .rc-photos figcaption{font-size:8pt;color:#718096;margin-top:1mm}
   #rapport-client .rc-vide{font-style:italic;color:#4a5568}
+  #rapport-client .rc-kpi-score{justify-content:center;align-items:center}
+  #rapport-client .rc-jauge{width:30mm;height:30mm;display:block;margin:0 auto}
+  #rapport-client .rc-section-radar{text-align:center}
+  #rapport-client .rc-radar-cadre{border:.5pt solid #e2e8f0;border-radius:3mm;padding:2mm;margin:2mm 0 4mm}
+  #rapport-client .rc-radar{width:100%;height:auto;max-height:150mm;display:block;margin:0 auto}
+  #rapport-client .rc-radar-legende{font-size:12pt;margin:0 0 3mm;color:#1a202c}
+  #rapport-client .rc-zones{list-style:none;margin:0 0 5mm;padding:0;display:flex;justify-content:center;flex-wrap:wrap;gap:2mm 6mm;font-size:9pt;color:#4a5568}
+  #rapport-client .rc-zones li{display:flex;align-items:center;gap:1.6mm;break-inside:avoid}
+  #rapport-client .rc-pastille{display:inline-block;width:4mm;height:4mm;border-radius:50%;border:.5pt solid rgba(0,0,0,.25)}
+  #rapport-client .rc-z-rouge{background:#c53030}
+  #rapport-client .rc-z-orange{background:#dd6b20}
+  #rapport-client .rc-z-vert{background:#2f855a}
+  #rapport-client .rc-liste-domaines{list-style:none;margin:0;padding:0;columns:2;column-gap:8mm;text-align:left;font-size:9pt}
+  #rapport-client .rc-liste-domaines li{display:flex;justify-content:space-between;gap:3mm;padding:1.3mm 0;border-bottom:.5pt solid #e2e8f0;break-inside:avoid}
+  #rapport-client .rc-t-rouge{color:#c53030}
+  #rapport-client .rc-t-orange{color:#c05621}
+  #rapport-client .rc-t-vert{color:#2f855a}
+  #rapport-client .rc-t-gris{color:#718096;font-weight:400}
+  #rapport-client .rc-pareto-titre{margin:0 0 3mm;padding:3.5mm 5mm;background:#fee2e2;border:.8pt solid #f87171;border-left:4pt solid #c53030;border-radius:1.5mm;font-size:12pt;font-weight:800;color:#991b1b;break-after:avoid;break-inside:avoid}
+  #rapport-client .rc-table-pareto td{background:#fff5f5}
   #rapport-client .rc-pied-secours{display:none}
   body.mode-rapport.rapport-sans-marges #rapport-client .rc-pied-secours{display:block;position:fixed;bottom:-14mm;left:0;right:0;text-align:center;font-size:8.5pt;color:#555}
 }
@@ -5634,9 +5656,89 @@ function titreFichierRapport(nomClient, dateIso){
   return 'Rapport_audit_' + nom + (date ? '_' + date : '');
 }
 
+// Couleur du score global (chiffre et jauge) : rouge sous 3, orange de 3 à 4 inclus, vert au-dessus de 4.
 function classeNoteRapport(score){
   if(score === null || score === undefined) return 'rc-gris';
-  return score >= 4 ? 'rc-vert' : (score >= 3 ? 'rc-ambre' : 'rc-rouge');
+  return score > 4 ? 'rc-vert' : (score >= 3 ? 'rc-ambre' : 'rc-rouge');
+}
+
+const COULEURS_RAPPORT = {'rc-vert': '#2f855a', 'rc-ambre': '#dd6b20', 'rc-rouge': '#c53030', 'rc-gris': '#a0aec0'};
+
+function formaterScoreRapport(score){
+  return (score === null || score === undefined) ? '—' : String(Math.round(score * 10) / 10).replace('.', ',');
+}
+
+// Jauge circulaire du score global (SVG en ligne : s imprime sans image externe).
+function jaugeScoreRapport(score){
+  const classe = classeNoteRapport(score);
+  const couleur = COULEURS_RAPPORT[classe];
+  const r = 46, circ = 2 * Math.PI * r;
+  const part = (score === null || score === undefined) ? 0 : Math.max(0, Math.min(5, score)) / 5;
+  const texte = (score === null || score === undefined) ? '—' : formaterScoreRapport(score) + ' / 5';
+  return '<svg class="rc-jauge" viewBox="0 0 120 120" role="img" aria-label="Score global : ' + echapperRapport(texte) + '">'
+    + '<circle cx="60" cy="60" r="46" fill="none" stroke="#e2e8f0" stroke-width="12"/>'
+    + (part > 0 ? '<circle cx="60" cy="60" r="46" fill="none" stroke="' + couleur + '" stroke-width="12" stroke-linecap="round" stroke-dasharray="' + (part * circ).toFixed(1) + ' ' + circ.toFixed(1) + '" transform="rotate(-90 60 60)"/>' : '')
+    + '<text x="60" y="67" text-anchor="middle" font-size="20" font-weight="800" fill="' + couleur + '">' + echapperRapport(texte) + '</text></svg>';
+}
+
+// Zone d un domaine d après sa moyenne arrondie : 1 à 2 rouge, 3 orange, 4 à 5 vert, non noté gris.
+function zoneScoreRapport(score){
+  if(score === null || score === undefined) return 'gris';
+  const n = Math.round(score);
+  return n <= 2 ? 'rouge' : (n === 3 ? 'orange' : 'vert');
+}
+
+const ZONES_RAPPORT = {rouge: '#c53030', orange: '#c05621', vert: '#2f855a', gris: '#718096'};
+const POINTS_ZONES_RAPPORT = {rouge: '#c53030', orange: '#dd6b20', vert: '#2f855a'};
+
+// Coupe un libellé en deux lignes au plus, près du milieu, sur un espace.
+function lignesLibelleRapport(libelle){
+  const t = String(libelle == null ? '' : libelle).trim();
+  if(t.length <= 16) return [t];
+  const milieu = t.length / 2;
+  let coupe = -1;
+  for(let i = 0; i < t.length; i++){ if(t[i] === ' ' && (coupe < 0 || Math.abs(i - milieu) < Math.abs(coupe - milieu))) coupe = i; }
+  if(coupe < 0) return [t];
+  const debut = t.slice(0, coupe).trim(), suite = t.slice(coupe + 1).trim();
+  return suite.indexOf('/ ') === 0 ? [debut + ' /', suite.slice(2)] : [debut, suite];
+}
+
+// Radar (toile d araignée) : bandes de fond rouge (score de 1 à 2), orange (3), vert (4 à 5) ; axes = domaines {label, score ou null}.
+function radarRapport(axes){
+  const n = axes.length, cx = 300, cy = 215, R = 120;
+  const point = (i, v) => { const a = -Math.PI / 2 + 2 * Math.PI * i / n; return [cx + R * (v / 5) * Math.cos(a), cy + R * (v / 5) * Math.sin(a)]; };
+  const poly = v => axes.map((x, i) => point(i, v).map(c => c.toFixed(1)).join(',')).join(' ');
+  let s = '<svg class="rc-radar" viewBox="0 0 600 430" role="img" aria-label="Radar de conformité par domaine" font-family="Segoe UI, Arial, sans-serif">';
+  s += '<polygon points="' + poly(5) + '" fill="#f0fff4"/><polygon points="' + poly(3.5) + '" fill="#fffaf0"/><polygon points="' + poly(2.5) + '" fill="#fff5f5"/>';
+  [1, 2, 3, 4, 5].forEach(v => { s += '<polygon points="' + poly(v) + '" fill="none" stroke="#cbd5e0" stroke-width="' + (v === 5 ? 1.2 : 0.6) + '"/>'; });
+  axes.forEach((x, i) => { const p = point(i, 5); s += '<line x1="' + cx + '" y1="' + cy + '" x2="' + p[0].toFixed(1) + '" y2="' + p[1].toFixed(1) + '" stroke="#cbd5e0" stroke-width="0.6"/>'; });
+  [1, 2, 3, 4, 5].forEach(v => { const p = point(0, v); s += '<text x="' + (p[0] + 4).toFixed(1) + '" y="' + (p[1] + 3).toFixed(1) + '" font-size="8" fill="#718096">' + v + '</text>'; });
+  s += '<polygon points="' + axes.map((a, i) => point(i, (a.score === null || a.score === undefined) ? 0 : a.score).map(c => c.toFixed(1)).join(',')).join(' ') + '" fill="rgba(30,45,62,0.16)" stroke="#1e2d3e" stroke-width="1.8" stroke-linejoin="round"/>';
+  axes.forEach((a, i) => {
+    const zone = zoneScoreRapport(a.score), couleur = ZONES_RAPPORT[zone];
+    const v = (a.score === null || a.score === undefined) ? 0 : a.score;
+    const p = point(i, v);
+    if(zone !== 'gris') s += '<circle cx="' + p[0].toFixed(1) + '" cy="' + p[1].toFixed(1) + '" r="' + (zone === 'rouge' ? 6 : 4.5) + '" fill="' + POINTS_ZONES_RAPPORT[zone] + '" stroke="#fff" stroke-width="1.2"/>';
+    const ang = -Math.PI / 2 + 2 * Math.PI * i / n, cos = Math.cos(ang), sin = Math.sin(ang);
+    const lx = cx + (R + 16) * cos, ly = cy + (R + 16) * sin;
+    const ancre = cos > 0.25 ? 'start' : (cos < -0.25 ? 'end' : 'middle');
+    const lignes = lignesLibelleRapport(a.label);
+    if(zone === 'rouge') lignes[0] = '🚨 ' + lignes[0];
+    lignes.push(zone === 'gris' ? 'non noté' : formaterScoreRapport(a.score) + ' / 5');
+    const L = lignes.length;
+    const y0 = ly + (sin > 0.5 ? 6 : (sin < -0.5 ? -(L - 1) * 13 : -(L - 1) * 6.5 + 4));
+    s += '<text text-anchor="' + ancre + '" font-size="11" fill="' + couleur + '">' + lignes.map((t, k) => '<tspan x="' + lx.toFixed(1) + '" y="' + (y0 + k * 13).toFixed(1) + '"' + (k === 0 ? ' font-weight="700"' : '') + '>' + echapperRapport(t) + '</tspan>').join('') + '</text>';
+  });
+  return s + '</svg>';
+}
+
+const PRIORITES_RAPPORT = {P1: ['🚨', 'Urgent'], P2: ['⚠️', 'Important'], P3: ['ℹ️', 'À planifier']};
+
+// Priorité en icône + mot (la couleur seule ne suffit pas sur une impression en noir et blanc).
+function badgePrioriteRapport(priorite){
+  const k = String(priorite == null ? '' : priorite);
+  const def = PRIORITES_RAPPORT[k] || ['', k];
+  return '<span class="rc-prio rc-prio-' + echapperRapport(k.toLowerCase()) + '" title="' + echapperRapport(k) + '"><span class="rc-prio-ico">' + def[0] + '</span><span class="rc-prio-lib">' + echapperRapport(def[1]) + '</span></span>';
 }
 
 function ligneActionRapport(a, avecEcheance){
@@ -5647,7 +5749,7 @@ function ligneActionRapport(a, avecEcheance){
     + '<td class="rc-ref">' + echapperRapport(a.ref) + badgePareto + '</td>'
     + '<td>' + echapperRapport(a.constat) + '</td>'
     + '<td>' + echapperRapport(a.preconisation) + source + '</td>'
-    + '<td class="rc-centre"><span class="rc-prio rc-prio-' + echapperRapport(String(a.priorite).toLowerCase()) + '">' + echapperRapport(a.priorite) + '</span></td>'
+    + '<td class="rc-centre">' + badgePrioriteRapport(a.priorite) + '</td>'
     + (avecEcheance ? '<td class="rc-centre rc-echeance' + (ech.depasse ? ' rc-depasse' : '') + '">' + echapperRapport(ech.label) + (ech.depasse ? ' ⚠' : '') + '</td>' : '')
     + '</tr>';
 }
@@ -5675,7 +5777,6 @@ function construireRapportClient(d){
   const pareto = actions.filter(a => a.pareto);
   const avecPhotos = actions.filter(a => !a.alerte && Array.isArray(a.photos) && a.photos.length > 0);
   const ligneInfo = (libelle, valeur) => '<tr><th>' + e(libelle) + '</th><td>' + (valeur ? e(valeur) : '—') + '</td></tr>';
-  const scoreTexte = (s.score === null || s.score === undefined) ? '—' : String(s.score).replace('.', ',') + ' / 5';
   const logo = d.logoSrc ? '<img class="rc-logo" alt="Sam Incendie" src="' + e(d.logoSrc) + '">' : '';
 
   const couverture = '<section class="rc-couverture">'
@@ -5686,7 +5787,7 @@ function construireRapportClient(d){
     + ligneInfo('Type d\'ERP', d.typeLibelle) + ligneInfo('Catégorie', d.categorieLibelle)
     + '</tbody></table>'
     + '<div class="rc-synthese"><h2>Synthèse</h2><div class="rc-kpis">'
-    + '<div class="rc-kpi"><span class="rc-kpi-val ' + classeNoteRapport(s.score) + '">' + e(scoreTexte) + '</span><span class="rc-kpi-lib">Score global</span></div>'
+    + '<div class="rc-kpi rc-kpi-score">' + jaugeScoreRapport(s.score) + '<span class="rc-kpi-lib">Score global</span></div>'
     + '<div class="rc-kpi"><span class="rc-kpi-val">' + e(s.nbNonConformites || 0) + '</span><span class="rc-kpi-lib">Non-conformités</span></div>'
     + '<div class="rc-kpi"><span class="rc-kpi-val rc-rouge">' + e(s.nbP1 || 0) + '</span><span class="rc-kpi-lib">Actions P1</span></div>'
     + '</div></div>'
@@ -5694,19 +5795,32 @@ function construireRapportClient(d){
     + '<p class="rc-meta">' + (id.auditeur ? 'Auditeur : ' + e(id.auditeur) : '') + (id.organisme ? (id.auditeur ? ' — ' : '') + e(id.organisme) : '') + (id.ref ? ' · Réf. ' + e(id.ref) : '') + '</p>'
     + '</section>';
 
+  const radar = Array.isArray(d.radar) ? d.radar : [];
+  const notes = radar.filter(a => a.score !== null && a.score !== undefined);
+  const zones = {rouge: '🚨 Score de 1 à 2 : zone à corriger en priorité', orange: 'Score de 3 : zone à améliorer', vert: 'Score de 4 à 5 : zone conforme'};
+  const sectionRadar = '<section class="rc-section rc-section-radar"><h2>Radar de conformité par domaine</h2>'
+    + (notes.length
+        ? (radar.length >= 3 ? '<div class="rc-radar-cadre">' + radarRapport(radar) + '</div>' : '')
+          + '<p class="rc-radar-legende"><strong>Plus la zone est grande, plus vous êtes conforme.</strong></p>'
+          + '<ul class="rc-zones">' + Object.keys(zones).map(k => '<li><span class="rc-pastille rc-z-' + k + '"></span>' + e(zones[k]) + '</li>').join('') + '</ul>'
+          + '<ul class="rc-liste-domaines">' + radar.map(a => '<li><span>' + e(a.label) + '</span><strong class="rc-t-' + zoneScoreRapport(a.score) + '">' + (a.score === null || a.score === undefined ? 'non noté' : e(formaterScoreRapport(a.score)) + ' / 5') + '</strong></li>').join('') + '</ul>'
+        : '<p class="rc-vide">Aucun point n\'a été noté : le radar n\'est pas disponible.</p>')
+    + '</section>';
+
+  const titrePareto = pareto.length === 1 ? '🚨 L\'action à faire en priorité absolue (80% des risques)' : '🚨 Les ' + pareto.length + ' actions à faire en priorité absolue (80% des risques)';
   const section1 = '<section class="rc-section rc-section-pareto"><h2>1. Actions prioritaires (Pareto)</h2>'
     + '<p class="rc-intro">Actions marquées ⚡ : points non conformes (note de 1 à 3 sur 5) des domaines à fort impact. À traiter en premier.</p>'
-    + (pareto.length ? tableauActionsRapport(pareto, false)
+    + (pareto.length ? '<div class="rc-pareto-titre">' + e(titrePareto) + '</div>' + tableauActionsRapport(pareto, false)
         : '<p class="rc-vide">' + (actions.length ? 'Aucune action ne relève d\'un domaine à fort impact.' : e(messageVideRapport(d.message))) + '</p>')
     + '</section>';
 
   const section2 = '<section class="rc-section"><h2>2. Plan d\'actions complet</h2>'
-    + '<p class="rc-intro">Toutes les non-conformités, par priorité (P1 : sous 1 mois ; P2 : sous 3 mois ; P3 : sous 12 mois à compter de la date de l\'audit).</p>'
+    + '<p class="rc-intro">Toutes les non-conformités, par priorité : 🚨 Urgent (sous 1 mois) ; ⚠️ Important (sous 3 mois) ; ℹ️ À planifier (sous 12 mois), à compter de la date de l\'audit.</p>'
     + (actions.length ? tableauActionsRapport(actions, true) : '<p class="rc-vide">' + e(messageVideRapport(d.message)) + '</p>')
     + '</section>';
 
   const blocs = avecPhotos.map(a => '<article class="rc-detail"><header><span class="rc-ref">' + e(a.ref) + '</span> — ' + e(a.label)
-      + ' <span class="rc-prio rc-prio-' + e(String(a.priorite).toLowerCase()) + '">' + e(a.priorite) + '</span>'
+      + ' ' + badgePrioriteRapport(a.priorite)
       + (a.note ? ' <span class="rc-note">Note ' + e(a.note) + '/5</span>' : '')
       + (a.pareto ? ' <span class="rc-pareto' + (a.pareto === 'crit' ? ' rc-pareto-crit' : '') + '">⚡ Prioritaire</span>' : '')
       + '</header>' + (a.constat ? '<p class="rc-constat"><strong>Constat :</strong> ' + e(a.constat) + '</p>' : '')
@@ -5715,7 +5829,7 @@ function construireRapportClient(d){
     + (blocs || '<p class="rc-vide">Aucune photo n\'a été ajoutée à cet audit : les constats figurent dans les sections 1 et 2.</p>')
     + '</section>';
 
-  return couverture + section1 + section2 + section3 + '<div class="rc-pied-secours">Sam Incendie - Expert Sécurité Incendie</div>';
+  return couverture + sectionRadar + section1 + section2 + section3 + '<div class="rc-pied-secours">Sam Incendie - Expert Sécurité Incendie</div>';
 }
 // RAPPORT-CLIENT:FIN
 
@@ -5774,6 +5888,7 @@ function rassemblerDonneesRapport(){
     dateRapport: id.date ? new Date(id.date).toLocaleDateString('fr-FR') : new Date().toLocaleDateString('fr-FR'),
     synthese: {score: scoreGlobalRapport(), nbNonConformites: actions.length, nbP1: actions.filter(a => a.priorite === 'P1').length, nbPareto: actions.filter(a => a.pareto).length},
     message: plan.message,
+    radar: getAuditData().domains.map(dom => ({label: dom.gn2Type ? 'Zone ' + dom.gn2Type : dom.name, score: getDomainScore(dom)})),
     actions: actions
   };
 }
