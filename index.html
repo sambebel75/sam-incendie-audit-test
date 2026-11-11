@@ -893,7 +893,7 @@ input[type="number"], input[type="text"], input[type="email"], input[type="tel"]
 if ('serviceWorker' in navigator) {
   try {
     // Doit rester égale à VERSION dans sw.js : le message n'apparaît que si le service worker actif est plus récent que la page.
-    const VERSION_PAGE = 'v35';
+    const VERSION_PAGE = 'v36';
     let bandeauAffiche = false;
     navigator.serviceWorker.addEventListener('message', e => {
       if (!e.data || e.data.type !== 'sw-active' || e.data.version === VERSION_PAGE || bandeauAffiche) return;
@@ -1159,7 +1159,9 @@ a.essai-btn{display:inline-flex;align-items:center;justify-content:center;text-d
   #rapport-client .rc-prio{display:inline-flex;flex-direction:column;align-items:center;gap:.3mm;min-width:0;max-width:100%;white-space:nowrap;padding:1mm 1.5mm;border-radius:1.5mm;border:.6pt solid;font-weight:700;line-height:1.15;text-align:center}
   #rapport-client .rc-prio-ico{font-size:12pt;font-family:"Segoe UI Emoji","Apple Color Emoji","Noto Color Emoji",sans-serif}
   #rapport-client .rc-prio-lib{font-size:6.5pt;text-transform:uppercase;letter-spacing:0;white-space:nowrap;overflow-wrap:normal;word-break:keep-all}
-  #rapport-client .rc-table td.rc-centre{padding-left:.8mm;padding-right:.8mm;overflow-wrap:normal}
+  #rapport-client .rc-table td.rc-centre{padding-left:.8mm;padding-right:.8mm;overflow-wrap:normal;word-break:keep-all;white-space:nowrap}
+  #rapport-client .rc-table-pareto .rc-c-prio,#rapport-client .rc-table-complet .rc-c-prio{width:12%}
+  #rapport-client .rc-table-pareto td.rc-centre .rc-prio,#rapport-client .rc-table-complet td.rc-centre .rc-prio{white-space:nowrap;overflow-wrap:normal;word-break:keep-all}
   #rapport-client .rc-prio-p1{background:#fee2e2;border-color:#f87171;color:#991b1b}
   #rapport-client .rc-prio-p2{background:#ffedd5;border-color:#fb923c;color:#9a3412}
   #rapport-client .rc-prio-p3{background:#dbeafe;border-color:#60a5fa;color:#1e40af}
