@@ -538,7 +538,6 @@ body.mode-essai .toolbar{justify-content:center}
   body{font-size:12px;margin:0;padding:0}
   .action-table{box-shadow:none!important}
   .at-head,.at-row{grid-template-columns:50px 1fr 70px 50px 140px 160px!important;gap:4px!important}
-  #printCR{display:block!important}
   #printRadarWrap{display:block!important;text-align:center;margin:12px 0}
   #radarChart{display:none!important}
   /* BUG1 FIX: page de garde */
@@ -894,7 +893,7 @@ input[type="number"], input[type="text"], input[type="email"], input[type="tel"]
 if ('serviceWorker' in navigator) {
   try {
     // Doit rester égale à VERSION dans sw.js : le message n'apparaît que si le service worker actif est plus récent que la page.
-    const VERSION_PAGE = 'v31';
+    const VERSION_PAGE = 'v32';
     let bandeauAffiche = false;
     navigator.serviceWorker.addEventListener('message', e => {
       if (!e.data || e.data.type !== 'sw-active' || e.data.version === VERSION_PAGE || bandeauAffiche) return;
@@ -1104,10 +1103,84 @@ a.essai-btn{display:inline-flex;align-items:center;justify-content:center;text-d
   body:has(#panel-lead-lock.active) .essai h3{break-after:avoid}
   body:has(#panel-lead-lock.active) .essai-fam,body:has(#panel-lead-lock.active) .essai-kpi{break-inside:avoid}
 }
+
+/* ===== RAPPORT CLIENT (PDF imprimé) : construit par imprimerRapportClient(), seul contenu imprimé tant que body.mode-rapport est actif ===== */
+/* RAPPORT-CSS:DEBUT */
+#rapport-client{display:none}
+@page rapport{
+  size:A4 portrait;margin:14mm 13mm 18mm 13mm;
+  @bottom-left{content:"Sam Incendie - Expert Sécurité Incendie";font:8.5pt "Segoe UI",Arial,Helvetica,sans-serif;color:#555}
+  @bottom-right{content:"Page " counter(page) " / " counter(pages);font:8.5pt "Segoe UI",Arial,Helvetica,sans-serif;color:#555}
+}
+@media print{
+  body.mode-rapport{background:#fff!important;color:#1a202c!important}
+  body.mode-rapport > *:not(#rapport-client){display:none!important}
+  body.mode-rapport #rapport-client{display:block!important;page:rapport;font-family:"Segoe UI",Arial,Helvetica,sans-serif;font-size:9.5pt;line-height:1.4;color:#1a202c;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  #rapport-client *{box-sizing:border-box}
+  #rapport-client .rc-couverture{display:flex;flex-direction:column;min-height:245mm}
+  #rapport-client .rc-entete{display:flex;align-items:center;gap:6mm;border-bottom:3pt solid #e8341c;padding-bottom:5mm}
+  #rapport-client .rc-logo{height:22mm;width:auto;display:block}
+  #rapport-client .rc-marque{font-size:20pt;font-weight:700;color:#e8341c;line-height:1.1}
+  #rapport-client .rc-marque small{display:block;font-size:9.5pt;font-weight:400;color:#4a5568;letter-spacing:.5pt;text-transform:uppercase;margin-top:1mm}
+  #rapport-client .rc-titre{font-size:26pt;margin:26mm 0 12mm;color:#1a202c;line-height:1.15;font-weight:800}
+  #rapport-client .rc-infos{width:100%;border-collapse:collapse;margin-bottom:12mm}
+  #rapport-client .rc-infos th{text-align:left;width:30%;font-weight:400;color:#718096;padding:2.2mm 0;border-bottom:.5pt solid #e2e8f0}
+  #rapport-client .rc-infos td{font-weight:700;padding:2.2mm 0;border-bottom:.5pt solid #e2e8f0}
+  #rapport-client .rc-synthese{border:1pt solid #cbd5e0;border-radius:3mm;padding:5mm 6mm;background:#f7fafc;break-inside:avoid}
+  #rapport-client .rc-synthese h2{font-size:11pt;text-transform:uppercase;letter-spacing:.6pt;margin:0 0 4mm;color:#2d3748;border:0;padding:0}
+  #rapport-client .rc-kpis{display:flex;gap:5mm}
+  #rapport-client .rc-kpi{flex:1;background:#fff;border:.5pt solid #e2e8f0;border-radius:2mm;padding:4mm 2mm;text-align:center;display:flex;flex-direction:column;gap:1mm}
+  #rapport-client .rc-kpi-val{font-size:22pt;font-weight:800;line-height:1.1}
+  #rapport-client .rc-kpi-lib{font-size:8.5pt;color:#4a5568;text-transform:uppercase;letter-spacing:.4pt}
+  #rapport-client .rc-vert{color:#2f855a}
+  #rapport-client .rc-ambre{color:#c05621}
+  #rapport-client .rc-rouge{color:#c53030}
+  #rapport-client .rc-gris{color:#718096}
+  #rapport-client .rc-pareto-note{margin:8mm 0 0;padding:4mm 5mm;border-left:3pt solid #f59e0b;background:#fffbeb;font-size:10pt;color:#744210;break-inside:avoid}
+  #rapport-client .rc-meta{margin:auto 0 0;padding-top:8mm;font-size:9pt;color:#718096}
+  #rapport-client .rc-section{break-before:page}
+  #rapport-client .rc-section h2{font-size:15pt;color:#1a202c;border-bottom:1.5pt solid #e8341c;padding-bottom:2mm;margin:0 0 4mm;break-after:avoid}
+  #rapport-client .rc-intro{font-size:9pt;color:#4a5568;margin:0 0 4mm;break-after:avoid}
+  #rapport-client .rc-table{width:100%;border-collapse:collapse;table-layout:fixed;font-size:8.6pt;line-height:1.35}
+  #rapport-client .rc-table thead{display:table-header-group}
+  #rapport-client .rc-table th{background:#1e2d3e;color:#fff;text-align:left;padding:2mm;font-size:8.5pt;font-weight:700}
+  #rapport-client .rc-table td{vertical-align:top;padding:1.6mm 2mm;border-bottom:.5pt solid #cbd5e0;overflow-wrap:anywhere}
+  #rapport-client .rc-table tr{break-inside:avoid;page-break-inside:avoid}
+  #rapport-client .rc-c-ref{width:14%}
+  #rapport-client .rc-c-constat{width:18%}
+  #rapport-client .rc-table-pareto .rc-c-preco{width:60%}
+  #rapport-client .rc-table-complet .rc-c-preco{width:46%}
+  #rapport-client .rc-c-prio{width:8%}
+  #rapport-client .rc-c-ech{width:14%}
+  #rapport-client .rc-ref{font-family:Consolas,"Courier New",monospace;font-size:8.5pt;color:#4a5568}
+  #rapport-client .rc-pareto{display:inline-block;margin-top:1.5mm;padding:.5mm 1.2mm;white-space:nowrap;background:#fef3c7;border:.5pt solid #f59e0b;border-radius:1mm;font-family:"Segoe UI",Arial,sans-serif;font-size:7pt;font-weight:700;color:#92400e}
+  #rapport-client .rc-pareto-crit{background:#fee2e2;border-color:#f87171;color:#991b1b}
+  #rapport-client .rc-source{margin-top:1.2mm;font-size:7pt;color:#718096}
+  #rapport-client .rc-prio{display:inline-block;min-width:8mm;padding:.8mm 2mm;border-radius:1.5mm;color:#fff;font-weight:700;font-size:8.5pt;text-align:center}
+  #rapport-client .rc-prio-p1{background:#c53030}
+  #rapport-client .rc-prio-p2{background:#dd6b20}
+  #rapport-client .rc-prio-p3{background:#d69e2e;color:#1a202c}
+  #rapport-client .rc-centre{text-align:center}
+  #rapport-client .rc-echeance{white-space:nowrap;font-size:8.5pt}
+  #rapport-client .rc-depasse{color:#c53030;font-weight:700}
+  #rapport-client .rc-detail{break-inside:avoid;page-break-inside:avoid;margin:0 0 6mm;border:.5pt solid #cbd5e0;border-radius:2mm;padding:3mm 4mm}
+  #rapport-client .rc-detail header{font-weight:700;margin-bottom:2mm}
+  #rapport-client .rc-note{font-weight:400;color:#4a5568;font-size:8.5pt}
+  #rapport-client .rc-constat{margin:0 0 3mm}
+  #rapport-client .rc-photos{display:flex;flex-wrap:wrap;gap:3mm}
+  #rapport-client .rc-photos figure{margin:0;width:56mm}
+  #rapport-client .rc-photos img{width:56mm;height:42mm;object-fit:cover;border:.5pt solid #cbd5e0;display:block}
+  #rapport-client .rc-photos figcaption{font-size:8pt;color:#718096;margin-top:1mm}
+  #rapport-client .rc-vide{font-style:italic;color:#4a5568}
+  #rapport-client .rc-pied-secours{display:none}
+  body.mode-rapport.rapport-sans-marges #rapport-client .rc-pied-secours{display:block;position:fixed;bottom:-14mm;left:0;right:0;text-align:center;font-size:8.5pt;color:#555}
+}
+/* RAPPORT-CSS:FIN */
 </style>
 </head>
 <body>
 <noscript><div style="max-width:520px;margin:60px auto;padding:20px;font:16px/1.5 Arial,sans-serif;text-align:center"><h1 style="font-size:22px">JavaScript est désactivé</h1><p>Activez JavaScript dans votre navigateur pour utiliser l'application, ou utilisez Chrome, Edge, Firefox ou Safari récent.</p></div></noscript>
+<div id="rapport-client" aria-hidden="true"></div>
 
 <header class="hdr">
   <div>
@@ -1399,41 +1472,6 @@ a.essai-btn{display:inline-flex;align-items:center;justify-content:center;text-d
 <!-- TAB 4: PLAN D'ACTIONS -->
 <div class="panel" id="panel4">
   <div class="plan-wrap">
-    <!-- Page de garde impression — masquée à l'écran (BUG3 FIX: statique, peuplée par doPrint) -->
-    <div class="print-only-cover">
-      <div style="border-bottom:4px solid #E53E3E;padding-bottom:20px;display:flex;justify-content:space-between;align-items:center">
-        <div>
-          <h1 style="margin:0;color:#E53E3E;font-size:28px;font-weight:800;letter-spacing:-.5px">SAM INCENDIE</h1>
-          <p style="margin:4px 0 0;font-size:11px;text-transform:uppercase;letter-spacing:1px;color:#4a5568;font-weight:bold">Audit, Conseil & Conformité Réglementaire ERP / Habitation</p>
-        </div>
-        <span style="display:inline-block;padding:5px 10px;background:#2d3748;color:white;font-size:10px;font-weight:bold;border-radius:3px;text-transform:uppercase">Rapport Technique Officiel</span>
-      </div>
-      <div style="margin-top:50mm;margin-bottom:50mm;text-align:left">
-        <span style="font-size:12px;font-weight:bold;color:#E53E3E;text-transform:uppercase;letter-spacing:1.5px;display:block;margin-bottom:10px">Rapport d'Évaluation de Sécurité</span>
-        <h2 style="margin:0 0 15px;font-size:32px;color:#1a202c;font-weight:800;line-height:1.2">PLAN D'ACTIONS DE MISE EN CONFORMITÉ INCENDIE</h2>
-        <p style="margin:0;font-size:14px;color:#4a5568;line-height:1.5;max-width:90%">Ce document consigne l'ensemble des écarts constatés par rapport au règlement de sécurité contre les risques d'incendie et de panique, et liste les mesures correctives obligatoires à appliquer.</p>
-      </div>
-      <div style="background:#f7fafc;border:1px solid #e2e8f0;padding:20px;border-radius:6px;margin-bottom:30mm">
-        <h4 style="margin:0 0 12px;color:#2d3748;font-size:13px;text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid #cbd5e0;padding-bottom:6px">Informations sur l'Établissement Audité</h4>
-        <table style="width:100%;border-collapse:collapse;margin:0;background:transparent">
-          <tr><td style="padding:4px 0;font-size:12px;color:#718096;width:30%">Nom / Enseigne :</td><td style="padding:4px 0;font-size:12px;color:#1a202c;font-weight:bold" id="cover-nom">—</td></tr>
-          <tr><td style="padding:4px 0;font-size:12px;color:#718096">Localisation :</td><td style="padding:4px 0;font-size:12px;color:#1a202c" id="cover-adresse">—</td></tr>
-          <tr><td style="padding:4px 0;font-size:12px;color:#718096">Type d'activité :</td><td style="padding:4px 0;font-size:12px;color:#1a202c;font-weight:bold" id="cover-type">—</td></tr>
-          <tr><td style="padding:4px 0;font-size:12px;color:#718096">Classement catégorie :</td><td style="padding:4px 0;font-size:12px;color:#E53E3E;font-weight:bold" id="cover-cat">—</td></tr>
-          <tr><td style="padding:4px 0;font-size:12px;color:#718096">Effectif total :</td><td style="padding:4px 0;font-size:12px;color:#1a202c" id="cover-eff">—</td></tr>
-        </table>
-      </div>
-      <div style="border-top:1px solid #e2e8f0;padding-top:15px;display:flex;justify-content:space-between;align-items:flex-end">
-        <div>
-          <p style="margin:0;font-size:11px;color:#718096">Date de l'évaluation : <strong id="cover-date">—</strong></p>
-          <p style="margin:2px 0 0;font-size:11px;color:#718096">Auditeur : <strong id="cover-auditeur">—</strong> — <span id="cover-organisme">—</span> | Réf. <span id="cover-ref">—</span></p>
-        </div>
-        <div style="text-align:right;width:50mm">
-          <p style="margin:0 0 35px;font-size:10px;text-transform:uppercase;color:#718096;font-weight:bold;letter-spacing:.5px">Visa de l'expert certifié, jury SSIAP 1 & 2</p>
-          <div style="border-bottom:1px dashed #718096;width:100%"></div>
-        </div>
-      </div>
-    </div>
     <div class="plan-toolbar">
       <strong>Filtre :</strong>
       <div class="plan-filter">
@@ -1450,8 +1488,6 @@ a.essai-btn{display:inline-flex;align-items:center;justify-content:center;text-d
     <div id="panel-plan-target"></div>
   </div>
 </div>
-
-<div id="printCR" style="display:none"></div>
 
 <div class="panel" id="panel5">
   <div class="calc-up">
@@ -2123,232 +2159,232 @@ function notePointsSpecifiques(spec){
 
 // ==================== MATRICE DES PRECONISATIONS ====================
 // Texte de préconisation par point de la grille (clé = identifiant du point). Utilisé par le plan d actions et le compte rendu
-// quand l auditeur n a rien saisi. Seules les entrées de statut 'valide' sont affichées : une entrée 'a_valider' reste ignorée.
+// quand l auditeur n a rien saisi. Seules les entrées de statut 'valide' sont affichées : une entrée 'a_valider' reste ignorée (v32 : les 45 entrées sont validées).
 // Chaque entrée porte sa source réglementaire, affichée sous le texte. Le texte et les chiffres sont validés par l expert (SSIAP 3).
 // Domaine e01 validé le 10/11/2026. Domaines suivants : brouillons à valider ligne par ligne avant ajout.
 const MATRICE_PRECONISATIONS = {
   e01_01: {
-    statut: 'valide', valide_le: '2026-11-10',
+    statut: 'valide', valide_le: '2026-11-10', valide_par: 'Sam Incendie',
     source: "CO 2 §1 et §4 ; desserte : CO 1 §3",
     preconisation: "Rétablir en permanence la voie utilisable par les engins de secours : supprimer tout obstacle et tout stationnement sur la chaussée. Contrôler ses caractéristiques : chaussée de 3 m, bandes de stationnement exclues (largeur exigée de 8 à 12 m) ou de 6 m (largeur exigée supérieure ou égale à 12 m) ; hauteur libre 3,50 m ; pente inférieure à 15 % ; rayon intérieur au moins égal à 11 m avec surlargeur S = 15/R si R est inférieur à 50 m ; force portante calculée pour 160 kN (90 kN maximum par essieu). Poser ou remettre en état le panneau de limite de tonnage, visible en toutes circonstances."
   },
   e01_02: {
-    statut: 'valide', valide_le: '2026-11-10',
+    statut: 'valide', valide_le: '2026-11-10', valide_par: 'Sam Incendie',
     source: "Arrêté municipal / recommandation SDIS",
     preconisation: "S'assurer que l'adresse est visible depuis la voie publique et signalée sur le bâtiment (arrêté municipal / recommandation SDIS)."
   },
   e01_03: {
-    statut: 'valide', valide_le: '2026-11-10', a_revoir_le: '2027-06-01',
+    statut: 'valide', valide_le: '2026-11-10', valide_par: 'Sam Incendie', a_revoir_le: '2027-06-01',
     source: "MS 18 à MS 24 (MS 18 : rédaction en vigueur jusqu'au 01/06/2027) ; PE 26 §2",
     preconisation: "Vérifier d'abord que l'obligation s'applique : plancher bas d'un étage à plus de 18 m du niveau de la voie accessible aux engins (MS 18 §1, rédaction en vigueur jusqu'au 01/06/2027, avec locaux à risques importants dans ces étages ; PE 26 §2 en 5e catégorie, dans les escaliers protégés). Si oui et colonne absente : installer une colonne sèche conforme aux normes françaises (MS 18 §2). Si elle existe, contrôler : raccords d'alimentation accessibles aux sapeurs-pompiers, signalés avec une pancarte indiquant l'escalier desservi, sur la façade la plus proche des bouches ou poteaux d'incendie, à 60 m au plus (MS 19) ; prises d'incendie dans les cages d'escalier (MS 20) ; dispositif de vidange et de purge d'air (MS 21). Colonne en charge (humide) : alimentation de 60 m³/h sous 4,5 à 8,5 bars pendant au moins 1 h (MS 23 §1) et réalimentation par deux orifices de 65 mm à moins de 60 m d'un poteau (MS 24 §1)."
   },
   e01_04: {
-    statut: 'valide', valide_le: '2026-11-10',
+    statut: 'valide', valide_le: '2026-11-10', valide_par: 'Sam Incendie',
     source: "MS 5 à MS 7",
     preconisation: "Faire évaluer les moyens en eau avec le service départemental d'incendie et de secours (MS 6 §1). Si les prises d'eau publiques sont trop éloignées ou de débit insuffisant, installer des bouches ou poteaux d'incendie normalisés, ou un point d'eau utilisable en permanence (MS 5). Contrôler que chaque point d'eau est facilement accessible en permanence, signalé selon la norme française et situé à 5 m au plus du bord de la chaussée ou de l'aire de stationnement des engins (MS 7)."
   },
   e01_05: {
-    statut: 'valide', valide_le: '2026-11-10',
+    statut: 'valide', valide_le: '2026-11-10', valide_par: 'Sam Incendie',
     source: "Prescriptions du SDIS local",
     preconisation: "Installer un dispositif de remise des clés sécurisé (type boîte à clés) accessible aux sapeurs-pompiers, conformément aux prescriptions du SDIS local."
   },
   e01_06: {
-    statut: 'valide', valide_le: '2026-11-10',
+    statut: 'valide', valide_le: '2026-11-10', valide_par: 'Sam Incendie',
     source: "CO 2 §2 et §4 ; desserte : CO 1 §3 a ; CO 3 §2 et §3",
     preconisation: "Libérer en permanence la section de voie utilisable pour la mise en station des échelles aériennes (voie échelle) et en interdire le stationnement. Contrôler : longueur au moins égale à 10 m ; largeur libre de chaussée au moins égale à 4 m ; pente au plus égale à 10 % ; position permettant aux échelles d'atteindre un point d'accès (balcon, coursive) depuis lequel toutes les baies de la façade sont atteignables, deux points d'accès distants de 20 m au plus ; raccordement à la voie publique par une voie engins si la section n'est pas sur la voie publique ; en impasse : largeur 10 m avec chaussée libre de stationnement de 7 m au moins. Panneau de tonnage visible et permanence des conditions assurées (CO 2 §4)."
   },
   e02_01: {
-    statut: 'valide', valide_le: '2026-11-10',
+    statut: 'valide', valide_le: '2026-11-10', valide_par: 'Sam Incendie',
     source: "CO 36 ; CO 38 ; PE 11 §3 et §5 (5e catégorie)",
     preconisation: "Mettre le nombre et la largeur des dégagements en conformité avec l'effectif admis. Calcul : à chaque niveau, cumuler l'effectif du niveau et ceux des niveaux situés au-dessus (niveaux en surélévation) ou en dessous (sous-sols) ; au rez-de-chaussée, retenir l'effectif total de l'établissement (CO 38 §2). Ajouter au public le personnel qui ne dispose pas de dégagements indépendants (CO 36). Au-delà de 200 personnes, ne pas admettre de dégagement normal de moins de deux unités de passage (CO 36). Sous-sol dont le point le plus bas est à plus de 2 m en contrebas et recevant plus de 100 personnes : calculer à partir d'un effectif arrondi à la centaine supérieure et majoré de 10 % par mètre au-delà de 2 m (CO 38). Établissement de 5e catégorie : appliquer les nombres et largeurs de PE 11 §3."
   },
   e02_02: {
-    statut: 'valide', valide_le: '2026-11-10',
+    statut: 'valide', valide_le: '2026-11-10', valide_par: 'Sam Incendie',
     source: "CO 36 ; CO 37 §1 et §2 ; PE 11 §3 (5e catégorie)",
     preconisation: "Mettre la largeur des dégagements en conformité : elle se calcule en unités de passage de 0,60 m, portée à 0,90 m pour une unité et à 1,40 m pour deux ; une largeur intermédiaire ne compte que pour la largeur type immédiatement inférieure (1,60 m compte pour 2 UP, soit 1,40 m) ; aucun rétrécissement du cheminement d'évacuation (CO 36). Supprimer toute saillie ou tout dépôt qui réduit la largeur réglementaire ; les aménagements fixes sont admis jusqu'à 1,10 m de hauteur s'ils ne dépassent pas 0,10 m de saillie (CO 37 §1). Au-delà de la largeur minimale, le mobilier en saillie (hors dépôts) n'est admis que s'il ne gêne pas la circulation, ne peut être ni déplacé ni renversé et ne gêne pas les portes à fermeture automatique ; jamais dans un escalier protégé (CO 37 §2). Aménagement dans un immeuble existant de 5e catégorie : 0,90 m peut être ramené à 0,80 m (PE 11 §3)."
   },
   e02_03: {
-    statut: 'valide', valide_le: '2026-11-10',
+    statut: 'valide', valide_le: '2026-11-10', valide_par: 'Sam Incendie',
     source: "CO 47 ; CO 34 §1 point 5 ; PE 11 §6 d (5e catégorie)",
     preconisation: "Pour toute porte résistant au feu maintenue ouverte pour l'exploitation : la mettre en conformité avec la norme relative aux portes à fermeture automatique (ferme-porte et dispositif de maintien en ouverture libéré au moment du sinistre, CO 34 §1 point 5), poser la plaque visible « Porte coupe-feu. Ne mettez pas d'obstacle à la fermeture. » et obtenir la fermeture dans les conditions de l'article MS 60 (CO 47). Assurer la fermeture simultanée de l'ensemble des portes, commandée par la détection automatique, lorsque l'établissement comporte des locaux de sommeil au-dessus du premier étage, lorsqu'il existe des portes d'isolement à fermeture automatique visées à CO 10, ou lorsque le type l'exige (CO 47). Escaliers encloisonnés de 5e catégorie : ferme-porte, ou fermeture asservie à une détection automatique sensible aux fumées et aux gaz si la porte doit rester ouverte (PE 11 §6 d)."
   },
   e02_04: {
-    statut: 'valide', valide_le: '2026-11-10',
+    statut: 'valide', valide_le: '2026-11-10', valide_par: 'Sam Incendie',
     source: "CO 42 ; CO 34 §2 ; EC 9 ; PE 24 §2 (5e catégorie)",
     preconisation: "Rétablir un balisage lisible de jour et de nuit sur tous les cheminements d'évacuation, placé de façon que, de tout point accessible au public, au moins une indication soit visible, même en cas d'affluence, et à une hauteur différente de celle des autres indications (CO 42 §1). Utiliser des panneaux opaques ou transparents, lumineux, rectangulaires, conformes à la norme NF X 08-003 ; réserver au balisage des dégagements les signaux blancs sur fond vert (dont les flèches directionnelles) ; remplacer les signaux normalisés n° 50041, 50042 et 50044, interdits dans les ERP (CO 42 §2). Si le cheminement d'évacuation est compliqué par l'exploitation, porter une attention particulière au balisage (CO 34 §2 point 1 a). Éclairage de sécurité d'évacuation des escaliers, des circulations de plus de 10 m ou à cheminement compliqué et des salles de plus de 100 m² (PE 24 §2, 5e catégorie). Les indications de balisage sont éclairées par l'éclairage d'évacuation : par leur luminaire si elles sont transparentes, par les luminaires situés à proximité si elles sont opaques ; dans les couloirs et dégagements, les foyers lumineux ne sont pas espacés de plus de 15 m et ont un flux lumineux assigné d'au moins 45 lumens pendant la durée de fonctionnement assignée (EC 9)."
   },
   e02_05: {
-    statut: 'valide', valide_le: '2026-11-11',
+    statut: 'valide', valide_le: '2026-11-11', valide_par: 'Sam Incendie',
     source: "EC 7 ; EC 13 à EC 15 ; EL 12 §3 ; EL 18 §3",
     preconisation: "Maintenir l'éclairage de sécurité à l'état de veille pendant l'exploitation (EC 7 ; EC 14 §1), avec une source de sécurité d'une durée assignée de fonctionnement d'au moins 1 heure (EC 7 ; EL 12 §3). Faire vérifier par l'exploitant une fois par mois le passage en fonctionnement en cas de défaillance de l'alimentation normale et l'allumage de toutes les lampes (fonctionnement limité au temps nécessaire au contrôle visuel), ainsi que l'efficacité de la commande de mise en position de repos à distance et la remise automatique en veille au retour de l'alimentation normale ; vérifier une fois tous les six mois l'autonomie d'au moins 1 heure. Ces opérations peuvent être automatiques avec des blocs autonomes à système automatique de test intégré (SATI) conforme à NF C 71-820 (mai 1999). Dans les établissements fermés par périodes, opérer de façon qu'au début de chaque ouverture au public l'installation ait retrouvé l'autonomie prescrite (EC 14 §3). Disposer en permanence de lampes de rechange correspondant aux modèles utilisés, annexer au registre de sécurité une notice de maintenance avec les pièces de rechange, et consigner l'entretien au registre (EC 13 ; EL 18 §3). Consigner dans le registre de sécurité les opérations de vérification et leurs résultats (EC 14 §3). Vérifier l'installation dans les conditions de l'article EL 19 (EC 15)."
   },
   e02_06: {
-    statut: 'valide', valide_le: '2026-11-10',
+    statut: 'valide', valide_le: '2026-11-10', valide_par: 'Sam Incendie',
     source: "MS 41 ; MS 47 ; O 21 §2 (type O) ; PE 27 §4 et §6 (5e catégorie)",
     preconisation: "Afficher les plans d'évacuation et les consignes de sécurité (MS 41 / MS 47) dans les zones accessibles au public et au personnel. Afficher sur supports fixes et inaltérables, constamment mises à jour, des consignes conformes à la norme NF S 60-303 indiquant : les modalités d'alerte des sapeurs-pompiers ; les dispositions à prendre pour la sécurité du public et du personnel ; celles pour favoriser l'évacuation des personnes en situation de handicap ou leur évacuation différée ; la mise en œuvre des moyens de secours ; l'accueil et le guidage des sapeurs-pompiers (MS 47). Type O : apposer à chaque niveau, à proximité du cheminement habituel, un plan d'évacuation conforme à NF S 60-303 (O 21 §2). 5e catégorie : apposer à l'entrée un plan d'intervention (PE 27 §6). Apposer à chaque entrée de bâtiment un plan schématique, sous forme de pancarte inaltérable, pour faciliter l'intervention des sapeurs-pompiers, ayant les caractéristiques des plans d'intervention de la norme NF S 60-303 (norme remplacée depuis juin 2013 par la norme NF X 08-070) ; il représente au minimum le sous-sol, le rez-de-chaussée, chaque étage ou l'étage courant, avec les dégagements, les espaces d'attente sécurisés et les cloisonnements principaux, et l'emplacement des locaux techniques et autres locaux à risques particuliers, des dispositifs et commandes de sécurité, des organes de coupure des fluides et des sources d'énergie, et des moyens d'extinction fixes et d'alarme (MS 41)."
   },
   e02_08: {
-    statut: 'valide', valide_le: '2026-11-10',
+    statut: 'valide', valide_le: '2026-11-10', valide_par: 'Sam Incendie',
     source: "MS 48 §1 ; MS 51 ; MS 67 §3 ; MS 72 §1 ; J 39 ; U 47 §2 (type U) ; R 33 (type R) ; PE 27 §2 c et §5",
     preconisation: "Organiser des exercices d'instruction du personnel sous la responsabilité de l'exploitant et porter leur date sur le registre de sécurité (MS 51). Exercices d'évacuation, selon le type : périodiques en type U (U 47 §2) ; pratiques, au cours de l'année scolaire, le premier dans le mois suivant la rentrée, de nuit si l'établissement a des locaux à sommeil, durée d'évacuation consignée au registre, en type R (R 33). Faire donner au personnel une formation conduite à l'initiative et sous la responsabilité de l'exploitant (MS 48 §1). Informer le personnel de la caractéristique et de la signification du signal sonore d'alarme générale, cette information pouvant être complétée par des exercices périodiques d'évacuation (MS 67 §3 ; PE 27 §2 c). Initier le personnel à la mise en œuvre des appareils d'extinction et d'alerte, cette information étant maintenue dans le temps (MS 72 §1). Type J : informer tout le personnel des dangers d'un incendie et des consignes, et organiser des exercices pratiques au moins une fois par semestre (J 39 §1 et §2). 5e catégorie : instruire le personnel sur la conduite à tenir en cas d'incendie et l'entraîner à la manœuvre des moyens de secours (PE 27 §5)."
   },
   e03_01: {
-    statut: 'a_valider',
+    statut: 'valide', valide_le: '2026-11-11', valide_par: 'Sam Incendie',
     source: "DF 2 ; DF 5 §1 et §4 ; DF 6 §1 et §2 ; DF 7 §1 ; IT 246 §7.1.2",
     preconisation: "Identifier les volumes à désenfumer et mettre chaque zone en conformité. Circulations horizontales encloisonnées : désenfumage par balayage naturel ou mécanique obligatoire si elles font plus de 30 m, sont desservies par des escaliers en surpression, desservent des locaux à sommeil ou sont en sous-sol (DF 6 §1). Halls : traités comme des circulations, mais comme des locaux s'ils dépassent 300 m² ou si le désenfumage des circulations du niveau est exigé (DF 6 §2). Locaux : plus de 100 m² en sous-sol, plus de 300 m² en rez-de-chaussée et en étage, plus de 100 m² sans ouverture sur l'extérieur (DF 7 §1). Escaliers encloisonnés : balayage naturel ou mise en surpression, jamais d'extraction mécanique des fumées (DF 5 §1) ; désenfumage ou mise à l'abri obligatoire s'ils desservent plus de deux niveaux en sous-sol, parcs de stationnement exclus (DF 5 §4). Locaux de plus de 2 000 m² ou de plus de 60 m de long : cantons de 1 600 m² au plus, de 60 m de long au plus, de préférence d'au moins 1 000 m² (IT 246 §7.1.2). Tenir à jour le plan des évacuations de fumée, amenées d'air, réseaux, ventilateurs et commandes, avec sa note explicative (DF 2)."
   },
   e03_02: {
-    statut: 'a_valider',
+    statut: 'valide', valide_le: '2026-11-11', valide_par: 'Sam Incendie',
     source: "IT 246 §3.6.2, §3.6.3, §3.6.4 ; DF 3 §5 ; DF 4 §3",
     preconisation: "Remettre en état les commandes de désenfumage : les commandes manuelles doivent ouvrir les exutoires, ouvrants ou volets de la zone concernée, avec ouverture simultanée des évacuations de fumée et des amenées d'air à partir du même organe quand ce sont des dispositifs actionnés de sécurité (IT 246 §3.6.2). SSI de catégorie A ou B : commandes manuelles uniquement depuis le CMSI (NF S 61-934). SSI de catégorie C, D ou E : dispositif de commande avec signalisation, de commandes manuelles regroupées ou de commande manuelle (NF S 61-938), ce dernier placé près de l'accès principal des volumes concernés (IT 246 §3.6.2). Si la réglementation impose une commande automatique par détection, la doubler par la commande manuelle de l'unité de commande manuelle centralisée du CMSI (IT 246 §3.6.3). Permettre le réarmement depuis le sol de la zone (IT 246 §3.6.4). Faire admettre à la marque NF les dispositifs de commande et les coffrets de relayage (DF 4 §3). Prévoir l'arrêt de la ventilation mécanique, VMC exceptée, à la mise en fonctionnement du désenfumage (DF 3 §5)."
   },
   e03_03: {
-    statut: 'a_valider',
+    statut: 'valide', valide_le: '2026-11-11', valide_par: 'Sam Incendie',
     source: "IT 246 §4.4, §4.6, §4.7, §4.8, §6.2, §7.2.3 ; DF 3 §3",
     preconisation: "Mettre le désenfumage mécanique en conformité. Circulations encloisonnées : bouches d'amenée d'air et d'extraction alternées ; distance entre amenée et extraction de 15 m au plus en parcours rectiligne et de 10 m dans le cas contraire ; toute porte de local public à 5 m au plus d'une bouche ; amenées d'air à 1 m au plus du plancher ; extraction avec la partie basse à 1,80 m au moins du plancher, dans le tiers supérieur ; débit d'extraction d'au moins 0,5 m³/s par unité de passage, limité à 8 m³/s par circulation ; différence de pression entre escalier et circulation inférieure à 80 Pa, portes de l'escalier fermées (IT 246 §6.2). Locaux : débit horaire d'extraction d'au moins 12 fois le volume du canton, jamais inférieur à 1,5 m³/s par local (IT 246 §7.2.3). Amenées d'air : vitesse de passage inférieure à 5 m/s ; amenées naturelles dimensionnées pour la totalité du débit extrait ; amenées mécaniques à environ 0,6 fois le débit extrait (IT 246 §4.6.1). Ventilateurs dimensionnés au débit nominal augmenté de la fuite tolérable, de l'ordre de 20 % ; ventilateurs d'extraction capables de fonctionner une heure avec des fumées à 400 °C ; installés à l'extérieur ou dans un local technique à parois coupe-feu 1 h, porte coupe-feu 1/2 h avec ferme-porte ; état du sectionneur reporté au poste de sécurité ; mise en route avec une temporisation de 30 secondes au plus (IT 246 §4.7, §4.8). Conduits : débit de fuite total inférieur à 20 % du débit exigé au niveau le plus défavorisé (IT 246 §4.4). Alimentation électrique de sécurité conforme à NF S 61-940 (DF 3 §3)."
   },
   e03_04: {
-    statut: 'a_valider',
+    statut: 'valide', valide_le: '2026-11-11', valide_par: 'Sam Incendie',
     source: "IT 246 §3.2, §3.6.1, §3.6.2, §3.6.4, §3.9, §7.1.4 ; DF 10 §2",
     preconisation: "Remettre en état les exutoires, ouvrants et volets de désenfumage naturel : conformes à la norme NF S 61-937 (IT 246 §3.6.1) ; aucune dimension d'ouverture inférieure à 0,20 m (IT 246 §3.2) ; commandes manuelles ouvrant simultanément les évacuations de fumée et les amenées d'air de la zone (IT 246 §3.6.2) ; réarmement possible depuis le sol (IT 246 §3.6.4). Locaux de 1 000 m² au plus : surface utile des évacuations de fumée égale à 1/200 de la superficie du local, et surface libre totale des amenées d'air au moins égale à la surface géométrique des évacuations (IT 246 §7.1.4). Les portes utilisées en amenée d'air peuvent être actionnées directement (IT 246 §3.9). Faire vérifier chaque année le fonctionnement des volets, exutoires et ouvrants (DF 10 §2)."
   },
   e03_05: {
-    statut: 'a_valider',
+    statut: 'valide', valide_le: '2026-11-11', valide_par: 'Sam Incendie',
     source: "DF 9 ; DF 10 §1, §2 et §3",
     preconisation: "Faire vérifier les installations de désenfumage tous les ans, dans les conditions des articles GE 6 à GE 10 (DF 10 §1 et §2) : fonctionnement des commandes manuelles et automatiques ; des volets, exutoires et ouvrants ; fermeture des éléments mobiles de compartimentage qui participent au désenfumage ; arrêt de la ventilation de confort (DF 3 §5) ; fonctionnement des ventilateurs ; mesures de pression, de débit et de vitesse en désenfumage mécanique. Si l'installation comprend un désenfumage mécanique et un SSI de catégorie A ou B : vérifications tous les trois ans par un organisme agréé (DF 10 §3). Faire effectuer périodiquement par un personnel compétent l'entretien des sources de sécurité (EL 18), l'entretien courant des éléments mécaniques et électriques selon les prescriptions des constructeurs et l'entretien du système de sécurité (MS 68, notice du constructeur) ; règles d'exploitation et de maintenance : MS 69 et NF S 61-933 (DF 9)."
   },
   e04_01: {
-    statut: 'valide', valide_le: '2026-11-11',
+    statut: 'valide', valide_le: '2026-11-11', valide_par: 'Sam Incendie',
     source: "MS 38 / MS 39",
     preconisation: "Installer des extincteurs adaptés aux risques (eau pulvérisée pour les feux secs, CO2 pour l'électrique) à raison d'un minimum de 1 appareil pour 200 m², avec un minimum de 2 appareils par niveau. Vérifier leur signalisation et leur accessibilité. 5e catégorie : voir PE 26 §1 (1 appareil pour 300 m²)"
   },
   e04_02: {
-    statut: 'a_valider',
+    statut: 'valide', valide_le: '2026-11-11', valide_par: 'Sam Incendie',
     source: "MS 73 §2 ; MS 74 ; MS 75 ; GE 6 ; GE 10",
     preconisation: "Faire vérifier tous les extincteurs au moins une fois par an (MS 73 §2) ; cette vérification peut être réalisée par un technicien compétent sous la responsabilité de l'exploitant, la date, le nom du vérificateur et l'objet des vérifications étant inscrits au registre de sécurité et un relevé des vérifications y étant annexé (GE 6 §1 ; GE 10). Classer au registre de sécurité les rapports, attestations et documents remis après chaque examen ou intervention (MS 75). Permettre aux commissions de sécurité le contrôle efficace des moyens de secours, avec le personnel compétent et le matériel nécessaires aux essais (MS 74)."
   },
   e04_03: {
-    statut: 'a_valider',
+    statut: 'valide', valide_le: '2026-11-11', valide_par: 'Sam Incendie',
     source: "MS 14 à MS 17 ; M 26 (type M)",
     preconisation: "Si des robinets d'incendie armés sont exigés par l'article du type, les installer ou les remettre en conformité : diamètre nominal DN 19/6, DN 25/8 ou DN 33/12, numérotés en série unique (MS 14) ; placés à l'intérieur des bâtiments, le plus près possible et à l'extérieur des locaux à protéger, en nombre et emplacements tels que toute la surface des locaux soit efficacement atteinte, et tout point des locaux à risques importants battu par deux jets de lance au moins ; armoires ou coffrets signalés et sans dispositif de condamnation (MS 15) ; alimentés par une canalisation d'eau en pression desservie par les conduites publiques, ou exceptionnellement par réservoirs élevés ou sous pression (MS 16) ; pression minimale de fonctionnement de 2,5 bars au robinet le plus défavorisé, avec un manomètre à robinets à trois voies près de ce robinet (MS 17). Exemple type M : RIA DN 19/6 ou 25/8 exigés dans les locaux de vente de plus de 3 000 m² (un jet de lance) et dans les établissements de 1re, 2e et 3e catégorie jusqu'à 3 000 m² (deux jets de lance) (M 26)."
   },
   e04_04: {
-    statut: 'a_valider',
+    statut: 'valide', valide_le: '2026-11-11', valide_par: 'Sam Incendie',
     source: "MS 72 ; MS 73 §2 ; MS 75 ; GE 6 ; GE 10",
     preconisation: "Faire vérifier les robinets d'incendie armés au moins une fois par an (MS 73 §2) ; cette vérification peut être réalisée par un technicien compétent sous la responsabilité de l'exploitant, la date, le nom du vérificateur et l'objet des vérifications étant inscrits au registre de sécurité et un relevé des vérifications y étant annexé (GE 6 §1 ; GE 10). Classer au registre de sécurité les rapports et attestations remis après chaque examen ou intervention (MS 75). Maintenir les appareils en permanence en bon état de fonctionnement, avec pancartes indicatrices de manœuvre à proximité (MS 72)."
   },
   e04_06: {
-    statut: 'a_valider',
+    statut: 'valide', valide_le: '2026-11-11', valide_par: 'Sam Incendie',
     source: "MS 25 §1 à §4 ; MS 73 §1, §2 et §4 ; M 26 a (type M)",
     preconisation: "Si un système d'extinction automatique du type sprinkleur est exigé : le faire conforme aux normes françaises homologuées et réalisé par des entreprises spécialisées et dûment qualifiées (MS 25 §4) ; isoler la partie protégée de la partie non protégée dans les conditions des locaux à risques particuliers (MS 25 §2) ; ne pas aménager ni exploiter les locaux d'une façon qui s'oppose au fonctionnement du système (MS 25 §3). Faire vérifier le système avant mise en service par une personne ou un organisme agréé (MS 73 §1), puis tous les trois ans par une personne ou un organisme agréé (MS 73 §2). La vérification triennale comprend l'examen de l'adéquation du système avec les classes de risque au vu du dossier technique et une visite du site, l'examen des conditions de maintenance et d'exploitation, et des essais sur le démarrage et le débit des pompes et sur les dispositifs d'alarme dédiés (MS 73 §4). Exemple type M : installation d'extinction automatique à eau appropriée aux risques dans les locaux de vente de plus de 3 000 m² (M 26 a)."
   },
   e06_01: {
-    statut: 'valide', valide_le: '2026-11-11', redige_par: 'expert',
+    statut: 'valide', valide_le: '2026-11-11', valide_par: 'Sam Incendie', redige_par: 'expert',
     source: "CO 21 §1 à §3 ; CO 24 §1 c",
     preconisation: "Façades : vérifier la règle du C + D (CO 21 §3) : C + D ≥ 1,00 m si la masse combustible mobilisable M ≤ 80 MJ/m², C + D ≥ 1,30 m si M est supérieure à 80 MJ/m². Elle s'applique aux façades des bâtiments comportant des locaux réservés au sommeil au-dessus du 1er étage, à celles des bâtiments dont le plancher bas du dernier niveau est à plus de 8 m et qui sont divisés en secteurs (CO 24 §2) ou en compartiments (CO 25), aux parties de façade au droit des planchers hauts des locaux à risques importants et des planchers d'isolement avec un tiers ; elle n'est pas exigée si l'établissement occupe la totalité du bâtiment et est entièrement équipé d'un système d'extinction automatique du type sprinkleur ou d'un SSI de catégorie A. Éviter le passage rapide des flammes ou des gaz chauds d'un étage à l'autre par la jonction façade-plancher (CO 21 §1). Recouper, lorsque applicable, les vides de façade susceptibles de créer un effet de cheminée tous les deux niveaux par des matériaux de catégorie M 0 (CO 21 §2, dans les deux premiers cas visés au §3 a : locaux de sommeil au-dessus du 1er étage ; bâtiment de plus de 8 m divisé en secteurs ou en compartiments). Mesure distincte, de cloisonnement des circulations et non de façade : recouper les circulations horizontales de grande longueur encloisonnées tous les 25 à 30 m par des parois et blocs-portes PF de degré 1/2 h munis d'un ferme-porte (CO 24 §1 c)."
   },
   e06_02: {
-    statut: 'valide', valide_le: '2026-11-11', redige_par: 'expert',
+    statut: 'valide', valide_le: '2026-11-11', valide_par: 'Sam Incendie', redige_par: 'expert',
     source: "CO 47 ; CO 28",
     preconisation: "Mettre les portes résistant au feu maintenues ouvertes pour l'exploitation en conformité avec la norme visant les portes à fermeture automatique, avec une plaque signalétique bien visible en position d'ouverture, en lettres blanches sur fond rouge ou inversement : « Porte coupe-feu. — Ne mettez pas d'obstacle à la fermeture. » (CO 47 §1 et §2). Obtenir la fermeture de chaque porte dans les conditions de l'article MS 60 (CO 47 §3). Asservir à la détection automatique la fermeture simultanée de ces portes dans l'ensemble du bâtiment lorsque l'établissement comporte des locaux de sommeil au-dessus du premier étage, lorsqu'il existe des portes d'isolement à fermeture automatique (CO 10 §1) ou lorsque le type l'impose (CO 47 §4). Portes des locaux à risques : communication avec les autres locaux CF de degré 1 h pour un local à risques importants, ouverture vers la sortie, avec ferme-porte (CO 28 §1) ; blocs-portes CF de degré 1/2 h équipés d'un ferme-porte pour un local à risques moyens (CO 28 §2)."
   },
   e06_03: {
-    statut: 'valide', valide_le: '2026-11-11', redige_par: 'expert',
+    statut: 'valide', valide_le: '2026-11-11', valide_par: 'Sam Incendie', redige_par: 'expert',
     source: "EL 10 §4",
     preconisation: "Obturer intérieurement et extérieurement les traversées de parois par les canalisations électriques, conformément à l'article 527.2 de la NF C 15-100 : 2002 et ses amendements, afin de ne pas diminuer le degré de résistance au feu prescrit pour la paroi (EL 10 §4)."
   },
   e06_04: {
-    statut: 'valide', valide_le: '2026-11-11', redige_par: 'expert',
+    statut: 'valide', valide_le: '2026-11-11', valide_par: 'Sam Incendie', redige_par: 'expert',
     source: "CO 27 / CO 28 ; CO 26 §2 ; EL 5 §3",
     preconisation: "Classer les locaux selon leur risque (CO 27) puis les isoler selon leur classement (CO 28). Local à risques importants : planchers hauts et parois CF de degré 2 h ; communication avec les autres locaux CF de degré 1 h, ouverture vers la sortie, portes munies de ferme-porte ; pas de communication directe avec les locaux et dégagements accessibles au public ; façades établies suivant la section V ; conduits et gaines selon CO 32 et CO 33 (CO 28 §1). Local à risques moyens : façades comme ci-dessus ; isolé des locaux et dégagements accessibles au public par des planchers hauts et parois CF de degré 1 h avec blocs-portes CF de degré 1/2 h équipés d'un ferme-porte ; conduits selon CO 31 (CO 28 §2). Les listes de locaux à risques particuliers sont fixées par les chapitres techniques et par le type, et peuvent être complétées après avis de la commission de sécurité dans chaque cas particulier (CO 27 §2). Recouper les combles inaccessibles et l'intervalle entre plancher et plafond suspendu, sauf protection par un réseau fixe d'extinction automatique à eau ou situation dans un compartiment (CO 26 §2). Locaux de service électrique : isolement selon EL 5 §3."
   },
   e06_05: {
-    statut: 'a_valider', a_revoir_le: '2027-06-01',
+    statut: 'valide', valide_le: '2026-11-11', valide_par: 'Sam Incendie', a_revoir_le: '2027-06-01',
     source: "CO 25 §1 et §2 ; CO 26 §1 ; art. du type (W 3 §2, R 6, S 3 §2, X 4, J 11)",
     preconisation: "Mettre le compartimentage en conformité avec l'article CO 25 et l'article du type, lorsque le type autorise les compartiments (CO 25 §2). Chaque niveau comporte au moins deux compartiments de capacité d'accueil du même ordre ; un compartiment peut s'étendre sur deux niveaux si sa superficie ne dépasse pas la moyenne (CO 25 §2 a). Parois verticales, façades exclues : coupe-feu de degré 1/2 h pour une structure sans exigence ou stable 1/2 h ; 1 h pour 1 h ; 1 h 1/2 pour 1 h 1/2 (CO 25 §2 b). Issues judicieusement réparties, proportionnées à l'effectif maximal (CO 38), dont une de deux unités de passage au moins au-delà de 100 personnes, débouchant à l'extérieur ou sur un dégagement protégé par un bloc-porte pare-flammes 1/2 h à ferme-porte (CO 25 §2 c) ; deux dispositifs de communication au plus entre compartiments, sur les circulations principales ; communication par bloc-porte en va-et-vient pare-flammes du degré de la paroi, ou par sas (CO 25 §2 c et d) ; circulations matérialisées (CO 25 §2 e) ; compartiment désenfumé (CO 25 §2 f). Parois construites de plancher à plancher (CO 26 §1). Surface maximale fixée par le type : par exemple 800 m² (type W, W 3 §2), 600 m² (type R, R 6 ; type J, J 11), 1 200 m² (type S, S 3 §2), 1 600 m² (type X, X 4)."
   },
   e05_01: {
-    statut: 'a_valider',
+    statut: 'valide', valide_le: '2026-11-11', valide_par: 'Sam Incendie',
     source: "EL 19 §1 à §3 ; EL 18 §1 ; GE 6 ; GE 7 ; GE 8 ; GE 10 ; MS 75",
     preconisation: "Faire vérifier chaque année les installations électriques, les installations d'éclairage et les éventuelles installations extérieures de protection contre la foudre qui n'ont pas été modifiées, dans les conditions de l'article GE 10 (EL 19 §1 et §3). Selon GE 10, ces vérifications peuvent être effectuées par des techniciens compétents sous la responsabilité de l'exploitant ; la date, le nom du vérificateur et l'objet des vérifications sont inscrits au registre de sécurité, et un relevé des vérifications, mentionnant l'état de bon fonctionnement et d'entretien des installations vérifiées, y est annexé. La vérification périodique porte, lorsqu'ils sont applicables, sur : EL 4 §4 ; EL 5 §1, §4 et §5 ; EL 8 §3 ; EL 10 §4 ; EL 11 §3, §4 et §7 ; EL 15 §3 ; EL 17 et EL 18 ; EC 6 §5 et §6 ; EC 7 ; EC 9 §1 ; EC 13 et EC 14 §3. Elle s'assure de l'absence de modifications depuis la dernière vérification, de l'état d'entretien et de maintenance des installations et appareils d'utilisation, de l'existence d'un relevé des essais incombant à l'exploitant, du maintien en l'état des installations d'éclairage normal et de sécurité et du bon état apparent des paratonnerres. Le relevé mentionne, article par article, les anomalies constatées avec leur localisation et des commentaires explicatifs ; y joindre le rapport de vérification périodique du décret n° 88-1056 du 14 novembre 1988 (EL 19 §3). Vérifier la conformité des installations neuves ou ayant fait l'objet de travaux dans les conditions de GE 7 et GE 8 §1 (EL 19 §2) : par un organisme agréé pour les travaux soumis à permis de construire ou à autorisation de travaux dans les établissements de 1re à 4e catégorie, avec rapport de vérifications réglementaires après travaux (RVRAT) ; l'exploitant communique au vérificateur la notice de sécurité, les plans et renseignements de détail des installations techniques, les prescriptions du permis ou de l'autorisation, l'historique des modifications et les prescriptions des visites de la commission de sécurité (GE 7 §1 et §2 ; GE 8 §1). Réparer dès leur constatation les défectuosités et les défauts d'isolement (EL 18 §1). Classer au registre de sécurité les rapports et attestations remis après chaque examen ou intervention (MS 75)."
   },
   e05_02: {
-    statut: 'a_valider',
+    statut: 'valide', valide_le: '2026-11-11', valide_par: 'Sam Incendie',
     source: "EL 5 §1 à §5 ; EL 9 ; EL 11 §4",
     preconisation: "Installer le tableau général dans un local de service électrique, dont l'accès est réservé aux personnes qualifiées, identifié et facile à atteindre par les services de secours (EL 5 §1 et §2). Isoler ce local selon la nature des matériels : parois verticales et plancher haut coupe-feu de degré 2 h, franchissements CF de degré 1 h, sans communication directe avec les locaux ou dégagements accessibles au public ; ou parois et plancher haut CF de degré 1 h avec portes CF de degré 1/2 h ; ou local ordinaire (EL 5 §3 a, b, c). Le doter de moyens d'extinction adaptés aux risques électriques, les appareils portatifs portant des signes distinctifs bien visibles (EL 5 §4), et d'un éclairage de sécurité par blocs autonomes ou luminaires sur source centralisée, complété par des blocs autonomes portables d'intervention (BAPI) (EL 5 §5). Tableau électrique « normal » hors local de service électrique : dans un local ou dégagement non accessible au public, ou accessible au public hors escaliers protégés, dans les conditions de l'article CO 37 ; puissance au plus égale à 100 kVA : armoire ou coffret à enveloppe métallique ou satisfaisant à l'essai au fil incandescent à 750 °C (NF EN 60695-2-11) ; puissance supérieure à 100 kVA : armoire ou coffret métallique dont l'appareillage satisfait à cet essai, ou enceinte à parois maçonnées avec bloc-porte pare-flammes de degré 1/2 h, ventilée exclusivement par grilles à chicane (EL 9). Dans les locaux et dégagements accessibles au public, la commande des dispositifs situés à moins de 2,50 m du sol dépend d'une clé ou d'un outil (EL 11 §4)."
   },
   e05_03: {
-    statut: 'a_valider',
+    statut: 'valide', valide_le: '2026-11-11', valide_par: 'Sam Incendie',
     source: "EL 10 §1 à §3 ; EL 4 §1 et §6 ; EL 11 §7 ; EL 23 ; PE 24 §1",
     preconisation: "Pour les projets dont la demande d'autorisation de travaux est déposée à compter du 23 mai 2025, installer des conducteurs et câbles classés Cca-s2, d2, a2, à la place de la catégorie C 2 (EL 10 §2, modifié par l'arrêté du 17 mai 2024 : « Les câbles ou les conducteurs sont classés Cca-s2,d2,a2 » ; dernier alinéa d'EL 10 ; EL 23 ; PE 24 §1 en 5e catégorie). Pour les installations semi-permanentes, les câbles souples sont classés Cca-s2, d2, a2 et fixés aux éléments stables du bâtiment (EL 23 §1). N'installer que des canalisations fixes (EL 10 §1). Systèmes de conduits, goulottes, chemins de câbles et similaires de type non propagateur de la flamme : essai à la flamme de 1 kW de la norme NF EN 60695-11-2 : 2017 et essai au fil incandescent à 650 °C de la norme NF EN 60695-2-11 : 2014 (EL 10 §3). Réaliser l'installation selon la norme NF C 15-100 (décembre 2002), présumée satisfaire aux exigences (EL 4 §1). Pour les projets déposés à compter du 23 mai 2025, appliquer les normes NF EN 50171 : 2021 et NF EN IEC 60598-2-22 : 2022 (dernier alinéa d'EL 10 ; EL 23 ; PE 24). Classer les locaux à risques particuliers (CO 27) en condition d'influence externe BE 2 selon l'article 422 de la NF C 15-100 (EL 4 §6). Interdire les fiches multiples et adapter le nombre de prises à l'utilisation (EL 11 §7)."
   },
   e05_04: {
-    statut: 'a_valider',
+    statut: 'valide', valide_le: '2026-11-11', valide_par: 'Sam Incendie',
     source: "EC 6 §1 ; EC 7 à EC 12 ; EL 12 §2 et §3 ; PE 24 §2 ; PE 36",
     preconisation: "Concevoir l'éclairage de sécurité à l'état de veille pendant l'exploitation, mis ou maintenu en service en cas de défaillance de l'éclairage normal ou de remplacement, alimenté par une source de sécurité d'une durée assignée de fonctionnement d'au moins 1 heure, constituée soit d'une source centralisée à batterie d'accumulateurs alimentant des luminaires, soit de blocs autonomes (EC 7 ; EL 12 §3). Éclairage d'évacuation (cheminements, sorties, indications de balisage de CO 42, obstacles, changements de direction) dans les locaux recevant 50 personnes et plus et dans les locaux de plus de 300 m² en étage et au rez-de-chaussée, 100 m² en sous-sol ; éclairage d'ambiance ou d'anti-panique dans tout local ou hall dont l'effectif peut atteindre 100 personnes en étage ou au rez-de-chaussée, 50 en sous-sol (EC 8). Évacuation : indications de balisage éclairées, par leur luminaire si elles sont transparentes, par les luminaires proches si elles sont opaques ; foyers lumineux espacés de 15 m au plus dans les couloirs et dégagements ; flux assigné d'au moins 45 lumens pendant la durée de fonctionnement assignée (EC 9). Ambiance : allumée à la disparition de l'éclairage normal ou de remplacement ; flux d'au moins 5 lumens par m² de surface du local ; rapport entre la distance maximale séparant deux foyers voisins et leur hauteur au plus égal à 4 (EC 10). Source centralisée : luminaires conformes à NF EN IEC 60598-2-22 : 2022 et batterie conforme à NF EN 50171 : 2021 présumés satisfaire à EC 2 ; lampes d'évacuation connectées en permanence à la source de sécurité ; circuits au départ d'un tableau de sécurité conforme à EL 15, conformes à EL 16, sans dispositif de protection sur le parcours des canalisations ; éclairage d'ambiance de chaque local et éclairage d'évacuation de chaque dégagement de plus de 15 m par au moins deux circuits distincts (EC 11). Blocs autonomes : conformes à NF EN IEC 60598-2-22 : 2022 et aux normes NF C71-800, NF C71-801 et NF C71-805 (2000), présumés satisfaire à EC 2 ; câbles et conducteurs classés Cca-s2, d2, a2, issus d'une dérivation en aval de la protection et en amont de la commande de l'éclairage normal ; système de test automatique pour l'éclairage d'évacuation (NF C71-820 : 1999 présumé conforme) ; dispositif de mise à l'état de repos centralisée ; au moins deux blocs autonomes pour l'évacuation de chaque dégagement de plus de 15 m conduisant vers l'extérieur et pour l'ambiance de chaque local ou hall (EC 12). Éclairage normal : éclairer locaux, dégagements, obstacles, marches, portes, sorties et balisage de CO 42, sans que les dégagements puissent être plongés dans l'obscurité totale par des commandes accessibles au public ou des détecteurs de présence (EC 6 §1). Établissement de 5e catégorie : PE 24 §2 (éclairage d'évacuation des escaliers, des circulations de plus de 10 m ou à cheminement compliqué et des salles de plus de 100 m²) et PE 36 (locaux à sommeil sans groupe électrogène de remplacement : blocs autonomes pour habitation conformes à NF C 71-805 ; batterie de source centralisée d'au moins six heures)."
   },
   e05_05: {
-    statut: 'a_valider',
+    statut: 'valide', valide_le: '2026-11-11', valide_par: 'Sam Incendie',
     source: "EL 7 ; EL 8 §2 et §3 ; EL 12 à EL 18 ; DF 3 §3",
     preconisation: "1. Alimentation et sources de sécurité. Alimenter les installations de sécurité, éclairage de sécurité excepté, par une alimentation électrique de sécurité conforme à NF S 61-940 (EL 12 §1). Une dérivation issue directement du tableau principal n'est admise que lorsque le règlement admet l'absence de groupe électrogène : désenfumage mécanique des 1re et 2e catégories dont la puissance totale des moteurs d'extraction des deux zones les plus contraignantes est inférieure à 10 kW, désenfumage mécanique des 3e et 4e catégories, secours en eau et pompes d'exhaure sauf dispositions aggravantes (EL 12 §1) ; le tableau principal est alors dans un local de service électrique isolé selon EL 5 §3 b, la dérivation est protégée sélectivement et, en schéma TN ou TT, un contrôleur permanent d'isolement surveille les équipements mis en œuvre seulement en cas de sinistre, comme les ventilateurs de désenfumage (EL 14). Temps de commutation maximal de dix secondes sauf dispositions aggravantes ; groupe électrogène de remplacement utilisable comme source de sécurité s'il est conforme à NF E 37-312 et de puissance suffisante pour démarrer et faire fonctionner tous les équipements de sécurité, même en cas de défaillance de l'un des groupes ; pour le désenfumage, puissance suffisante pour les deux zones les plus contraignantes (EL 13 §2 et §3 ; DF 3 §3). Groupes électrogènes dans un local de service électrique isolé selon EL 5 §3 a, locaux moteurs largement ventilés sur l'extérieur (EL 7). Batteries qui alimentent des installations de sécurité : local de service électrique isolé selon EL 5 §3 b, réservé aux batteries, ventilé ; coupure de l'alimentation du chargeur signalée au tableau de sécurité (EL 8 §2 et §3). Tableau de sécurité : local de service électrique affecté à ce seul usage et isolé selon EL 5 §3 b, circuits identifiés de manière sûre et durable, éléments minimaux de EL 15 §5 ; signalisation de la coupure des chargeurs reportée au poste de sécurité (EL 15 §1 à §3 et §5). 2. Circuits de sécurité. Canalisations de catégorie CR 1 depuis la source de sécurité ou le tableau principal jusqu'aux appareils terminaux ; dérivations, jonctions et enveloppes satisfaisant à l'essai au fil incandescent à 960 °C (NF EN 60695-2-11) ; locaux à risques particuliers traversés seulement par les canalisations destinées à alimenter leurs propres appareils ; câbles distincts de ceux de l'alimentation normale-remplacement ; chaque circuit protégé de sorte qu'un incident n'interrompe pas les autres circuits de sécurité de la même source ; canalisations des ventilateurs de désenfumage protégées contre les courts-circuits seulement et dimensionnées pour 1,5 fois le courant nominal des moteurs (EL 16 §1 à §3). Schéma de liaison à la terre de type IT, ou TN avec groupe électrogène, sélectivité totale et contrôleur permanent d'isolement pour les équipements qui ne fonctionnent qu'en cas de sinistre (EL 16 §4) ; ces dispositions ne sont pas exigées avec une dérivation issue du tableau principal (EL 16 §5). Reporter au poste de sécurité la coupure des dispositifs de charge et les défauts d'isolement signalés par les contrôleurs permanents (EL 17). 3. Entretien des groupes électrogènes de sécurité. Entretien régulier et essais selon la périodicité minimale suivante : tous les quinze jours, vérification du niveau d'huile, d'eau et de combustible, du dispositif de réchauffage du moteur et de l'état de la source utilisée pour le démarrage (batterie ou air comprimé) ; tous les mois, en plus, essai de démarrage automatique avec une charge d'au moins 50 % de la puissance du groupe et fonctionnement avec cette charge pendant au moins trente minutes. Consigner les interventions et leurs résultats dans un registre d'entretien tenu à la disposition de la commission de sécurité (EL 18 §4). Maintenir les installations en bon état de fonctionnement et réparer dès leur constatation les défectuosités et les défauts d'isolement (EL 18 §1)."
   },
   e07_01: {
-    statut: 'a_valider',
+    statut: 'valide', valide_le: '2026-11-11', valide_par: 'Sam Incendie',
     source: "R. 143-44 ; GE 3 §2 et §3 ; GE 10 ; MS 51 ; MS 52 §1 ; MS 58 §4 ; MS 68 ; MS 75 ; EC 13 ; EC 14 §3 ; EL 18 §4",
     preconisation: "Tenir un registre de sécurité sur lequel sont reportés les renseignements indispensables à la bonne marche du service de sécurité, notamment : l'état du personnel chargé du service d'incendie ; les consignes générales et particulières établies en cas d'incendie, y compris les consignes d'évacuation prenant en compte les différents types de handicap ; les dates des contrôles et vérifications et les observations auxquelles ils ont donné lieu ; les dates des travaux d'aménagement et de transformation, leur nature et les noms des entrepreneurs et, s'il y a lieu, de l'architecte ou du technicien chargé de les surveiller (R. 143-44 ; GE 3 §3). Y consigner : la date des exercices d'instruction du personnel (MS 51) ; la date, le nom du vérificateur et l'objet de chaque vérification faite par un technicien compétent, avec un relevé annexé (GE 10) ; le contrat et la notice d'entretien de la détection (MS 58 §4) et la preuve du contrat ou des consignes d'entretien du SSI (MS 68) ; la notice de maintenance de l'éclairage de sécurité et ses opérations d'entretien et de vérification (EC 13, EC 14 §3) ; le registre d'entretien des groupes électrogènes de sécurité (EL 18 §4) ; le dossier technique des installations avec le rapport des examens et essais avant mise en service et tous les documents, rapports et attestations remis après chaque examen ou intervention (MS 75). Faire assurer la mise à jour du registre par l'exploitant ou son représentant présent pendant la présence du public (MS 52 §1). Être en mesure de le présenter à la commission de sécurité, avec les dossiers de renseignements à jour et les rapports des vérifications techniques (GE 3 §2 et §3)."
   },
   e07_02: {
-    statut: 'valide', valide_le: '2026-11-11', redige_par: 'expert',
+    statut: 'valide', valide_le: '2026-11-11', valide_par: 'Sam Incendie', redige_par: 'expert',
     source: "MS 46 ; MS 48 §1 et §2 ; M 29 ; U 43 ; PE 27 §5",
     preconisation: "Désigner un responsable de la sécurité incendie et du personnel formé (SSIAP) selon la catégorie et le type de l'établissement (MS 46). Pendant la présence du public, composer le service de sécurité incendie, selon le type, la catégorie et les caractéristiques de l'établissement, de personnes désignées par l'exploitant et entraînées à la manœuvre des moyens de secours et à l'évacuation du public, d'agents de sécurité incendie dont la qualification est définie à l'article MS 48, de sapeurs-pompiers d'un service public de secours, ou d'une combinaison de ces possibilités déterminée après avis de la commission compétente (MS 46 §1 a à d). Lorsque le service est assuré par des agents de sécurité incendie : au moins trois personnes présentes simultanément, dont un chef d'équipe, l'effectif étant adapté à l'importance de l'établissement ; le chef d'équipe et un agent au moins ne sont pas distraits de leurs missions spécifiques ; les autres agents peuvent être employés à des tâches de maintenance technique mais restent en liaison permanente avec le poste de sécurité ; placer le service sous la direction d'un chef de service de sécurité incendie spécifiquement affecté lorsque les dispositions particulières le prévoient (MS 46 §1). Missions du service : connaître et faire appliquer les consignes en cas d'incendie, notamment pour l'évacuation des personnes en situation de handicap ; prendre éventuellement, sous l'autorité de l'exploitant, les premières mesures de sécurité ; assurer la vacuité et la permanence des cheminements d'évacuation jusqu'à la voie publique ; diriger les secours en attendant les sapeurs-pompiers ; veiller au bon fonctionnement du matériel de protection contre l'incendie, en effectuer ou en faire effectuer les essais et l'entretien ; organiser des rondes, y compris dans les locaux non occupés (MS 46 §2). Faire donner aux personnes désignées une formation conduite à l'initiative et sous la responsabilité de l'exploitant, et faire vérifier la qualification des agents de sécurité incendie dans les conditions définies par arrêté ministériel (MS 48 §1 et §2). En atténuation, une convention annexée au registre de sécurité peut organiser le service de sécurité lors de manifestations ou d'activités dans les établissements autres que ceux de la 1re catégorie, sans hébergement, disposant d'une alarme générale ne nécessitant pas de surveillance humaine et dont l'effectif total n'excède pas 300 personnes (MS 46 §3). Exemples : type M, établissements de moins de 4 000 personnes : agents désignés par l'exploitant et entraînés à la manœuvre des moyens de secours et à l'évacuation (M 29 §1) ; type M au-delà de 4 000 personnes : agents de sécurité incendie (M 29 §2) ; type U de 2e catégorie : employés spécialement désignés et entraînés, au nombre de 3 au minimum en permanence, celui qui surveille le SSI étant titulaire du diplôme d'agent de sécurité incendie (U 43 b) ; 5e catégorie : personnel instruit sur la conduite à tenir en cas d'incendie et entraîné à la manœuvre des moyens de secours (PE 27 §5)."
   },
   e07_03: {
-    statut: 'a_valider',
+    statut: 'valide', valide_le: '2026-11-11', valide_par: 'Sam Incendie',
     source: "R. 143-38 à R. 143-42 ; GE 3 §1 ; GE 5 ; MS 74",
     preconisation: "Disposer de l'autorisation d'ouverture délivrée par le maire par arrêté après avis de la commission de sécurité ; l'établissement est visité avant toute ouverture et avant la réouverture après une fermeture de plus de dix mois (R. 143-38, R. 143-39 ; GE 3 §1). Afficher de façon apparente, près de l'entrée principale, l'avis relatif au contrôle de la sécurité (type, catégorie, effectif maximal du public autorisé, date de la visite de réception, date de l'autorisation d'ouverture), rempli par l'exploitant sous sa responsabilité et visé par l'autorité qui a délivré l'autorisation (GE 5). Assister à chaque visite de la commission ou s'y faire représenter par une personne qualifiée ; le maire notifie le procès-verbal et sa décision (R. 143-42). Permettre le contrôle efficace des moyens de secours, avec le personnel compétent et le matériel nécessaires aux essais (MS 74). Donner suite aux observations de la commission (R. 143-41). Conserver le procès-verbal de la dernière visite, qui porte l'avis de la commission, favorable ou défavorable (R. 143-42)."
   },
   e07_04: {
-    statut: 'valide', valide_le: '2026-11-11', redige_par: 'expert',
+    statut: 'valide', valide_le: '2026-11-11', valide_par: 'Sam Incendie', redige_par: 'expert',
     source: "GE 4 §1 à §4",
     preconisation: "Suivre le calendrier des visites de la commission de sécurité (GE 4). Périodicité des visites périodiques des établissements de 1re à 4e catégorie (GE 4 §1) : en 1re et 2e catégorie, tous les 3 ans pour tous les types sauf le type V (5 ans) ; en 3e catégorie, tous les 3 ans pour les types J, L, O, P, R et U, tous les 5 ans pour les types M, N, S, T, V, W, X et Y ; en 4e catégorie, tous les 3 ans pour les types J, O, R avec hébergement et U, tous les 5 ans pour les types L, M, N, P, R sans hébergement, S, T, V, W, X et Y. Si l'établissement comprend plusieurs bâtiments isolés entre eux, les visites portent sur l'ensemble avec la périodicité la plus courte (GE 4 §2). Pour un établissement sans hébergement dont la visite périodique et la précédente, faite dans les délais, ont conclu à un avis favorable, le délai peut être prolongé dans la limite de cinq ans, sur proposition de la commission et mention au procès-verbal (GE 4 §3). La fréquence peut être modifiée par arrêté du maire ou du préfet après avis de la commission (GE 4 §4). Programmer les actions correctives avant la prochaine visite."
   },
   e07_05: {
-    statut: 'a_valider',
+    statut: 'valide', valide_le: '2026-11-11', valide_par: 'Sam Incendie',
     source: "MS 58 §3 et §4 ; MS 68 ; MS 69 ; MS 72 §1 ; MS 73 §2 ; GE 8 §2 ; DF 9 ; DF 10 ; EL 18 §4",
     preconisation: "Faire entretenir tous les appareils et dispositifs d'extinction et d'alerte pour les maintenir en permanence en bon état de fonctionnement, et initier le personnel à leur mise en œuvre (MS 72 §1). S'assurer de l'existence des moyens nécessaires à l'entretien et à la maintenance : techniciens désignés, contrats d'entretien, notices, livrets d'entretien (GE 8 §2). Système de sécurité incendie : entretien par un technicien compétent habilité par l'établissement ou par l'installateur de chaque équipement ou son représentant habilité ; contrat d'entretien obligatoire pour les SSI de catégories A et B ; le contrat ou les consignes écrites précisent la périodicité des interventions et prévoient la réparation rapide ou l'échange des éléments défaillants, et la preuve de leur existence est transcrite au registre de sécurité (MS 68). Détection automatique d'incendie : contrat d'entretien avec un installateur qualifié incluant les essais fonctionnels de MS 56 §3, annexé au registre avec la notice (MS 58 §3 et §4). Sprinkleurs et SSI A et B : vérification tous les trois ans par une personne ou un organisme agréé (MS 73 §2). Groupes électrogènes de sécurité : entretien régulier et essais (EL 18 §4). Exploitant : contrôle hebdomadaire du fonctionnement de l'alarme et des alimentations de sécurité, stock de petites fournitures de rechange (MS 69). Désenfumage : faire effectuer périodiquement par un personnel compétent l'entretien des sources de sécurité (EL 18), l'entretien courant des éléments mécaniques et électriques selon les prescriptions des constructeurs et l'entretien du système de sécurité (MS 68), puis les vérifications annuelles de DF 10 (DF 9 ; DF 10). Extincteurs : vérification au moins une fois par an (MS 73 §2)."
   },
   e07_08: {
-    statut: 'a_valider',
+    statut: 'valide', valide_le: '2026-11-11', valide_par: 'Sam Incendie',
     source: "R. 143-44 3° et 4° ; GE 8 §2 ; GE appendice §2.3 ; EL 18 §1 ; MS 69",
     preconisation: "Lever les non-conformités constatées lors des vérifications techniques et des visites de la commission de sécurité, et reporter au registre de sécurité les dates des contrôles et vérifications, les observations auxquelles ils ont donné lieu, et les dates, la nature et les intervenants des travaux de remise en conformité (R. 143-44 3° et 4°). Prendre toutes dispositions pour remédier aux anomalies relevées par les vérificateurs, dont les observations sont listées en une série numérotée, avec localisation, dans le rapport de vérification (GE 8 §2 ; GE appendice §2.3). Réparer dès leur constatation les défectuosités et les défauts d'isolement des installations électriques (EL 18 §1) et faire effectuer sous la responsabilité de l'exploitant les remises en état le plus rapidement possible (MS 69). Se conformer aux prescriptions du procès-verbal notifié par le maire (R. 143-41, R. 143-42)."
   },
   e08_01: {
-    statut: 'a_valider',
+    statut: 'valide', valide_le: '2026-11-11', valide_par: 'Sam Incendie',
     source: "MS 53 §2 et §3 ; J 36 ; U 44 ; O 19 ; R 31 ; S 16 ; P 22 ; M 30 ; W 14 ; CO 24 §2",
     preconisation: "Équiper l'établissement d'un système de sécurité incendie de la catégorie exigée par les dispositions particulières de son type, le SSI satisfaisant aux normes en vigueur (MS 53 §2 et §3). Les SSI sont classés en cinq catégories, A, B, C, D et E, par ordre de sévérité décroissante (MS 53 §2). Exemples : catégorie A dans tous les établissements de type J (J 36), de type O (O 19), dans les établissements de type U abritant des locaux à sommeil (U 44), dans les établissements de type R comportant des locaux à sommeil (R 31), dans les établissements de type S de 1re catégorie (S 16) et de type P de 1re catégorie (P 22) ; type M : catégorie B en 1re catégorie, C, D ou E en 2e catégorie, la catégorie A pouvant être exigée après avis motivé de la commission de sécurité (M 30) ; types W et X : catégorie C, D ou E avec équipement d'alarme du type 2 b en 1re et 2e catégorie (W 14). Tout bâtiment dont les locaux à sommeil sont, par destination, divisés en secteurs : SSI de catégorie A (CO 24 §2)."
   },
   e08_02: {
-    statut: 'a_valider',
+    statut: 'valide', valide_le: '2026-11-11', valide_par: 'Sam Incendie',
     source: "MS 59 §2 ; MS 68 ; MS 69 ; MS 73 §1 à §3 ; MS 75",
     preconisation: "Maintenir le système de sécurité incendie en bon état de fonctionnement et le faire entretenir par un technicien compétent habilité par l'établissement ou par l'installateur de chaque équipement ou son représentant habilité ; contrat d'entretien obligatoire pour les SSI de catégories A et B, précisant la périodicité des interventions et prévoyant la réparation rapide ou l'échange des éléments défaillants, la preuve du contrat ou des consignes écrites étant transcrite au registre de sécurité (MS 68). Faire vérifier le SSI au moins une fois par an, selon les modalités de la norme en vigueur, avec, pour la détection, les essais fonctionnels de MS 56 §3 (MS 73 §2 et §3) ; pour les SSI de catégories A et B, le faire vérifier avant la mise en service puis tous les trois ans par une personne ou un organisme agréé (MS 73 §1 et §2). Exploitant : contrôler une fois par semaine au moins le bon fonctionnement de l'installation et l'aptitude des alimentations électriques ou pneumatiques de sécurité, faire effectuer les remises en état le plus rapidement possible, disposer en permanence d'un stock de petites fournitures de rechange et initier le personnel au fonctionnement du système d'alarme (MS 69). Les centralisateurs de mise en sécurité incendie des SSI de catégorie A ou B sont admis à la marque NF ou à une certification équivalente (MS 59 §2). Classer au registre de sécurité les rapports, attestations et documents remis après chaque examen ou intervention (MS 75)."
   },
   e08_03: {
-    statut: 'a_valider',
+    statut: 'valide', valide_le: '2026-11-11', valide_par: 'Sam Incendie',
     source: "MS 55 §3 ; MS 56 ; MS 57 ; MS 58",
     preconisation: "Faire admettre les matériels de détection automatique d'incendie à la marque NF Matériel de détection d'incendie, ou à une certification de qualité équivalente (MS 58 §1), et faire réaliser l'installation par une entreprise spécialisée et dûment qualifiée (MS 58 §2). Faire déceler et signaler tout début d'incendie dans les meilleurs délais par l'installation, et mettre en œuvre les équipements de sécurité qui lui sont asservis (MS 56 §2) ; l'exigence est réputée satisfaite lorsque l'installation remplit sa fonction lors d'essais fonctionnels réalisés au moyen d'appareils de vérification adaptés au type de détecteur (MS 56 §3), ou lors de la combustion d'un foyer type pour une installation neuve ou modifiée. Toute installation de détection fait l'objet d'un contrat d'entretien avec un installateur qualifié, incluant ces essais fonctionnels, annexé au registre de sécurité avec la notice descriptive (MS 58 §3 et §4). Prendre toutes dispositions pour éliminer les fausses alarmes sans nuire à l'efficacité de l'installation (MS 57 §2). Pendant la présence du public, disposer d'un personnel permanent qualifié, capable d'alerter les sapeurs-pompiers et de mettre en œuvre les moyens de lutte (MS 57 §1). Concevoir les zones de détection de façon que chacune puisse être rapidement inspectée par la personne alertée (MS 55 §3)."
   },
   e08_04: {
-    statut: 'a_valider',
+    statut: 'valide', valide_le: '2026-11-11', valide_par: 'Sam Incendie',
     source: "MS 50 §2 à §4 ; MS 61 b et c ; MS 66 §1 à §5",
     preconisation: "Alarme restreinte : signal sonore et visuel distinct de l'alarme générale, destiné au poste de sécurité incendie, à la direction, au gardien ou au personnel désigné, qui l'exploite (vérifie s'il s'agit d'un déclenchement intempestif ou d'un sinistre et, dans ce cas, déclenche immédiatement l'alarme générale) (MS 61 b et c). Équipements d'alarme des types 1 et 2 : tableau de signalisation installé à un emplacement non accessible au public et surveillé pendant les heures d'exploitation, visible du personnel de surveillance, à organes de commande et de signalisation aisément accessibles ; report de l'alarme restreinte limité à une distance permettant au personnel de se rendre rapidement au tableau (MS 66 §1). Déclencheur manuel ou détecteur automatique : alarme restreinte immédiate au tableau (MS 66 §2) ; alarme générale automatique après une temporisation réglable de cinq minutes au maximum (MS 66 §3) ; commande manuelle permettant de déclencher immédiatement l'alarme générale, par zone de diffusion (MS 66 §4) ; temporisation admise seulement si un personnel qualifié peut exploiter immédiatement l'alarme restreinte, et adaptée ou annulée si les conditions d'exploitation changent (MS 66 §5). Poste de sécurité : accès aisé, relié au centre de secours par un moyen de transmission rapide et sûr, recevant les alarmes restreintes, occupé en permanence par une personne au moins quand le service est assuré par des agents de sécurité incendie, avec les commandes manuelles des dispositifs d'alarme et de désenfumage mécanique (MS 50 §2 à §4)."
   },
   e09_03: {
-    statut: 'a_valider',
+    statut: 'valide', valide_le: '2026-11-11', valide_par: 'Sam Incendie',
     source: "MS 46 §1 ; MS 48 §2 ; M 29 §2 à §4 ; L 14 ; U 43 a",
     preconisation: "Faire assurer le service de sécurité incendie par des agents de sécurité incendie lorsque les dispositions particulières du type l'exigent, au nombre de trois au moins présents simultanément, dont un chef d'équipe, l'effectif étant adapté à l'importance de l'établissement, et faire vérifier leur qualification dans les conditions définies par arrêté ministériel (MS 46 §1 ; MS 48 §2). Exemples : type M, au-delà de 4 000 personnes, surveillance par des agents de sécurité incendie (M 29 §2) ; dans les centres commerciaux et magasins de vente, de 4 001 à 6 000 personnes, 3 agents dont 1 SSIAP 2, puis 4 agents de 6 001 à 9 000, jusqu'à 11 agents dont 1 SSIAP 2 au-delà de 27 000 ; au-delà de 9 000 personnes, chef de service de sécurité incendie et d'assistance à personnes (SSIAP 3) en plus (M 29 §3 et §4) ; type L, 1re catégorie de plus de 3 000 personnes : 1 SSIAP 2 et 2 SSIAP 1, majorés d'un SSIAP 1 à partir de 6 000 personnes par fraction supplémentaire de 3 000 ; 1re catégorie de 1 501 à 3 000 personnes : 1 SSIAP 1 (L 14) ; type U, 1re catégorie : agents de sécurité (U 43 a)."
   },
   e10_01: {
-    statut: 'a_valider',
+    statut: 'valide', valide_le: '2026-11-11', valide_par: 'Sam Incendie',
     source: "CO 37 §1 et §2 ; CO 34 §1 et §2 ; PE 11 §1 ; EL 11 §6",
     preconisation: "Maintenir les dégagements libres : aucun dépôt, aucun matériel, aucun objet ne doit faire obstacle à la circulation des personnes (PE 11 §1, 5e catégorie). Aucune saillie ou dépôt ne doit réduire la largeur réglementaire des dégagements ; les aménagements fixes sont admis jusqu'à 1,10 m de hauteur s'ils ne font pas saillie de plus de 0,10 m (CO 37 §1). Au-delà de la largeur minimale, le mobilier en saillie, à l'exclusion des dépôts, n'est admis que s'il ne gêne pas la circulation rapide, ne peut être ni déplacé ni renversé et ne gêne pas les portes à fermeture automatique, et jamais dans un escalier protégé (CO 37 §2). Les tableaux et appareils d'utilisation installés dans les dégagements respectent CO 37 (EL 11 §6). Ne pas placer de marches isolées dans les circulations principales (CO 34 §2). Les cheminements d'évacuation ne doivent pas permettre d'hésiter sur la direction à suivre, y compris dans les zones de circulation non délimitées par un cloisonnement (CO 34 §1). Les halls sont des dégagements au sens de CO 34 §1."
   }
@@ -3214,90 +3250,7 @@ function doPrint(){
     const msg = 'Attention, le rapport présente des éléments incomplets :\n\n' + issues.join('\n') + '\n\nImprimer quand même ?';
     if(!confirm(msg)) return;
   }
-  buildPrintCompteRendu();
-  // Peupler la page de garde (BUG1+2 FIX: vrais chemins state + categorieText calculé ici)
-  const id = state.identification;
-  const setText = (elId, val) => { const el=document.getElementById(elId); if(el) el.textContent=val||'—'; };
-  // BUG2 FIX: categorieText calculé depuis getCategorieERP (pas de dépendance à executerCalculCO36)
-  let coverCat = id.categorie ? `${id.categorie}e catégorie` : '—';
-  if(state.auditType==='erp'){
-    const effNum = parseInt(String(id.effectif||'').match(/\d+/)?.[0])||0;
-    const cat = getCategorieERP(effNum>0 ? effNum : undefined);
-    if(cat && !cat.indeterminee) coverCat = cat.indicative ? `${cat.categorieAffichee} (${cat.mention})` : cat.categorie;
-  }
-  setText('cover-nom', id.nom);
-  setText('cover-adresse', id.adresse);
-  setText('cover-type', state.erpSubType ? `Type ${state.erpSubType}` : (state.auditType==='erp'?'ERP':'Habitation'));
-  setText('cover-cat', coverCat);
-  setText('cover-eff', id.effectif);
-  setText('cover-auditeur', id.auditeur);
-  setText('cover-organisme', id.organisme);
-  setText('cover-ref', id.ref);
-  setText('cover-date', id.date || new Date().toLocaleDateString('fr-FR'));
-  requestAnimationFrame(()=>window.print());
-}
-
-function buildPrintCompteRendu(){
-  const allPts = getAllPoints();
-  const ncPts = allPts.filter(p=>{
-    const s=state.scores[p.id];
-    return s&&s.note&&s.note<4;
-  }).sort((a,b)=>{
-    const sa=state.scores[a.id], sb=state.scores[b.id];
-    const priO={P1:0,P2:1,P3:2};
-    const pa=priO[sa.priorite]??3, pb=priO[sb.priorite]??3;
-    if(pa!==pb) return pa-pb;
-    return (sa.note||5)-(sb.note||5);
-  });
-
-  if(!ncPts.length){
-    document.getElementById('printCR').innerHTML='';
-    return;
-  }
-
-  const rows = ncPts.map(p=>{
-    const s=state.scores[p.id]||{};
-    const priColors={P1:'#dc3545',P2:'#fd7e14',P3:'#ffc107'};
-    const noteColor=['','#dc3545','#dc3545','#fd7e14','#28a745','#20c997'][s.note]||'#666';
-    return `<tr>
-      <td style="font-size:11px;color:#666">${p.domain.name}</td>
-      <td><strong>${p.label}</strong>${p.expert_note?`<br><span style="color:#0369a1;font-size:10px">💡 ${p.expert_note}</span>`:''}</td>
-      <td style="color:${noteColor};font-weight:700;text-align:center">${s.note}/5</td>
-      <td style="text-align:center"><span style="background:${priColors[s.priorite]||'#999'};color:#fff;padding:2px 6px;border-radius:10px;font-size:10px;font-weight:700">${s.priorite||'—'}</span></td>
-      <td style="font-size:10px;color:#555">${p.ref}</td>
-      <td style="font-size:11px">${s.constat||'<em style="color:#ccc">Non renseigné</em>'}</td>
-      <td style="font-size:11px">${(()=>{
-        if(typeof s.preconisation === 'string' && s.preconisation.trim() !== '') return s.preconisation;
-        const m = matriceValidee(MATRICE_PRECONISATIONS, p.id);
-        return m ? m.preconisation + (m.source ? `<div style="margin-top:3px;font-size:9px;color:#888">Source : ${m.source}</div>` : '') : '<em style="color:#ccc">Non renseignée</em>';
-      })()}</td>
-    </tr>`;
-  }).join('');
-
-  const ident = state.identification;
-  document.getElementById('printCR').innerHTML=`
-    <div style="margin-top:32px;page-break-before:always">
-      <h2 style="font-size:16px;border-bottom:2px solid #e8341c;padding-bottom:6px;margin-bottom:12px">Compte rendu des non-conformités — ${ncPts.length} point(s) &lt; 4/5</h2>
-      <table style="width:100%;border-collapse:collapse;font-size:12px">
-        <thead>
-          <tr style="background:#1e2d3e;color:#fff">
-            <th style="padding:7px 8px;text-align:left;width:100px">Domaine</th>
-            <th style="padding:7px 8px;text-align:left">Point de contrôle / Texte réglementaire</th>
-            <th style="padding:7px 8px;text-align:center;width:40px">Note</th>
-            <th style="padding:7px 8px;text-align:center;width:40px">Prio</th>
-            <th style="padding:7px 8px;text-align:left;width:80px">Référence</th>
-            <th style="padding:7px 8px;text-align:left;width:150px">Constat terrain</th>
-            <th style="padding:7px 8px;text-align:left;width:150px">Préconisation / Action</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${rows}
-        </tbody>
-      </table>
-      <div style="margin-top:16px;font-size:10px;color:#888;border-top:1px solid #eee;padding-top:8px">
-        Audit réalisé le ${ident.date||'—'} par ${ident.auditeur||'—'} — ${ident.organisme||'Sam Incendie'} — Réf. ${ident.ref||'—'} | Grille Sam Incendie, samincendie.fr — Un doute sur une priorité ? Échange gratuit de 20 min : contact@samincendie.fr
-      </div>
-    </div>`;
+  imprimerRapportClient();
 }
 
 // ==================== ESSAI GRATUIT V2 ====================
@@ -5487,10 +5440,9 @@ function compilerActionsPlan(entree){
   return { actions: visibles, total: actions.length, pointsNotes: pointsNotes, message: message };
 }
 
-function renderPlan() {
-    const conteneurPlan = document.getElementById('panel-plan-target');
-    if (!conteneurPlan) return;
-
+// Entrée du plan d'actions (pure vis-à-vis de l'écran) : points de la grille affichée, alertes calculées, type d'audit, matrice, points retirés.
+// Utilisée par l'affichage du plan et par le rapport client imprimé.
+function entreePlan(filtre) {
     const typePrincipal = state.erpSubType || "M";
 
     // Référence réglementaire (p.ref) et ordre des domaines : lus dans la grille affichée
@@ -5531,10 +5483,19 @@ function renderPlan() {
         }
     }
 
-    const plan = compilerActionsPlan({
+    return {
         scores: state.scores, points: pointsGrille, alertes: alertes, typeAudit: state.auditType, matrice: MATRICE_PRECONISATIONS, retires: POINTS_RETIRES,
-        u43: state.auditType === 'erp' && typePrincipal === "U", filtre: currentPlanFilter
-    });
+        u43: state.auditType === 'erp' && typePrincipal === "U", filtre: filtre
+    };
+}
+
+function renderPlan() {
+    const conteneurPlan = document.getElementById('panel-plan-target');
+    if (!conteneurPlan) return;
+
+    const typePrincipal = state.erpSubType || "M";
+
+    const plan = compilerActionsPlan(entreePlan(currentPlanFilter));
     const actionsCompilees = plan.actions;
 
     // Rendu IHM : trois messages distincts, jamais de conclusion de conformité hors du cas « points notés, aucun écart »
@@ -5623,7 +5584,7 @@ function renderPlan() {
         <div class="print-report-wrapper">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;" class="no-print">
                 <h3 style="margin: 0; color: #2d3748; font-size: 15px;">🎯 Plan d'Actions Règlementaires (${actionsCompilees.length} lignes d'écarts${nbPareto ? ` dont ${nbPareto} ⚡ prioritaire${nbPareto > 1 ? 's' : ''}` : ''})</h3>
-                <button onclick="window.print();" style="cursor: pointer; padding: 6px 14px; background: #E53E3E; color: white; border: none; border-radius: 4px; font-weight: bold; font-size: 12px;">
+                <button onclick="doPrint();" style="cursor: pointer; padding: 6px 14px; background: #E53E3E; color: white; border: none; border-radius: 4px; font-weight: bold; font-size: 12px;">
                     🖨️ Imprimer le Rapport PDF
                 </button>
             </div>
@@ -5644,6 +5605,193 @@ function renderPlan() {
         </div>
     `;
 }
+
+// ==================== RAPPORT CLIENT (PDF imprimé) ====================
+// RAPPORT-CLIENT:DEBUT
+// Partie pure : aucune lecture de la page, de l'état ni du navigateur (testée sans navigateur).
+function echapperRapport(valeur){
+  return String(valeur == null ? '' : valeur).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+// Les numéros de page en pied de page s'impriment par les marges de page (@page) : pris en charge par Chrome et Edge 131 et suivants.
+function margesDePageSupportees(agentUtilisateur, marques){
+  const ua = String(agentUtilisateur || '');
+  if(/CriOS|FxiOS|EdgiOS|Firefox|Safari\//.test(ua) && !/Chrome\/|Edg\//.test(ua)) return false;
+  let version = 0;
+  if(Array.isArray(marques)){
+    marques.forEach(m => { if(m && /^(Chromium|Google Chrome|Microsoft Edge)$/.test(String(m.brand))) version = Math.max(version, parseInt(m.version, 10) || 0); });
+  }
+  if(!version){ const x = /(?:Chrome|Edg)\/(\d+)/.exec(ua); if(x) version = parseInt(x[1], 10) || 0; }
+  return version >= 131;
+}
+
+function classeNoteRapport(score){
+  if(score === null || score === undefined) return 'rc-gris';
+  return score >= 4 ? 'rc-vert' : (score >= 3 ? 'rc-ambre' : 'rc-rouge');
+}
+
+function ligneActionRapport(a, avecEcheance){
+  const ech = a.echeance || {label: '—', depasse: false};
+  const badgePareto = a.pareto ? '<div class="rc-pareto' + (a.pareto === 'crit' ? ' rc-pareto-crit' : '') + '">⚡ Prioritaire</div>' : '';
+  const source = a.source ? '<div class="rc-source">Source : ' + echapperRapport(a.source) + '</div>' : '';
+  return '<tr>'
+    + '<td class="rc-ref">' + echapperRapport(a.ref) + badgePareto + '</td>'
+    + '<td>' + echapperRapport(a.constat) + '</td>'
+    + '<td>' + echapperRapport(a.preconisation) + source + '</td>'
+    + '<td class="rc-centre"><span class="rc-prio rc-prio-' + echapperRapport(String(a.priorite).toLowerCase()) + '">' + echapperRapport(a.priorite) + '</span></td>'
+    + (avecEcheance ? '<td class="rc-centre rc-echeance' + (ech.depasse ? ' rc-depasse' : '') + '">' + echapperRapport(ech.label) + (ech.depasse ? ' ⚠' : '') + '</td>' : '')
+    + '</tr>';
+}
+
+function tableauActionsRapport(actions, avecEcheance){
+  return '<table class="rc-table' + (avecEcheance ? ' rc-table-complet' : ' rc-table-pareto') + '"><thead><tr>'
+    + '<th class="rc-c-ref">Réf.</th><th class="rc-c-constat">Constat</th><th class="rc-c-preco">Préconisation</th><th class="rc-c-prio">Priorité</th>'
+    + (avecEcheance ? '<th class="rc-c-ech">Échéance</th>' : '')
+    + '</tr></thead><tbody>' + actions.map(a => ligneActionRapport(a, avecEcheance)).join('') + '</tbody></table>';
+}
+
+function messageVideRapport(message){
+  if(message === 'aucune_note') return 'Aucun point n\'a été noté : aucune conclusion de conformité n\'est tirée.';
+  if(message === 'conforme') return 'Aucun écart relevé : tous les points notés atteignent 4/5 ou plus.';
+  return 'Aucune non-conformité à afficher.';
+}
+
+// d = { logoSrc, identification:{nom, adresse, date, auditeur, organisme, ref, effectif}, typeLibelle, categorieLibelle, dateRapport,
+//       synthese:{score, nbNonConformites, nbP1, nbPareto}, message, actions:[{id, ref, label, priorite, note, constat, preconisation, source, pareto, alerte, echeance:{label, depasse}, photos:[src]}] }
+function construireRapportClient(d){
+  const e = echapperRapport;
+  const id = d.identification || {};
+  const actions = Array.isArray(d.actions) ? d.actions : [];
+  const s = d.synthese || {};
+  const pareto = actions.filter(a => a.pareto);
+  const avecPhotos = actions.filter(a => !a.alerte && Array.isArray(a.photos) && a.photos.length > 0);
+  const ligneInfo = (libelle, valeur) => '<tr><th>' + e(libelle) + '</th><td>' + (valeur ? e(valeur) : '—') + '</td></tr>';
+  const scoreTexte = (s.score === null || s.score === undefined) ? '—' : String(s.score).replace('.', ',') + ' / 5';
+  const logo = d.logoSrc ? '<img class="rc-logo" alt="Sam Incendie" src="' + e(d.logoSrc) + '">' : '';
+
+  const couverture = '<section class="rc-couverture">'
+    + '<div class="rc-entete">' + logo + '<div class="rc-marque">Sam Incendie<small>Expert Sécurité Incendie</small></div></div>'
+    + '<h1 class="rc-titre">Rapport d\'Audit de Sécurité Incendie</h1>'
+    + '<table class="rc-infos"><tbody>'
+    + ligneInfo('Client', id.nom) + ligneInfo('Adresse', id.adresse) + ligneInfo('Date', d.dateRapport)
+    + ligneInfo('Type d\'ERP', d.typeLibelle) + ligneInfo('Catégorie', d.categorieLibelle)
+    + '</tbody></table>'
+    + '<div class="rc-synthese"><h2>Synthèse</h2><div class="rc-kpis">'
+    + '<div class="rc-kpi"><span class="rc-kpi-val ' + classeNoteRapport(s.score) + '">' + e(scoreTexte) + '</span><span class="rc-kpi-lib">Score global</span></div>'
+    + '<div class="rc-kpi"><span class="rc-kpi-val">' + e(s.nbNonConformites || 0) + '</span><span class="rc-kpi-lib">Non-conformités</span></div>'
+    + '<div class="rc-kpi"><span class="rc-kpi-val rc-rouge">' + e(s.nbP1 || 0) + '</span><span class="rc-kpi-lib">Actions P1</span></div>'
+    + '</div></div>'
+    + '<p class="rc-pareto-note">Ce rapport applique la méthode Pareto (80/20) : les actions marquées ⚡ sont prioritaires car elles réduisent 80% des risques critiques.</p>'
+    + '<p class="rc-meta">' + (id.auditeur ? 'Auditeur : ' + e(id.auditeur) : '') + (id.organisme ? (id.auditeur ? ' — ' : '') + e(id.organisme) : '') + (id.ref ? ' · Réf. ' + e(id.ref) : '') + '</p>'
+    + '</section>';
+
+  const section1 = '<section class="rc-section rc-section-pareto"><h2>1. Actions prioritaires (Pareto)</h2>'
+    + '<p class="rc-intro">Actions marquées ⚡ : points non conformes (note de 1 à 3 sur 5) des domaines à fort impact. À traiter en premier.</p>'
+    + (pareto.length ? tableauActionsRapport(pareto, false)
+        : '<p class="rc-vide">' + (actions.length ? 'Aucune action ne relève d\'un domaine à fort impact.' : e(messageVideRapport(d.message))) + '</p>')
+    + '</section>';
+
+  const section2 = '<section class="rc-section"><h2>2. Plan d\'actions complet</h2>'
+    + '<p class="rc-intro">Toutes les non-conformités, par priorité (P1 : sous 1 mois ; P2 : sous 3 mois ; P3 : sous 12 mois à compter de la date de l\'audit).</p>'
+    + (actions.length ? tableauActionsRapport(actions, true) : '<p class="rc-vide">' + e(messageVideRapport(d.message)) + '</p>')
+    + '</section>';
+
+  const blocs = avecPhotos.map(a => '<article class="rc-detail"><header><span class="rc-ref">' + e(a.ref) + '</span> — ' + e(a.label)
+      + ' <span class="rc-prio rc-prio-' + e(String(a.priorite).toLowerCase()) + '">' + e(a.priorite) + '</span>'
+      + (a.note ? ' <span class="rc-note">Note ' + e(a.note) + '/5</span>' : '')
+      + (a.pareto ? ' <span class="rc-pareto' + (a.pareto === 'crit' ? ' rc-pareto-crit' : '') + '">⚡ Prioritaire</span>' : '')
+      + '</header><p class="rc-constat"><strong>Constat :</strong> ' + e(a.constat) + '</p>'
+      + '<div class="rc-photos">' + a.photos.map((src, i) => '<figure><img alt="Photo ' + (i + 1) + ' — ' + e(a.ref) + '" src="' + e(src) + '"><figcaption>Photo ' + (i + 1) + '</figcaption></figure>').join('') + '</div></article>').join('');
+  const section3 = '<section class="rc-section"><h2>3. Détail des constats et photos</h2>'
+    + (blocs || '<p class="rc-vide">Aucune photo n\'a été ajoutée à cet audit : les constats figurent dans les sections 1 et 2.</p>')
+    + '</section>';
+
+  return couverture + section1 + section2 + section3 + '<div class="rc-pied-secours">Sam Incendie - Expert Sécurité Incendie</div>';
+}
+// RAPPORT-CLIENT:FIN
+
+// Moyenne des notes des points applicables et notés (même calcul que la synthèse). Null si aucun point noté.
+function scoreGlobalRapport(){
+  const ctx = state.auditType === 'erp' ? getERPContext() : null;
+  const notes = getAllPoints().filter(p => !isPointNA(p, ctx)).map(p => parseInt((state.scores[p.id] || {}).note, 10)).filter(n => n >= 1 && n <= 5);
+  if(!notes.length) return null;
+  return Math.round(notes.reduce((a, n) => a + n, 0) / notes.length * 10) / 10;
+}
+
+function libelleTypeRapport(){
+  if(state.auditType === 'igh') return 'Immeuble de grande hauteur (IGH)';
+  if(state.auditType !== 'erp') return 'Habitation';
+  if(state.mixteTypes && state.mixteTypes.length > 1) return 'ERP mixte (types ' + state.mixteTypes.join(', ') + ')';
+  const t = state.erpSubType;
+  if(!t) return 'ERP';
+  const nom = ERP_TYPE_SPECIFICS[t] && ERP_TYPE_SPECIFICS[t].name;
+  return nom ? (/^type /i.test(nom) ? nom : 'Type ' + t + ' — ' + nom) : 'Type ' + t;
+}
+
+function libelleCategorieRapport(){
+  const id = state.identification || {};
+  let cat = id.categorie ? id.categorie + 'e catégorie' : '';
+  if(state.auditType === 'erp'){
+    const effNum = parseInt(String(id.effectif || '').match(/\d+/)?.[0]) || 0;
+    const c = getCategorieERP(effNum > 0 ? effNum : undefined);
+    if(c && !c.indeterminee) cat = c.indicative ? c.categorieAffichee + ' (' + c.mention + ')' : c.categorie;
+  }
+  return cat;
+}
+
+// Données du rapport client à partir de l'état de l'audit (le plan complet, tous niveaux de priorité).
+function rassemblerDonneesRapport(){
+  const id = state.identification || {};
+  const entree = entreePlan('all');
+  const plan = compilerActionsPlan(entree);
+  const actions = plan.actions.map(a => {
+    const p = entree.points[a.id] || {};
+    const s = (state.scores && state.scores[a.id]) || {};
+    return {
+      id: a.id, ref: a.ref, label: p.label || '', priorite: a.priorite, note: a.note, constat: a.constat, preconisation: a.preconisation,
+      source: a.source || '', pareto: a.pareto || null, alerte: a.note === null, echeance: dateEcheance(a.priorite, id.date || ''),
+      photos: Array.isArray(s.photos) ? s.photos.map(photoSrc).filter(src => src !== PIXEL_VIDE) : []
+    };
+  });
+  const enteteImg = document.querySelector('.hdr img');
+  return {
+    logoSrc: enteteImg ? enteteImg.src : '',
+    identification: id,
+    typeLibelle: libelleTypeRapport(),
+    categorieLibelle: libelleCategorieRapport(),
+    dateRapport: id.date ? new Date(id.date).toLocaleDateString('fr-FR') : new Date().toLocaleDateString('fr-FR'),
+    synthese: {score: scoreGlobalRapport(), nbNonConformites: actions.length, nbP1: actions.filter(a => a.priorite === 'P1').length, nbPareto: actions.filter(a => a.pareto).length},
+    message: plan.message,
+    actions: actions
+  };
+}
+
+function nettoyerRapportClient(){
+  const c = document.getElementById('rapport-client');
+  if(c) c.innerHTML = '';
+  document.body.classList.remove('mode-rapport', 'rapport-sans-marges');
+}
+
+function attendreImagesRapport(conteneur){
+  const promesses = Array.from(conteneur.querySelectorAll('img')).map(img => (img.decode ? img.decode() : Promise.resolve()).catch(() => {}));
+  return Promise.race([Promise.all(promesses), new Promise(r => setTimeout(r, 4000))]);
+}
+
+// Construit le rapport dans #rapport-client, masque le reste de l'outil à l'impression (classe mode-rapport) puis lance l'impression.
+async function imprimerRapportClient(){
+  const conteneur = document.getElementById('rapport-client');
+  if(!conteneur) return;
+  const refs = [];
+  Object.values(state.scores || {}).forEach(s => { if(estObjet(s) && Array.isArray(s.photos)) refs.push(...s.photos); });
+  try{ await PhotoStore.charger(refs); }catch(e){}
+  conteneur.innerHTML = construireRapportClient(rassemblerDonneesRapport());
+  document.body.classList.add('mode-rapport');
+  const marques = navigator.userAgentData && navigator.userAgentData.brands;
+  if(!margesDePageSupportees(navigator.userAgent, marques)) document.body.classList.add('rapport-sans-marges');
+  await attendreImagesRapport(conteneur);
+  requestAnimationFrame(() => window.print());
+}
+window.addEventListener('afterprint', nettoyerRapportClient);
 
 function renderPlanTechAlerts(){
   const alertTarget = document.getElementById('panel-plan-target');
@@ -7393,10 +7541,6 @@ function init(){
         }, 100);
       }
     } catch(e){}
-  });
-  window.addEventListener('afterprint', ()=>{
-    const cr = document.getElementById('printCR');
-    if(cr) cr.innerHTML='';
   });
   restaurerDossierAuditEnregistre();
   essaiAppliquerAccesAuDemarrage();
