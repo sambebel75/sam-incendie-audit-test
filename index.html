@@ -893,7 +893,7 @@ input[type="number"], input[type="text"], input[type="email"], input[type="tel"]
 if ('serviceWorker' in navigator) {
   try {
     // Doit rester égale à VERSION dans sw.js : le message n'apparaît que si le service worker actif est plus récent que la page.
-    const VERSION_PAGE = 'v32';
+    const VERSION_PAGE = 'v33';
     let bandeauAffiche = false;
     navigator.serviceWorker.addEventListener('message', e => {
       if (!e.data || e.data.type !== 'sw-active' || e.data.version === VERSION_PAGE || bandeauAffiche) return;
@@ -5625,6 +5625,15 @@ function margesDePageSupportees(agentUtilisateur, marques){
   return version >= 131;
 }
 
+// Nom de fichier proposé par le navigateur : Rapport_audit_[NomClient]_[Date]. Caractères interdits dans un nom de fichier retirés, espaces en tirets bas.
+function titreFichierRapport(nomClient, dateIso){
+  const nettoyer = v => String(v == null ? '' : v).replace(/[\\/:*?"<>|]/g, ' ').replace(/[\x00-\x1f]/g, ' ').replace(/\s+/g, '_').replace(/^[_.]+|[_.]+$/g, '');
+  const nom = nettoyer(nomClient).slice(0, 60) || 'Client';
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(dateIso || ''));
+  const date = m ? m[1] + '-' + m[2] + '-' + m[3] : '';
+  return 'Rapport_audit_' + nom + (date ? '_' + date : '');
+}
+
 function classeNoteRapport(score){
   if(score === null || score === undefined) return 'rc-gris';
   return score >= 4 ? 'rc-vert' : (score >= 3 ? 'rc-ambre' : 'rc-rouge');
@@ -5700,7 +5709,7 @@ function construireRapportClient(d){
       + ' <span class="rc-prio rc-prio-' + e(String(a.priorite).toLowerCase()) + '">' + e(a.priorite) + '</span>'
       + (a.note ? ' <span class="rc-note">Note ' + e(a.note) + '/5</span>' : '')
       + (a.pareto ? ' <span class="rc-pareto' + (a.pareto === 'crit' ? ' rc-pareto-crit' : '') + '">⚡ Prioritaire</span>' : '')
-      + '</header><p class="rc-constat"><strong>Constat :</strong> ' + e(a.constat) + '</p>'
+      + '</header>' + (a.constat ? '<p class="rc-constat"><strong>Constat :</strong> ' + e(a.constat) + '</p>' : '')
       + '<div class="rc-photos">' + a.photos.map((src, i) => '<figure><img alt="Photo ' + (i + 1) + ' — ' + e(a.ref) + '" src="' + e(src) + '"><figcaption>Photo ' + (i + 1) + '</figcaption></figure>').join('') + '</div></article>').join('');
   const section3 = '<section class="rc-section"><h2>3. Détail des constats et photos</h2>'
     + (blocs || '<p class="rc-vide">Aucune photo n\'a été ajoutée à cet audit : les constats figurent dans les sections 1 et 2.</p>')
@@ -5739,6 +5748,9 @@ function libelleCategorieRapport(){
   return cat;
 }
 
+// Constat de l auditeur seulement : le texte générique du plan (« Écart constaté au référentiel… ») n apparaît pas dans le PDF.
+function constatSaisiRapport(v){ return (typeof v === 'string' && v.trim() !== '') ? v.trim() : ''; }
+
 // Données du rapport client à partir de l'état de l'audit (le plan complet, tous niveaux de priorité).
 function rassemblerDonneesRapport(){
   const id = state.identification || {};
@@ -5748,7 +5760,7 @@ function rassemblerDonneesRapport(){
     const p = entree.points[a.id] || {};
     const s = (state.scores && state.scores[a.id]) || {};
     return {
-      id: a.id, ref: a.ref, label: p.label || '', priorite: a.priorite, note: a.note, constat: a.constat, preconisation: a.preconisation,
+      id: a.id, ref: a.ref, label: p.label || '', priorite: a.priorite, note: a.note, constat: a.note === null ? a.constat : constatSaisiRapport(s.constat), preconisation: a.preconisation,
       source: a.source || '', pareto: a.pareto || null, alerte: a.note === null, echeance: dateEcheance(a.priorite, id.date || ''),
       photos: Array.isArray(s.photos) ? s.photos.map(photoSrc).filter(src => src !== PIXEL_VIDE) : []
     };
@@ -5766,7 +5778,9 @@ function rassemblerDonneesRapport(){
   };
 }
 
+let titreAvantRapport = null;
 function nettoyerRapportClient(){
+  if(titreAvantRapport !== null){ document.title = titreAvantRapport; titreAvantRapport = null; }
   const c = document.getElementById('rapport-client');
   if(c) c.innerHTML = '';
   document.body.classList.remove('mode-rapport', 'rapport-sans-marges');
@@ -5784,7 +5798,10 @@ async function imprimerRapportClient(){
   const refs = [];
   Object.values(state.scores || {}).forEach(s => { if(estObjet(s) && Array.isArray(s.photos)) refs.push(...s.photos); });
   try{ await PhotoStore.charger(refs); }catch(e){}
-  conteneur.innerHTML = construireRapportClient(rassemblerDonneesRapport());
+  const donnees = rassemblerDonneesRapport();
+  conteneur.innerHTML = construireRapportClient(donnees);
+  if(titreAvantRapport === null) titreAvantRapport = document.title;
+  document.title = titreFichierRapport((donnees.identification || {}).nom, (donnees.identification || {}).date);
   document.body.classList.add('mode-rapport');
   const marques = navigator.userAgentData && navigator.userAgentData.brands;
   if(!margesDePageSupportees(navigator.userAgent, marques)) document.body.classList.add('rapport-sans-marges');
