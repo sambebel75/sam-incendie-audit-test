@@ -1011,6 +1011,17 @@ input[type="number"], input[type="text"], input[type="email"], input[type="tel"]
   body.mode-fiche .fc-logo{width:48mm}
   body.mode-fiche .fc-photos img{max-height:80mm}
 }
+/* LICENCE BÊTA : écran bloquant (domaine non autorisé, accès expiré) */
+#licence-bloc{position:fixed;inset:0;z-index:100000;display:flex;align-items:center;justify-content:center;padding:20px;overflow:auto;background:rgba(15,23,42,.96);font-family:"Segoe UI",system-ui,sans-serif}
+.licence-carte{max-width:520px;width:100%;background:#fff;color:#1a202c;border-radius:12px;padding:28px 28px 24px;box-shadow:0 20px 60px rgba(0,0,0,.4);border-top:5px solid #e8341c}
+.licence-carte h2{margin:0 0 12px;font-size:20px;line-height:1.3;color:#1e2d3e}
+.licence-carte p{margin:0 0 16px;line-height:1.55;font-size:14px}
+.licence-carte a{color:#c0280f}
+.licence-form{margin-top:18px;display:grid;gap:8px}
+.licence-form label{display:block;font-size:12px;color:#6b7280}
+.licence-form input{display:block;width:100%;margin-top:4px;padding:9px 11px;border:1px solid #cbd5e0;border-radius:6px;background:#fff;color:#1a202c;font:inherit}
+.licence-msg{min-height:1em;font-size:13px;font-weight:600;color:#b91c1c}
+@media print{#licence-bloc{display:none}}
 .lettre-modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:600;display:none;align-items:flex-start;justify-content:center;overflow-y:auto;padding:20px}
 .lettre-modal-bg.open{display:flex}
 .lettre-modal{background:#fff;border-radius:8px;padding:36px;max-width:720px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.3);font-family:'Times New Roman',serif;font-size:13px;line-height:1.7;color:#1a1f2e;position:relative}
@@ -1040,7 +1051,7 @@ input[type="number"], input[type="text"], input[type="email"], input[type="tel"]
 if ('serviceWorker' in navigator) {
   try {
     // Doit rester égale à VERSION dans sw.js : le message n'apparaît que si le service worker actif est plus récent que la page.
-    const VERSION_PAGE = 'v43';
+    const VERSION_PAGE = 'v44';
     let bandeauAffiche = false;
     navigator.serviceWorker.addEventListener('message', e => {
       if (!e.data || e.data.type !== 'sw-active' || e.data.version === VERSION_PAGE || bandeauAffiche) return;
@@ -4209,23 +4220,270 @@ function essaiHtmlQuestions(){
   return html;
 }
 
+// ==================== LICENCE BÊTA : durée des codes, heure fiable, domaine autorisé ====================
+// Trois protections, toutes côté navigateur (page statique : verrou dissuasif, pas une protection inviolable) :
+//  1. chaque code d'accès a une date d'expiration (ACCES_CODES, dans le bloc d'accès plus bas) ;
+//  2. l'heure vient du serveur (en-tête Date de ce site, sinon worldtimeapi.org) ; hors ligne, la date la plus avancée
+//     jamais vue empêche de reculer l'horloge ;
+//  3. l'outil ne tourne que sur les domaines autorisés.
+// Tout est testé sans navigateur (tests/licence.test.js). Une panne du réseau ne verrouille jamais un testeur.
+const LICENCE_DOMAINES = ['samincendie.fr', 'www.samincendie.fr', 'sambebel75.github.io', 'samincendie2.pages.dev', 'localhost', '127.0.0.1', '[::1]'];
+const LICENCE_SUFFIXES = ['.samincendie2.pages.dev'];
+const LICENCE_TEMPS_CLE = 'sam_incendie_temps';
+const LICENCE_RECHECK_MS = 30 * 60 * 1000;
+const LICENCE_TOLERANCE_MS = 5 * 60 * 1000;
+const LICENCE_DELAI_MS = 4000;
+const LICENCE_CONTACT = 'contact@samincendie.fr';
+const LICENCE_REPLI_URL = 'https://worldtimeapi.org/api/timezone/Etc/UTC';
+const LICENCE = {serveur: null, derniereVerif: 0, enCours: false, bloque: '', urlEntree: null};
+
+// Domaine autorisé : liste exacte, ou sous-domaine d'aperçu du projet Cloudflare. samincendie.fr.evil.com et evilsamincendie.fr sont refusés.
+function domaineAutorise(hostname){
+  const h = String(hostname == null ? '' : hostname).trim().toLowerCase().replace(/\.$/, '');
+  if(h === '') return false;
+  return LICENCE_DOMAINES.includes(h) || LICENCE_SUFFIXES.some(suffixe => h.length > suffixe.length && h.endsWith(suffixe));
+}
+
+// Date du jour à Paris (AAAA-MM-JJ) : une expiration « jusqu'au 31/12 inclus » tombe à minuit heure de Paris, heure d'été comprise.
+function dateParisISO(ms){
+  const d = new Date(ms);
+  if(Number.isNaN(d.getTime())) return '';
+  try{
+    const p = {};
+    new Intl.DateTimeFormat('en-GB', {timeZone: 'Europe/Paris', year: 'numeric', month: '2-digit', day: '2-digit'}).formatToParts(d).forEach(x => { p[x.type] = x.value; });
+    return p.year + '-' + p.month + '-' + p.day;
+  }catch(err){
+    return d.toISOString().slice(0, 10);
+  }
+}
+
+function dateLongueFr(iso){
+  const d = decomposerDateRegistre(iso);
+  return d ? new Date(d.ms).toLocaleDateString('fr-FR', {timeZone: 'UTC', day: 'numeric', month: 'long', year: 'numeric'}) : '';
+}
+
+// Heure retenue. En ligne : celle du serveur, qui fait foi (et qui remet la « date la plus avancée vue » à jour, ce qui permet de se
+// remettre d'une horloge déréglée en avance). Hors ligne : le plus grand de l'horloge et de la date la plus avancée vue,
+// donc reculer l'horloge ne rend jamais un accès expiré.
+function heureFiable(o){
+  const entree = o || {};
+  const horloge = Number.isFinite(entree.horlogeMs) ? entree.horlogeMs : 0;
+  const maxVu = Number.isFinite(entree.maxVuMs) && entree.maxVuMs > 0 ? entree.maxVuMs : 0;
+  if(Number.isFinite(entree.serveurMs) && entree.serveurMs > 0){
+    return {ms: entree.serveurMs, source: 'serveur', maxVuMs: entree.serveurMs, horlogeRecule: false};
+  }
+  const ms = Math.max(horloge, maxVu);
+  return {ms: ms, source: horloge >= maxVu ? 'horloge' : 'garde', maxVuMs: ms, horlogeRecule: horloge < maxVu - LICENCE_TOLERANCE_MS};
+}
+
+// Statut d'une entrée d'ACCES_CODES à la date du jour (AAAA-MM-JJ, Paris). date_expiration = dernier jour valable, inclus ; vide = permanent.
+// Une date illisible REFUSE le code (une faute de frappe ne doit jamais donner un accès illimité).
+function accesStatut(entree, aujourdhui){
+  if(!estObjet(entree) || typeof entree.code_hash !== 'string' || entree.code_hash === '') return {etat: 'invalide', expireLe: ''};
+  const exp = entree.date_expiration;
+  if(exp === '' || exp == null) return {etat: 'permanent', expireLe: ''};
+  const fin = decomposerDateRegistre(exp), auj = decomposerDateRegistre(aujourdhui);
+  if(!fin || !auj) return {etat: 'invalide', expireLe: ''};
+  const jours = Math.round((fin.ms - auj.ms) / 86400000);
+  return {etat: jours < 0 ? 'expire' : 'ok', expireLe: exp, jours: jours};
+}
+
+// Heure du serveur : 1) en-tête Date d'une requête HEAD vers ce site (le service worker ne touche pas aux requêtes non-GET, et
+// /sam-incendie-audit/* est servi sans cache) ; 2) repli : worldtimeapi.org. Délai de 4 s ; renvoie null au moindre échec.
+async function lireHeureServeur(options){
+  const o = options || {};
+  const fetchFn = o.fetchFn || (typeof fetch === 'function' ? fetch : null);
+  if(!fetchFn) return null;
+  const delai = o.delaiMs || LICENCE_DELAI_MS;
+  const plausible = ms => Number.isFinite(ms) && ms > Date.UTC(2024, 0, 1) && ms < Date.UTC(2100, 0, 1);
+  const avecDelai = async (url, init) => {
+    const ctl = typeof AbortController === 'function' ? new AbortController() : null;
+    let minuterie;
+    const limite = new Promise((_, refus) => { minuterie = setTimeout(() => { if(ctl) ctl.abort(); refus(new Error('délai dépassé')); }, delai); });
+    try{ return await Promise.race([fetchFn(url, Object.assign({cache: 'no-store'}, init, ctl ? {signal: ctl.signal} : {})), limite]); }
+    finally{ clearTimeout(minuterie); }
+  };
+  if(o.urlSite){
+    try{
+      const r = await avecDelai(o.urlSite, {method: 'HEAD'});
+      const age = parseInt(r && r.headers && r.headers.get('Age'), 10);
+      const ms = Date.parse(r && r.headers && r.headers.get('Date')) + (age > 0 ? age * 1000 : 0);
+      if(plausible(ms)) return {ms: ms, source: 'site'};
+    }catch(err){}
+  }
+  if(o.urlRepli !== null){
+    try{
+      const r = await avecDelai(o.urlRepli || LICENCE_REPLI_URL, {});
+      if(r && r.ok === false) throw new Error('réponse refusée');
+      const j = await r.json();
+      const ms = typeof j.unixtime === 'number' ? j.unixtime * 1000 : Date.parse(j.utc_datetime);
+      if(plausible(ms)) return {ms: ms, source: 'worldtimeapi'};
+    }catch(err){}
+  }
+  return null;
+}
+
+// Date la plus avancée jamais vue, gardée sur l'appareil.
+function licenceLireMemoire(){
+  try{ const t = JSON.parse(localStorage.getItem(LICENCE_TEMPS_CLE)); return t && Number.isFinite(t.maxVuMs) ? t.maxVuMs : 0; }catch(err){ return 0; }
+}
+function licenceEcrireMemoire(ms){
+  try{ if(ms > licenceLireMemoire()) localStorage.setItem(LICENCE_TEMPS_CLE, JSON.stringify({maxVuMs: ms})); }catch(err){}
+}
+// Quand le serveur répond, il fait foi même si la mémoire est plus avancée (horloge déréglée en avance, puis corrigée).
+function licenceReinitialiserMemoire(ms){
+  try{ localStorage.setItem(LICENCE_TEMPS_CLE, JSON.stringify({maxVuMs: ms})); }catch(err){}
+}
+
+function licenceMaintenantMs(){
+  const b = LICENCE.serveur;
+  const serveurMs = b ? b.ms + Math.max(0, Date.now() - b.refLocal) : null;
+  const h = heureFiable({serveurMs: serveurMs, horlogeMs: Date.now(), maxVuMs: licenceLireMemoire()});
+  if(h.source === 'serveur') licenceReinitialiserMemoire(h.maxVuMs); else licenceEcrireMemoire(h.maxVuMs);
+  return h.ms;
+}
+function licenceAujourdhui(){ return dateParisISO(licenceMaintenantMs()); }
+
+// Code gardé sur l'appareil : aucun, inconnu (retiré de la liste), valable, permanent, expiré ou illisible.
+function licenceEtatStocke(){
+  let h = null;
+  try{ h = localStorage.getItem(ACCES_CLE); }catch(err){}
+  if(!h) return {etat: 'aucun', entree: null};
+  const entree = accesEntreeParEmpreinte(h);
+  if(!entree) return {etat: 'inconnu', entree: null};
+  const st = accesStatut(entree, licenceAujourdhui());
+  return {etat: st.etat, expireLe: st.expireLe, entree: entree};
+}
+
+// Message pour un code saisi qui n'ouvre pas l'outil.
+function licenceMessageCode(code){
+  const inconnu = 'Code non reconnu. Vérifiez la saisie, ou écrivez à ' + LICENCE_CONTACT + '.';
+  if(essaiNormaliserCode(code).length < 6) return inconnu;
+  const entree = accesEntreeParEmpreinte(essaiEmpreinteCode(code));
+  if(!entree) return inconnu;
+  const st = accesStatut(entree, licenceAujourdhui());
+  if(st.etat === 'expire') return 'Ce code a expiré le ' + dateLongueFr(st.expireLe) + '. Écrivez à ' + LICENCE_CONTACT + ' pour en obtenir un nouveau.';
+  if(st.etat === 'invalide') return 'Ce code n\'est pas utilisable. Écrivez à ' + LICENCE_CONTACT + '.';
+  return '';
+}
+
+// Écran bloquant (pur : renvoie du HTML). type = 'domaine' | 'expire' | 'invalide'.
+function htmlEcranBloquant(type, infos){
+  const e = echapperRapport;
+  const i = infos || {};
+  const contact = '<a href="mailto:' + LICENCE_CONTACT + '">' + LICENCE_CONTACT + '</a>';
+  let titre, texte, actions = '';
+  if(type === 'domaine'){
+    titre = 'Licence non valide';
+    texte = 'Cette copie de Sam Incendie — Audit n\'est pas hébergée sur un site autorisé. Pour utiliser l\'outil, rendez-vous sur samincendie.fr, ou écrivez à ' + contact + '.';
+  } else {
+    const date = dateLongueFr(i.expireLe);
+    titre = type === 'expire' && date ? 'Votre accès Bêta a expiré le ' + date : 'Votre accès Bêta n\'est plus valide';
+    texte = 'Vos données restent enregistrées sur cet appareil : exportez votre dossier pour le conserver. Pour prolonger votre accès, saisissez un nouveau code ou écrivez à ' + contact + '.';
+    actions = '<button type="button" class="btn btn-accent" onclick="licenceExporterDossier()">💾 Exporter mon dossier</button>'
+      + '<form class="licence-form" onsubmit="licenceValiderNouveauCode(event)"><label>Nouveau code d\'accès<input type="text" id="licence-code-champ" class="essai-code-champ" autocomplete="off" autocapitalize="characters" spellcheck="false"></label>'
+      + '<button type="submit" class="btn">Ouvrir avec ce code</button><span class="licence-msg" id="licence-msg" role="status"></span></form>';
+  }
+  return '<div class="licence-carte" role="alertdialog" aria-modal="true" aria-labelledby="licence-titre" aria-describedby="licence-texte"><h2 id="licence-titre">' + e(titre) + '</h2><p id="licence-texte">' + texte + '</p>' + actions + '</div>';
+}
+
+// Le reste de l'outil devient inerte (ni clic, ni clavier) tant que l'écran est là ; rien n'est modifié dans le dossier.
+function licenceBloquer(type, infos){
+  LICENCE.bloque = type;
+  let zone = document.getElementById('licence-bloc');
+  if(!zone){ zone = document.createElement('div'); zone.id = 'licence-bloc'; document.body.appendChild(zone); }
+  zone.innerHTML = htmlEcranBloquant(type, infos);
+  Array.prototype.forEach.call(document.body.children, c => { if(c !== zone) c.setAttribute('inert', ''); });
+  const premier = zone.querySelector('button, input');
+  if(premier && premier.focus) premier.focus();
+}
+function licenceLever(){
+  LICENCE.bloque = '';
+  const zone = document.getElementById('licence-bloc');
+  if(zone) zone.remove();
+  Array.prototype.forEach.call(document.body.children, c => c.removeAttribute('inert'));
+}
+
+function licenceExporterDossier(){
+  if(typeof exporterDossierAuditJSON === 'function') exporterDossierAuditJSON();
+}
+
+function licenceValiderNouveauCode(ev){
+  ev.preventDefault();
+  const champ = document.getElementById('licence-code-champ');
+  const msg = document.getElementById('licence-msg');
+  const code = champ ? champ.value : '';
+  if(essaiCodeValide(code)){
+    LICENCE.urlEntree = null;
+    licenceLever();
+    essaiOuvrirOutilComplet(code);
+    return;
+  }
+  if(msg) msg.textContent = licenceMessageCode(code);
+}
+
+// Applique l'état du code à l'écran : bloque si le code gardé sur l'appareil (ou celui de l'adresse) est expiré, lève le blocage s'il est valable.
+// Le blocage par domaine, lui, ne se lève jamais.
+function licenceAppliquerEtat(){
+  if(LICENCE.bloque === 'domaine') return;
+  const st = licenceEtatStocke();
+  if(st.etat === 'ok' || st.etat === 'permanent'){ if(LICENCE.bloque) licenceLever(); return; }
+  if(st.etat === 'expire' || st.etat === 'invalide'){ licenceBloquer(st.etat, st); return; }
+  if(LICENCE.urlEntree){
+    const sUrl = accesStatut(LICENCE.urlEntree, licenceAujourdhui());
+    if(sUrl.etat === 'expire' || sUrl.etat === 'invalide'){ licenceBloquer(sUrl.etat, sUrl); return; }
+  }
+  if(LICENCE.bloque) licenceLever();
+}
+
+// Au démarrage, au retour au premier plan (au plus une fois par 30 minutes) et à la reconnexion.
+async function verifierLicence(options){
+  const force = !!(options && options.force);
+  if(!domaineAutorise(location.hostname)){ licenceBloquer('domaine'); return; }
+  if(LICENCE.enCours) return;
+  if(!force && LICENCE.derniereVerif && Date.now() - LICENCE.derniereVerif < LICENCE_RECHECK_MS) return;
+  LICENCE.enCours = true;
+  try{
+    if(typeof navigator !== 'undefined' && navigator.onLine === false){
+      licenceAppliquerEtat();
+    } else {
+      const lu = await lireHeureServeur({urlSite: location.origin + location.pathname});
+      if(lu) LICENCE.serveur = {ms: lu.ms, refLocal: Date.now()};
+      licenceAppliquerEtat();
+    }
+    LICENCE.derniereVerif = Date.now();
+  }catch(err){
+    console.error('Licence :', err);
+    try{ licenceAppliquerEtat(); }catch(err2){}
+  }finally{
+    LICENCE.enCours = false;
+  }
+}
+document.addEventListener('visibilitychange', () => { if(document.visibilityState === 'visible') verifierLicence(); });
+window.addEventListener('online', () => verifierLicence({force: true}));
+
 // ==================== ACCÈS À L'OUTIL COMPLET ====================
 // Trois niveaux : essai (5 questions + résultat), bilan (e-mail donné : plan d'actions sur les
 // 5 points), complet (code d'accès : toute la grille). state.isDemo reste vrai tant que le
 // niveau complet n'est pas ouvert.
 //
 // Le fichier ne contient jamais un code en clair, seulement son empreinte SHA-256.
-// Ajouter ou changer un code : ouvrir la console du navigateur sur l'outil, taper
-//   essaiEmpreinteCode('MON-NOUVEAU-CODE')
-// puis coller l'empreinte affichée dans la liste ci-dessous. Retirer une empreinte coupe le code
-// correspondant. Majuscules, espaces et tirets ne comptent pas à la saisie.
-// Lien direct pour un client : /sam-incendie-audit/?acces=MON-CODE
+// Ajouter un code : node sam-incendie-audit/outils/generer-code.js "Testeur 01" 30
+// (alias du testeur, durée en jours). Le script affiche le code en clair (à envoyer au testeur), son empreinte et la ligne à coller
+// dans la liste ci-dessous. Retirer une ligne coupe le code correspondant. Majuscules, espaces et tirets ne comptent pas à la saisie.
+//   code_hash        : empreinte SHA-256 (salée) du code
+//   date_expiration  : AAAA-MM-JJ, dernier jour valable INCLUS (heure de Paris) ; vide = accès permanent
+//   nom_testeur      : un ALIAS (« Testeur 01 »), jamais un nom complet : ce fichier est public
+// Lien direct pour un client : /sam-incendie-audit/ suivi du paramètre d'accès (voir le script)
 //
 // Limite à connaître : page statique, donc verrou dissuasif, pas une protection. Quelqu'un qui
-// sait ouvrir la console du navigateur peut le contourner.
-const ACCES_EMPREINTES = [
-  'a3bedb0bafa66fa4b13dba0fe63b47b2ccb99c87d62a8e31e8477ec032df1135',
+// sait ouvrir la console du navigateur ou modifier le fichier peut le contourner.
+// ACCES-CODES:DEBUT
+const ACCES_CODES = [
+  { code_hash: 'a3bedb0bafa66fa4b13dba0fe63b47b2ccb99c87d62a8e31e8477ec032df1135', date_expiration: '', nom_testeur: 'Accès clients (permanent)' },
 ];
+  { code_hash: '565e2ccb548bab72fcc19001939a9d1e82ceb89a9b18a8376b242f2ba1d49eab', date_expiration: '2026-10-01', nom_testeur: 'Test expiré (site de test uniquement)' },
+// ACCES-CODES:FIN
 const ACCES_CLE = 'sam_incendie_acces';
 const ACCES_SEL = 'sam-incendie-acces|';
 
@@ -4268,9 +4526,12 @@ function essaiSha256(texte){
 
 function essaiNormaliserCode(code){ return String(code == null ? '' : code).toUpperCase().replace(/[^A-Z0-9]/g, ''); }
 function essaiEmpreinteCode(code){ return essaiSha256(ACCES_SEL + essaiNormaliserCode(code)); }
-function essaiCodeValide(code){ return essaiNormaliserCode(code).length >= 6 && ACCES_EMPREINTES.includes(essaiEmpreinteCode(code)); }
+function accesEntreeParEmpreinte(h){ return ACCES_CODES.find(c => c && c.code_hash === h) || null; }
+// Un code ouvre l'outil s'il est dans la liste ET pas expiré (heure fiable : serveur, ou garde locale hors ligne).
+function accesUtilisable(entree){ const st = accesStatut(entree, licenceAujourdhui()); return st.etat === 'ok' || st.etat === 'permanent'; }
+function essaiCodeValide(code){ return essaiNormaliserCode(code).length >= 6 && accesUtilisable(accesEntreeParEmpreinte(essaiEmpreinteCode(code))); }
 function essaiAccesEnregistre(){
-  try { return ACCES_EMPREINTES.includes(localStorage.getItem(ACCES_CLE)); } catch(e){ return false; }
+  try { return accesUtilisable(accesEntreeParEmpreinte(localStorage.getItem(ACCES_CLE))); } catch(e){ return false; }
 }
 
 // Ouvre l'outil complet sur cet appareil et s'en souvient.
@@ -4299,6 +4560,8 @@ function essaiAppliquerAccesAuDemarrage(){
     if(dansAdresse){
       try { const u = new URL(location.href); u.searchParams.delete('acces'); history.replaceState(null, '', u.pathname + u.search + u.hash); } catch(e){}
     }
+  } else if(code){
+    LICENCE.urlEntree = accesEntreeParEmpreinte(essaiEmpreinteCode(code));
   }
   if(essaiAccesEnregistre() && state.isDemo){
     state.isDemo = false;
@@ -4312,7 +4575,7 @@ function essaiValiderCode(ev){
   const champ = ev.target.querySelector('input');
   const msg = ev.target.querySelector('.essai-code-msg');
   if(champ && essaiCodeValide(champ.value)){ essaiOuvrirOutilComplet(champ.value); return; }
-  if(msg) msg.textContent = 'Code non reconnu. Vérifiez la saisie, ou écrivez à contact@samincendie.fr.';
+  if(msg) msg.textContent = licenceMessageCode(champ ? champ.value : '');
 }
 
 function essaiHtmlCode(){
@@ -7974,6 +8237,7 @@ function init(){
   });
   restaurerDossierAuditEnregistre();
   essaiAppliquerAccesAuDemarrage();
+  verifierLicence();
   if(!SamCompat.caps.serviceWorker && !state.isDemo) avisUneFois('hors-ligne', SamCompat.MSG.horsLigne);
   afficherPanneauCompat();
   renderCockpit();
