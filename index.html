@@ -996,7 +996,7 @@ input[type="number"], input[type="text"], input[type="email"], input[type="tel"]
 if ('serviceWorker' in navigator) {
   try {
     // Doit rester égale à VERSION dans sw.js : le message n'apparaît que si le service worker actif est plus récent que la page.
-    const VERSION_PAGE = 'v41';
+    const VERSION_PAGE = 'v42';
     let bandeauAffiche = false;
     navigator.serviceWorker.addEventListener('message', e => {
       if (!e.data || e.data.type !== 'sw-active' || e.data.version === VERSION_PAGE || bandeauAffiche) return;
@@ -1224,6 +1224,7 @@ a.essai-btn{display:inline-flex;align-items:center;justify-content:center;text-d
   #rapport-client .rc-entete{display:flex;align-items:center;gap:6mm;border-bottom:3pt solid #e8341c;padding-bottom:5mm}
   #rapport-client .rc-logo{height:22mm;width:auto;display:block}
   #rapport-client .rc-marque{font-size:20pt;font-weight:700;color:#e8341c;line-height:1.1}
+  #rapport-client .rc-coord{margin-left:auto;text-align:right;font-size:9pt;color:#4a5568}
   #rapport-client .rc-marque small{display:block;font-size:9.5pt;font-weight:400;color:#4a5568;letter-spacing:.5pt;text-transform:uppercase;margin-top:1mm}
   #rapport-client .rc-titre{font-size:26pt;margin:26mm 0 12mm;color:#1a202c;line-height:1.15;font-weight:800}
   #rapport-client .rc-infos{width:100%;border-collapse:collapse;margin-bottom:12mm}
@@ -6020,7 +6021,7 @@ function construireRapportClient(d){
   const logo = d.logoSrc ? '<img class="rc-logo" alt="Sam Incendie" src="' + e(d.logoSrc) + '">' : '';
 
   const couverture = '<section class="rc-couverture">'
-    + '<div class="rc-entete">' + logo + '<div class="rc-marque">Sam Incendie<small>Expert Sécurité Incendie</small></div></div>'
+    + '<div class="rc-entete">' + logo + '<div class="rc-marque">Sam Incendie<small>Expert Sécurité Incendie</small></div><div class="rc-coord">samincendie.fr · contact@samincendie.fr</div></div>'
     + '<h1 class="rc-titre">Rapport d\'Audit de Sécurité Incendie</h1>'
     + '<table class="rc-infos"><tbody>'
     + ligneInfo('Client', id.nom) + ligneInfo('Adresse', id.adresse) + ligneInfo('Date', d.dateRapport)
@@ -8409,7 +8410,7 @@ function construireLettre(d){
   const logo = texte(d.logoSrc);
   return '<div class="lt-page">'
     + '<header class="lt-entete">' + (logo ? '<img class="lt-logo" src="' + e(logo) + '" alt="Sam Incendie, protection incendie pour les professionnels">' : '<div class="lt-marque">SAM INCENDIE</div>')
-    + '<div class="lt-coord"><strong>Expert sécurité incendie</strong>samincendie.fr</div></header>'
+    + '<div class="lt-coord"><strong>Expert sécurité incendie</strong>samincendie.fr · contact@samincendie.fr</div></header>'
     + '<div class="lt-meta"><div class="lt-dest"><span class="lt-dest-lib">À l\'attention du gestionnaire</span><strong>' + e(nom) + '</strong>' + (adresse ? '<br>' + e(adresse) : '') + '</div>'
     + '<div class="lt-date">' + e(d.dateLettre || '') + '</div></div>'
     + '<p class="lt-objet"><span>Objet</span>Rapport de visite de sécurité incendie — ' + e(nom) + '</p>'
