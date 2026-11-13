@@ -4259,7 +4259,7 @@ function dateParisISO(ms){
 
 function dateLongueFr(iso){
   const d = decomposerDateRegistre(iso);
-  return d ? new Date(d.ms).toLocaleDateString('fr-FR', {timeZone: 'UTC', day: 'numeric', month: 'long', year: 'numeric'}) : '';
+  return d ? new Date(d.ms).toLocaleDateString('fr-FR', {timeZone: 'UTC', day: 'numeric', month: 'long', year: 'numeric'}).replace(/^1 /, '1er ') : '';
 }
 
 // Heure retenue. En ligne : celle du serveur, qui fait foi (et qui remet la « date la plus avancée vue » à jour, ce qui permet de se
