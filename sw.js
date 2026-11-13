@@ -1,5 +1,5 @@
 const PREFIX = 'sam-incendie-';
-const VERSION = 'v40';
+const VERSION = 'v41';
 const CACHE = PREFIX + VERSION;
 const CHART_URL = 'https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js';
 const COEUR = ['./index.html', './manifest.json'];
