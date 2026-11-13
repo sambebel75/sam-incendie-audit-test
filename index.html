@@ -4470,7 +4470,7 @@ window.addEventListener('online', () => verifierLicence({force: true}));
 // Le fichier ne contient jamais un code en clair, seulement son empreinte SHA-256.
 // Ajouter un code : node sam-incendie-audit/outils/generer-code.js "Testeur 01" 30
 // (alias du testeur, durée en jours). Le script affiche le code en clair (à envoyer au testeur), son empreinte et la ligne à coller
-// dans la liste ci-dessous. Retirer une ligne coupe le code correspondant. Majuscules, espaces et tirets ne comptent pas à la saisie.
+// dans la liste ci-dessous, juste avant la ligne « ACCES-CODES:FIN ». Retirer une ligne coupe le code correspondant. Majuscules, espaces et tirets ne comptent pas à la saisie.
 //   code_hash        : empreinte SHA-256 (salée) du code
 //   date_expiration  : AAAA-MM-JJ, dernier jour valable INCLUS (heure de Paris) ; vide = accès permanent
 //   nom_testeur      : un ALIAS (« Testeur 01 »), jamais un nom complet : ce fichier est public
@@ -4478,12 +4478,12 @@ window.addEventListener('online', () => verifierLicence({force: true}));
 //
 // Limite à connaître : page statique, donc verrou dissuasif, pas une protection. Quelqu'un qui
 // sait ouvrir la console du navigateur ou modifier le fichier peut le contourner.
-// ACCES-CODES:DEBUT
 const ACCES_CODES = [
+  // ACCES-CODES:DEBUT (coller les nouvelles lignes juste avant la ligne FIN ci-dessous, jamais en dehors des crochets)
   { code_hash: 'a3bedb0bafa66fa4b13dba0fe63b47b2ccb99c87d62a8e31e8477ec032df1135', date_expiration: '', nom_testeur: 'Accès clients (permanent)' },
-];
   { code_hash: '565e2ccb548bab72fcc19001939a9d1e82ceb89a9b18a8376b242f2ba1d49eab', date_expiration: '2026-10-01', nom_testeur: 'Test expiré (site de test uniquement)' },
-// ACCES-CODES:FIN
+  // ACCES-CODES:FIN
+];
 const ACCES_CLE = 'sam_incendie_acces';
 const ACCES_SEL = 'sam-incendie-acces|';
 
