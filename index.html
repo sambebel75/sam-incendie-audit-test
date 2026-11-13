@@ -355,7 +355,8 @@ body.mode-essai .hdr{position:static}
 body.mode-essai .toolbar{justify-content:center}
 
 /* TABS */
-.tabs{background:var(--surface);border-bottom:2px solid var(--border);display:flex;gap:0;position:sticky;top:53px;z-index:190}
+.tabs{background:var(--surface);border-bottom:2px solid var(--border);display:flex;gap:0;position:sticky;top:53px;z-index:190;overflow-x:auto;scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
 .tab{padding:12px 20px;cursor:pointer;font-weight:600;font-size:13px;color:var(--text2);border-bottom:3px solid transparent;margin-bottom:-2px;transition:.2s;white-space:nowrap}
 .tab:hover{color:var(--text)}
 .tab.active{color:var(--accent);border-bottom-color:var(--accent)}
@@ -405,6 +406,25 @@ body.mode-essai .toolbar{justify-content:center}
 .cockpit-al-reste{font-size:12px;color:var(--text2);margin:8px 0 0}
 .cockpit-nav{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
 .cockpit-nav .btn{justify-content:center;padding:12px 10px}
+/* REGISTRE DE SÉCURITÉ (onglet 7) */
+.registre{max-width:1100px;margin:24px auto 0;padding:0 20px 24px}
+.registre h2{font-size:17px;margin:0 0 4px;color:var(--primary)}
+.reg-sub{font-size:13px;color:var(--text2);margin:0 0 14px}
+.reg-resume{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 16px;font-size:12px;font-weight:700}
+.reg-resume span{padding:4px 10px;border-radius:12px;background:var(--surface);box-shadow:var(--shadow)}
+.reg-grille{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}
+.reg-card{background:var(--surface);border-radius:var(--r);box-shadow:var(--shadow);padding:16px 18px}
+.reg-head{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:12px}
+.reg-titre{font-weight:700;font-size:14px}
+.reg-badge{display:inline-block;padding:3px 10px;border-radius:12px;font-size:11px;font-weight:700;white-space:nowrap;color:#fff}
+.reg-b-retard{background:#dc2626}.reg-b-a_venir{background:#d97706}.reg-b-ok{background:#15803d}.reg-b-non_renseigne{background:#6b7280}
+.reg-champ{display:block;font-size:12px;color:var(--text2);margin-bottom:10px}
+.reg-champ input{display:block;width:100%;margin-top:3px;padding:8px 10px;border:1px solid var(--border);border-radius:6px;background:var(--surface2);color:var(--text);font:inherit}
+.reg-ech{font-size:13px;margin:4px 0 0}
+.reg-err{font-size:12px;color:var(--s1);font-weight:700;margin:6px 0 0;min-height:0}
+.reg-note{font-size:12px;color:var(--text2);margin:8px 0 0}
+.reg-avis{font-size:12px;color:var(--text2);margin:16px 0 0}
+@media (max-width:700px){.reg-grille{grid-template-columns:1fr}}
 .guide-details{margin-top:8px}
 .guide-details > summary{cursor:pointer;font-weight:700;font-size:14px;padding:12px 16px;background:var(--surface);border-radius:var(--r);box-shadow:var(--shadow);list-style:none}
 .guide-details > summary::-webkit-details-marker{display:none}
@@ -926,7 +946,7 @@ input[type="number"], input[type="text"], input[type="email"], input[type="tel"]
 if ('serviceWorker' in navigator) {
   try {
     // Doit rester égale à VERSION dans sw.js : le message n'apparaît que si le service worker actif est plus récent que la page.
-    const VERSION_PAGE = 'v39';
+    const VERSION_PAGE = 'v40';
     let bandeauAffiche = false;
     navigator.serviceWorker.addEventListener('message', e => {
       if (!e.data || e.data.type !== 'sw-active' || e.data.version === VERSION_PAGE || bandeauAffiche) return;
@@ -1274,6 +1294,7 @@ a.essai-btn{display:inline-flex;align-items:center;justify-content:center;text-d
   <div class="tab" onclick="showTab(4)" id="tab4">🎯 Plan d'actions</div>
   <div class="tab" onclick="showTab(5)" id="tab5">📐 Dégagements UP</div>
   <div class="tab" onclick="showTab(6)" id="tab6">📁 Historique</div>
+  <div class="tab" onclick="showTab(7)" id="tab7">🗂️ Registre</div>
 </nav>
 
 <!-- TAB 0: COCKPIT (tableau de bord) puis MODE D'EMPLOI (bloc replié) -->
@@ -1805,6 +1826,11 @@ a.essai-btn{display:inline-flex;align-items:center;justify-content:center;text-d
     <div id="hist-comparatif" style="margin-bottom:32px;"></div>
     <div id="hist-list"></div>
   </div>
+</div>
+
+<!-- TAB 7: REGISTRE DE SÉCURITÉ (suivi des vérifications périodiques) -->
+<div class="panel" id="panel7">
+  <div class="registre" id="registre-zone"></div>
 </div>
 
 <!-- MODAL LETTRE GESTIONNAIRE -->
@@ -2538,6 +2564,7 @@ let state = {
   },
   isDemo: true,
   essai: { activite: '', reponses: {} },
+  registre: {},
 };
 let radarChart = null;
 
@@ -2549,7 +2576,7 @@ let radarChart = null;
 const STORE_KEY = 'sam_incendie_audit_state';
 const SCHEMA_VERSION = 2;
 const AUDIT_TYPES = ['habitation','erp','igh'];
-const DOSSIER_FIELDS = ['erpSubType','mixteTypes','mixteZones','identification','scores','effectifRdc','effectifTotal','desenfumage','habitation','techniqueErp','igh','essai'];
+const DOSSIER_FIELDS = ['erpSubType','mixteTypes','mixteZones','identification','scores','effectifRdc','effectifTotal','desenfumage','habitation','techniqueErp','igh','essai','registre'];
 const BACKUP_TTL_MS = 30*24*60*60*1000;
 const PIXEL_VIDE = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
 
@@ -2570,6 +2597,106 @@ function migrerClasseIghAncienne(igh){
   return igh;
 }
 
+// ==================== REGISTRE DE SÉCURITÉ : données et règles (pures, sans écran ni état) ====================
+// state.registre = { extincteurs:{lastDate:'AAAA-MM-JJ', company:''}, electricite:{...}, desenfumage:{...}, ssi:{...}, ria:{...} }
+// Périodicité : 12 mois pour les cinq équipements (vérifications annuelles reprises de la grille : extincteurs, RIA, SSI, désenfumage DF 10 §2, électricité EL 19).
+const REGISTRE_ELEMENTS = [
+  {cle: 'extincteurs', icone: '🧯', libelle: 'Extincteurs', mois: 12, note: ''},
+  {cle: 'electricite', icone: '⚡', libelle: 'Installations électriques', mois: 12, note: ''},
+  {cle: 'desenfumage', icone: '💨', libelle: 'Désenfumage', mois: 12, note: ''},
+  {cle: 'ssi', icone: '🚨', libelle: 'SSI (détection et alarme incendie)', mois: 12, note: "Suivi annuel. La vérification triennale par un organisme agréé (SSI de catégories A et B) n'est pas encore suivie ici."},
+  {cle: 'ria', icone: '🚒', libelle: "Robinets d'incendie armés (RIA)", mois: 12, note: ''}
+];
+const REGISTRE_SEUIL_JOURS = 30;
+
+function registreVierge(){
+  const r = {};
+  REGISTRE_ELEMENTS.forEach(e => { r[e.cle] = {lastDate: '', company: ''}; });
+  return r;
+}
+
+// Jamais de perte : tout ce qui est reconnu est gardé tel quel ; seul le type est contrôlé (texte). Les clés inconnues sont conservées.
+function normaliserRegistre(raw){
+  const out = registreVierge();
+  if(!estObjet(raw)) return out;
+  Object.keys(raw).forEach(k => {
+    if(k === '__proto__' || k === 'constructor' || k === 'prototype') return;
+    const v = raw[k];
+    const connu = REGISTRE_ELEMENTS.some(e => e.cle === k);
+    if(estObjet(v)){
+      out[k] = copierSur(out[k] || {}, v);
+      if(connu){
+        if(typeof out[k].lastDate !== 'string') out[k].lastDate = '';
+        if(typeof out[k].company !== 'string') out[k].company = '';
+      }
+    } else if(!connu){
+      out[k] = v;
+    }
+  });
+  return out;
+}
+
+// Date réelle au format AAAA-MM-JJ (le 31/02 est refusé), sinon null.
+function decomposerDateRegistre(texte){
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(typeof texte === 'string' ? texte : '');
+  if(!m) return null;
+  const a = +m[1], mo = +m[2], j = +m[3];
+  const d = new Date(Date.UTC(a, mo - 1, j));
+  if(d.getUTCFullYear() !== a || d.getUTCMonth() !== mo - 1 || d.getUTCDate() !== j) return null;
+  return {a: a, mo: mo, j: j, ms: d.getTime()};
+}
+
+// Prochaine échéance = dernière vérification + périodicité, en calendrier (le 29/02 + 12 mois = 28/02). '' si la date est illisible.
+function calculerEcheanceRegistre(lastDate, mois){
+  const p = decomposerDateRegistre(lastDate);
+  if(!p || !(mois > 0)) return '';
+  const total = (p.mo - 1) + mois;
+  const annee = p.a + Math.floor(total / 12);
+  const moisIdx = total % 12;
+  const dernierJour = new Date(Date.UTC(annee, moisIdx + 1, 0)).getUTCDate();
+  const jour = Math.min(p.j, dernierJour);
+  return String(annee).padStart(4, '0') + '-' + String(moisIdx + 1).padStart(2, '0') + '-' + String(jour).padStart(2, '0');
+}
+
+// Badge au jour près. Retard = échéance strictement dépassée (le jour d'échéance lui-même n'est pas en retard).
+function statutRegistre(echeance, aujourdhui){
+  const e = decomposerDateRegistre(echeance), a = decomposerDateRegistre(aujourdhui);
+  if(!e || !a) return {code: 'non_renseigne', libelle: 'À renseigner', jours: null};
+  const jours = Math.round((e.ms - a.ms) / 86400000);
+  if(jours < 0) return {code: 'retard', libelle: 'EN RETARD', jours: jours};
+  if(jours <= REGISTRE_SEUIL_JOURS) return {code: 'a_venir', libelle: 'À venir < 30j', jours: jours};
+  return {code: 'ok', libelle: 'OK', jours: jours};
+}
+
+// Saisie d'une date de vérification : vide = effacer ; illisible ou future = refusée.
+function validerDateRegistre(valeur, aujourdhui){
+  if(valeur === '' || valeur == null) return {ok: true, erreur: ''};
+  const d = decomposerDateRegistre(valeur);
+  if(!d) return {ok: false, erreur: 'Date illisible : saisissez une date valide.'};
+  const a = decomposerDateRegistre(aujourdhui);
+  if(a && d.ms > a.ms) return {ok: false, erreur: 'Date de vérification dans le futur : refusée.'};
+  return {ok: true, erreur: ''};
+}
+
+// Import, restauration d'un snapshot : pour chaque équipement, la vérification la plus récente est gardée (jamais de recul).
+function fusionnerRegistre(actuel, entrant){
+  const a = normaliserRegistre(actuel), b = normaliserRegistre(entrant);
+  const out = normaliserRegistre(a);
+  Object.keys(b).forEach(k => {
+    const connu = REGISTRE_ELEMENTS.some(e => e.cle === k);
+    if(!connu){ if(!(k in a)) out[k] = estObjet(b[k]) ? copierSur({}, b[k]) : b[k]; return; }
+    const da = decomposerDateRegistre(a[k].lastDate), db = decomposerDateRegistre(b[k].lastDate);
+    const prendEntrant = !!db && (!da || db.ms > da.ms);
+    const choisi = prendEntrant ? b[k] : a[k];
+    const autre = prendEntrant ? a[k] : b[k];
+    out[k] = copierSur({}, choisi);
+    // même date des deux côtés, ou aucune date : on ne perd pas le nom de l'entreprise renseigné de l'autre côté
+    const memeSituation = (!da && !db) || (da && db && da.ms === db.ms);
+    if(out[k].company === '' && memeSituation && typeof autre.company === 'string') out[k].company = autre.company;
+  });
+  return out;
+}
+
 function dossierVierge(){
   return {
     erpSubType: '',
@@ -2584,6 +2711,7 @@ function dossierVierge(){
     techniqueErp: {},
     igh: {classeIgh:'', hauteurDernierNiveau:0, nombreCompartiments:1, typeClapets:'autonome', hasReportCMSI:false, nombreColonnesHumides:1},
     essai: {activite:'', reponses:{}},
+    registre: registreVierge(),
   };
 }
 
@@ -2603,6 +2731,7 @@ function normaliserDossier(raw){
   copierSur(d.igh, raw.igh);
   migrerClasseIghAncienne(d.igh);
   copierSur(d.essai, raw.essai);
+  d.registre = normaliserRegistre(raw.registre);
   return d;
 }
 
@@ -3016,6 +3145,8 @@ const Store = {
     const d = normaliserDossier(flat);
     await internaliserPhotosScores(d.scores, new Map());
     this.commit();
+    // Registre de sécurité : suivi à long terme, jamais écrasé par un import ou un snapshot plus ancien (vérification la plus récente gardée).
+    d.registre = fusionnerRegistre(this.env.dossiers[flat.auditType] && this.env.dossiers[flat.auditType].registre, d.registre);
     this.env.dossiers[flat.auditType] = d;
     state.auditType = flat.auditType;
     // Le niveau d'accès appartient à l'appareil, pas au fichier importé : state.isDemo ne change pas.
@@ -4537,6 +4668,7 @@ function showTab(n){
     case 3: if(typeof renderSynthese==='function') renderSynthese(); break;
     case 4: if(typeof renderPlan==='function') renderPlan(); break;
     case 6: if(typeof renderHistorique==='function') renderHistorique(); break;
+    case 7: renderRegistre(); break;
     case 5: {
       const blockErp  = document.getElementById('block-technique-erp');
       const blockHab  = document.getElementById('block-technique-habitation');
@@ -4678,6 +4810,7 @@ function switchType(type){
   if(typeof rafraichirChampsSpecifiquesIdentification==='function') rafraichirChampsSpecifiquesIdentification();
   renderGrille();
   if(state.activeTab===0) renderCockpit();
+  if(state.activeTab===7) renderRegistre();
   if(state.activeTab===3) renderSynthese();
   if(state.activeTab===4) renderPlan();
   updateProgress();
@@ -5001,6 +5134,7 @@ function setErpType(t){
   if(selMain && !document.getElementById('i_mixte')?.checked) selMain.value = state.erpSubType||'M';
   if(typeof rafraichirChampsSpecifiquesIdentification==='function') rafraichirChampsSpecifiquesIdentification();
   if(state.activeTab===0) renderCockpit();
+  if(state.activeTab===7) renderRegistre();
   if(state.activeTab===2) renderGrille();
   if(state.activeTab===3) renderSynthese();
   updateProgress();
@@ -6244,6 +6378,7 @@ function reinitialiserTrameAuditComplete(){
   if(!confirmation2) return;
   try{
     const dossier = dossierVierge();
+    dossier.registre = normaliserRegistre(state.registre);   // le registre de sécurité survit à la remise à zéro d'un audit
     if(state.auditType==='erp'){
       dossier.erpSubType = 'M';
       dossier.techniqueErp = {puissonCuissonKw:0, cuisineOuverte:false, surfaceVenteM2:0, surfaceReservesM2:0};
@@ -7828,6 +7963,114 @@ function renderCockpit(){
     console.error('Cockpit :', err);
     zone.innerHTML = '<p class="cockpit-sub">Le tableau de bord n\'a pas pu être calculé. Le reste de l\'application n\'est pas affecté.</p>';
   }
+}
+
+// ==================== REGISTRE DE SÉCURITÉ (onglet 7) : affichage et saisie ====================
+// Les règles de calcul sont plus haut (REGISTRE_ELEMENTS, calculerEcheanceRegistre, statutRegistre...). L'affichage n'écrit rien ;
+// seule la saisie (majRegistre) modifie state.registre, puis demande la sauvegarde automatique.
+function aujourdhuiRegistre(){
+  const d = new Date();
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+}
+
+function dateFrRegistre(iso){
+  const d = decomposerDateRegistre(iso);
+  return d ? String(d.j).padStart(2, '0') + '/' + String(d.mo).padStart(2, '0') + '/' + d.a : '';
+}
+
+function infosRegistre(element, saisie, aujourdhui){
+  const lastDate = estObjet(saisie) && typeof saisie.lastDate === 'string' ? saisie.lastDate : '';
+  const echeance = calculerEcheanceRegistre(lastDate, element.mois);
+  return {lastDate: lastDate, echeance: echeance, statut: statutRegistre(echeance, aujourdhui)};
+}
+
+function htmlBadgeRegistre(statut){
+  return '<span class="reg-badge reg-b-' + statut.code + '">' + echapperRapport(statut.libelle) + '</span>';
+}
+
+function htmlDetailRegistre(infos){
+  if(infos.echeance === ''){
+    return infos.lastDate === '' ? 'Aucune vérification enregistrée : renseignez la date de la dernière vérification.' : 'La date enregistrée est illisible : à corriger.';
+  }
+  const j = infos.statut.jours;
+  const duree = j < 0 ? 'dépassée de ' + (-j) + ' jour' + (-j > 1 ? 's' : '') : (j === 0 ? 'aujourd\'hui' : 'dans ' + j + ' jour' + (j > 1 ? 's' : ''));
+  return 'Prochaine vérification avant le <strong>' + dateFrRegistre(infos.echeance) + '</strong> (' + duree + ').';
+}
+
+function htmlResumeRegistre(registre, aujourdhui){
+  const reg = normaliserRegistre(registre);
+  const n = {retard: 0, a_venir: 0, ok: 0, non_renseigne: 0};
+  REGISTRE_ELEMENTS.forEach(e => { n[infosRegistre(e, reg[e.cle], aujourdhui).statut.code]++; });
+  return '<span>🔴 ' + n.retard + ' en retard</span><span>🟠 ' + n.a_venir + ' à venir (&lt; 30j)</span><span>🟢 ' + n.ok + ' OK</span><span>⚪ ' + n.non_renseigne + ' à renseigner</span>';
+}
+
+function htmlCarteRegistre(element, saisie, aujourdhui){
+  const e = echapperRapport;
+  const infos = infosRegistre(element, saisie, aujourdhui);
+  const company = estObjet(saisie) && typeof saisie.company === 'string' ? saisie.company : '';
+  const k = element.cle;
+  return '<div class="reg-card" id="reg-card-' + k + '">'
+    + '<div class="reg-head"><span class="reg-titre">' + element.icone + ' ' + e(element.libelle) + '</span><span id="reg-badge-' + k + '">' + htmlBadgeRegistre(infos.statut) + '</span></div>'
+    + '<label class="reg-champ">Date de la dernière vérification<input type="date" id="reg-date-' + k + '" value="' + e(infos.lastDate) + '" max="' + e(aujourdhui) + '" onchange="majRegistre(\'' + k + '\',\'lastDate\',this.value)"></label>'
+    + '<label class="reg-champ">Entreprise intervenante<input type="text" id="reg-co-' + k + '" value="' + e(company) + '" placeholder="Nom de l\'entreprise" autocomplete="off" oninput="majRegistre(\'' + k + '\',\'company\',this.value)"></label>'
+    + '<p class="reg-ech" id="reg-ech-' + k + '">' + htmlDetailRegistre(infos) + '</p>'
+    + '<p class="reg-err" id="reg-err-' + k + '" role="alert"></p>'
+    + (element.note ? '<p class="reg-note">' + e(element.note) + '</p>' : '')
+    + '</div>';
+}
+
+function htmlRegistre(registre, aujourdhui){
+  const reg = normaliserRegistre(registre);
+  return '<h2>🗂️ Registre de sécurité</h2>'
+    + '<p class="reg-sub">Suivi des vérifications périodiques : la prochaine échéance se calcule à partir de la date de la dernière vérification (12 mois).</p>'
+    + '<div class="reg-resume" id="reg-resume">' + htmlResumeRegistre(reg, aujourdhui) + '</div>'
+    + '<div class="reg-grille">' + REGISTRE_ELEMENTS.map(el => htmlCarteRegistre(el, reg[el.cle], aujourdhui)).join('') + '</div>'
+    + '<p class="reg-avis">Aide au suivi des échéances : ne remplace pas le registre de sécurité de l\'établissement.</p>';
+}
+
+function renderRegistre(){
+  const zone = document.getElementById('registre-zone');
+  if(!zone) return;
+  try{
+    zone.innerHTML = htmlRegistre(state.registre, aujourdhuiRegistre());
+  }catch(err){
+    console.error('Registre de sécurité :', err);
+    zone.innerHTML = '<p class="reg-sub">Le registre n\'a pas pu être affiché. Le reste de l\'application n\'est pas affecté.</p>';
+  }
+}
+
+// Met à jour le badge, la phrase d'échéance et le résumé d'une carte, sans refaire tout l'écran (le champ en cours de saisie garde le focus).
+function rafraichirCarteRegistre(cle){
+  const element = REGISTRE_ELEMENTS.find(x => x.cle === cle);
+  if(!element) return;
+  const aujourdhui = aujourdhuiRegistre();
+  const infos = infosRegistre(element, (state.registre || {})[cle], aujourdhui);
+  const badge = document.getElementById('reg-badge-' + cle), ech = document.getElementById('reg-ech-' + cle), resume = document.getElementById('reg-resume');
+  if(badge) badge.innerHTML = htmlBadgeRegistre(infos.statut);
+  if(ech) ech.innerHTML = htmlDetailRegistre(infos);
+  if(resume) resume.innerHTML = htmlResumeRegistre(state.registre, aujourdhui);
+}
+
+// Saisie d'une date de vérification ou d'une entreprise. Une date illisible ou future est refusée : message, champ remis à la valeur enregistrée, rien n'est sauvegardé.
+function majRegistre(cle, champ, valeur){
+  if(!REGISTRE_ELEMENTS.some(x => x.cle === cle) || (champ !== 'lastDate' && champ !== 'company')) return;
+  const texte = typeof valeur === 'string' ? valeur : '';
+  if(!estObjet(state.registre)) state.registre = {};
+  if(!estObjet(state.registre[cle])) state.registre[cle] = {lastDate: '', company: ''};
+  const err = document.getElementById('reg-err-' + cle);
+  if(champ === 'lastDate'){
+    const verdict = validerDateRegistre(texte, aujourdhuiRegistre());
+    if(!verdict.ok){
+      if(err) err.textContent = verdict.erreur;
+      const champDate = document.getElementById('reg-date-' + cle);
+      if(champDate) champDate.value = typeof state.registre[cle].lastDate === 'string' ? state.registre[cle].lastDate : '';
+      return;
+    }
+  }
+  if(err) err.textContent = '';
+  state.registre[cle][champ] = texte;
+  planifierSauvegardeAutomatique();
+  rafraichirCarteRegistre(cle);
 }
 
 // ==================== DÉLAIS RÉGLEMENTAIRES ====================
