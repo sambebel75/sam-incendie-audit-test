@@ -918,7 +918,7 @@ input[type="number"], input[type="text"], input[type="email"], input[type="tel"]
 if ('serviceWorker' in navigator) {
   try {
     // Doit rester égale à VERSION dans sw.js : le message n'apparaît que si le service worker actif est plus récent que la page.
-    const VERSION_PAGE = 'v37';
+    const VERSION_PAGE = 'v38';
     let bandeauAffiche = false;
     navigator.serviceWorker.addEventListener('message', e => {
       if (!e.data || e.data.type !== 'sw-active' || e.data.version === VERSION_PAGE || bandeauAffiche) return;
@@ -5018,6 +5018,19 @@ function getNCSorted(filter){
       return (state.scores[a.id]?.note||5)-(state.scores[b.id]?.note||5);
     });
 }
+// Avancement de la saisie : UNE seule règle pour la barre du bas et le Cockpit.
+// Base = points applicables au dossier (hors points sans objet) ; est saisi un point noté de 1 à 5.
+function noteSaisie(v){ const n = parseInt(v, 10); return n >= 1 && n <= 5; }
+function pointsApplicables(){
+  const ctx = state.auditType === 'erp' ? getERPContext() : null;
+  return getAllPoints().filter(p => !isPointNA(p, ctx));
+}
+function avancementSaisie(){
+  const scores = state.scores || {};
+  const applicables = pointsApplicables();
+  const notes = applicables.filter(p => noteSaisie((scores[p.id] || {}).note)).length;
+  return {applicables: applicables.length, notes: notes, pct: applicables.length ? Math.round(notes / applicables.length * 100) : 0};
+}
 function updateProgress(){
   document.body.classList.toggle('mode-essai', !!state.isDemo);
   if(typeof majBandeauCompat === 'function') majBandeauCompat();
@@ -5037,10 +5050,9 @@ function updateProgress(){
     return;
   }
   const data = getAuditData();
-  const allPts = getAllPoints();
-  const total = data.totalPoints || allPts.length;
-  const done = allPts.filter(p=>state.scores[p.id]&&state.scores[p.id].note).length;
-  const pct = total ? Math.round(done/total*100) : 0;
+  // même base que le Cockpit : points applicables au dossier (les points sans objet ne comptent pas)
+  const av = avancementSaisie();
+  const total = av.applicables, done = av.notes, pct = av.pct;
   const bar = document.getElementById('globalProgBar');
   const lbl = document.getElementById('globalProgLabel');
   if (bar) bar.style.width = pct+'%';
@@ -5050,8 +5062,10 @@ function updateProgress(){
     const domCount = domains.length;
     const dom = domains[domIdx];
     if (dom && state.activeTab === 2) {
-      const domDone = dom.points.filter(p=>state.scores[p.id]&&state.scores[p.id].note).length;
-      const domPct = dom.points.length ? Math.round(domDone/dom.points.length*100) : 0;
+      const ctxDom = state.auditType === 'erp' ? getERPContext() : null;
+      const domPts = dom.points.filter(p => !isPointNA(p, ctxDom));
+      const domDone = domPts.filter(p => noteSaisie((state.scores[p.id] || {}).note)).length;
+      const domPct = domPts.length ? Math.round(domDone/domPts.length*100) : 0;
       lbl.innerHTML = `Dom. <strong>${domIdx+1}/${domCount}</strong> — ${domPct}% &nbsp;·&nbsp; ${done}/${total} total`;
     } else {
       lbl.textContent = `${done} / ${total} pts (${pct}%)`;
@@ -7727,10 +7741,9 @@ function init(){
 // Mêmes règles que la Synthèse (points applicables, notes de 1 à 5) et que le plan d'actions (compilerActionsPlan, dateEcheance).
 const COCKPIT_MAX_ALERTES = 8;
 function calculerCockpit(){
-  const ctx = state.auditType === 'erp' ? getERPContext() : null;
   const scores = state.scores || {};
-  const applicables = getAllPoints().filter(p => !isPointNA(p, ctx));
-  const notes = applicables.map(p => parseInt((scores[p.id] || {}).note, 10)).filter(n => n >= 1 && n <= 5);
+  const av = avancementSaisie();
+  const notes = pointsApplicables().map(p => parseInt((scores[p.id] || {}).note, 10)).filter(n => n >= 1 && n <= 5);
   const id = state.identification || {};
   const dateAudit = typeof id.date === 'string' ? id.date : '';
   const dateValide = dateAudit !== '' && !Number.isNaN(new Date(dateAudit).getTime());
@@ -7747,10 +7760,10 @@ function calculerCockpit(){
     nom: id.nom || '',
     score: scoreGlobalRapport(),
     reference: getAuditData().reference,
-    nbNotes: notes.length,
-    nbApplicables: applicables.length,
+    nbNotes: av.notes,
+    nbApplicables: av.applicables,
     critiques: notes.filter(n => n <= 2).length,
-    avancement: applicables.length ? Math.round(notes.length / applicables.length * 100) : 0,
+    avancement: av.pct,
     dateValide: dateValide,
     nbP1: p1.length,
     p1Retard: p1Retard
@@ -8045,53 +8058,61 @@ function lienArticle(ref) {
 }
 
 // --- Lettre gestionnaire ---
+// Partie pure : aucune lecture de la page ni de l'état. d = { identification:{nom, adresse, date, auditeur, organisme}, dateLettre, message, actions:[{ref, label, priorite, constat, preconisation, source, echeance:{label, depasse}}] }
+// Les actions viennent du plan d'actions (rassemblerDonneesRapport) : mêmes non-conformités que le rapport client. Tout texte saisi est échappé.
+function construireLettre(d){
+  const e = echapperRapport;
+  const id = d.identification || {};
+  const actions = Array.isArray(d.actions) ? d.actions : [];
+  const nom = (typeof id.nom === 'string' && id.nom.trim()) ? id.nom.trim() : '[Nom établissement]';
+  const adresse = (typeof id.adresse === 'string' && id.adresse.trim()) ? id.adresse.trim() : '';
+  const auditeur = (typeof id.auditeur === 'string' && id.auditeur.trim()) ? id.auditeur.trim() : '[Auditeur]';
+  const organisme = (typeof id.organisme === 'string' && id.organisme.trim()) ? id.organisme.trim() : '';
+  const dateBrute = typeof id.date === 'string' ? id.date : '';
+  const dateOk = dateBrute !== '' && !Number.isNaN(new Date(dateBrute).getTime());
+  const dateAudit = dateOk ? new Date(dateBrute).toLocaleDateString('fr-FR', {year: 'numeric', month: 'long', day: 'numeric'}) : '';
+  const SECTIONS = [
+    ['P1', 'Actions prioritaires (P1, délai 1 mois)'],
+    ['P2', 'Actions à planifier (P2, délai 3 mois)'],
+    ['P3', 'Actions à programmer (P3, délai 12 mois)']
+  ];
+  const ligne = a => {
+    const constat = (a.constat || '').trim();
+    return '<li style="margin-bottom:10px"><strong>' + e(a.ref) + '</strong>' + (a.label ? ' — ' + e(a.label) : '')
+      + (constat ? '<br><span>Constat : ' + e(constat) + '</span>' : '')
+      + '<br><span>Préconisation : ' + e(a.preconisation) + '</span>'
+      + (a.echeance && a.echeance.label ? '<br><span style="font-size:12px;color:#555">Échéance : ' + e(a.echeance.label) + '</span>' : '')
+      + '</li>';
+  };
+  const listes = SECTIONS.map(([prio, titre]) => {
+    const lot = actions.filter(a => a.priorite === prio);
+    return lot.length ? '<p style="margin-top:20px"><strong>' + titre + ' :</strong></p><ul style="margin:8px 0 0 16px;line-height:1.6">' + lot.map(ligne).join('') + '</ul>' : '';
+  }).join('');
+  const vide = actions.length === 0 ? '<p style="margin-top:16px">' + e(messageVideRapport(d.message)) + '</p>' : '';
+  const intro = actions.length
+    ? 'nous vous adressons ci-après les non-conformités relevées lors de notre audit (' + actions.length + ' action' + (actions.length > 1 ? 's' : '') + ' au plan d\'actions).'
+    : 'nous vous adressons ci-après le résultat de notre audit.';
+  return '<p style="text-align:right;margin:0 0 24px">' + e(d.dateLettre || '') + '</p>'
+    + '<p><strong>Objet : Rapport de visite de sécurité incendie — ' + e(nom) + '</strong></p>'
+    + '<p>Madame, Monsieur,</p>'
+    + '<p>Suite à la visite de sécurité incendie réalisée' + (dateAudit ? ' le <strong>' + e(dateAudit) + '</strong>' : '') + ' au sein de l\'établissement <strong>' + e(nom) + '</strong>' + (adresse ? ', situé ' + e(adresse) : '') + ', ' + intro + '</p>'
+    + listes + vide
+    + '<p style="margin-top:24px">Nous restons à votre disposition pour tout renseignement complémentaire.</p>'
+    + '<p style="margin-top:16px">Veuillez agréer, Madame, Monsieur, l\'expression de nos salutations distinguées.</p>'
+    + '<div style="margin-top:40px;display:flex;justify-content:space-between">'
+    + '<div><p style="margin:0"><strong>' + e(auditeur) + '</strong></p><p style="margin:4px 0 0;font-size:12px;color:#666">' + (organisme ? e(organisme) + ' — ' : '') + 'Auditeur sécurité incendie</p></div>'
+    + '<div style="text-align:right"><p style="margin:0;font-size:12px;color:#666">Cachet / Signature</p><div style="margin-top:8px;border:1px solid #ccc;width:120px;height:60px;"></div></div>'
+    + '</div>';
+}
+
+// Appelée par le bouton du plan d'actions et par celui du Cockpit : une seule lettre.
 function genererLettreCourrier() {
   const bg = document.getElementById('lettreBg');
   const body = document.getElementById('lettreBody');
   if (!bg || !body) return;
-
-  const id = state.identification || {};
-  const nom = id.nom || id.nomERP || id.nomBatiment || '[Nom établissement]';
-  const adresse = id.adresse || id.adresseERP || '[Adresse]';
-  const dateAudit = id.dateAudit || id.date || new Date().toISOString().slice(0,10);
-  const auditeur = id.auditeur || id.inspecteur || '[Auditeur]';
-  const today = new Date().toLocaleDateString('fr-FR',{year:'numeric',month:'long',day:'numeric'});
-
-  // Collecter actions P1 + P2
-  const structure = typeof getAuditStructure === 'function' ? getAuditStructure() : null;
-  const domains = structure ? structure.domains : [];
-  const p1 = [], p2 = [];
-  domains.forEach(dom => {
-    dom.points.forEach(pt => {
-      const s = (state.scores || {})[pt.id] || {};
-      if (s.score <= 2 || s.nc) {
-        const prio = s.priorite || (s.score === 1 ? 'P1' : 'P2');
-        const item = `<li style="margin-bottom:6px"><strong>${pt.ref}</strong> — ${pt.label}${s.action ? ` : ${s.action}` : ''}</li>`;
-        if (prio === 'P1') p1.push(item);
-        else if (prio === 'P2') p2.push(item);
-      }
-    });
-  });
-
-  body.innerHTML = `
-    <p style="text-align:right;margin:0 0 24px">${today}</p>
-    <p><strong>Objet : Rapport de visite de sécurité incendie — ${nom}</strong></p>
-    <p>Madame, Monsieur,</p>
-    <p>Suite à la visite de sécurité incendie réalisée le <strong>${dateAudit}</strong> au sein de l'établissement <strong>${nom}</strong>, situé ${adresse}, nous vous adressons ci-après les observations relevées lors de notre audit.</p>
-    ${p1.length ? `
-    <p style="margin-top:20px"><strong>Actions prioritaires (P1 — délai 1 mois) :</strong></p>
-    <ul style="margin:8px 0 0 16px;line-height:1.7">${p1.join('')}</ul>` : ''}
-    ${p2.length ? `
-    <p style="margin-top:20px"><strong>Actions à planifier (P2 — délai 3 mois) :</strong></p>
-    <ul style="margin:8px 0 0 16px;line-height:1.7">${p2.join('')}</ul>` : ''}
-    ${!p1.length && !p2.length ? '<p style="margin-top:16px;color:#15803d">Aucune non-conformité majeure détectée lors de cette visite.</p>' : ''}
-    <p style="margin-top:24px">Nous restons à votre disposition pour tout renseignement complémentaire.</p>
-    <p style="margin-top:16px">Veuillez agréer, Madame, Monsieur, l'expression de nos salutations distinguées.</p>
-    <div style="margin-top:40px;display:flex;justify-content:space-between">
-      <div><p style="margin:0"><strong>${auditeur}</strong></p><p style="margin:4px 0 0;font-size:12px;color:#666">Auditeur sécurité incendie</p></div>
-      <div style="text-align:right"><p style="margin:0;font-size:12px;color:#666">Cachet / Signature</p><div style="margin-top:8px;border:1px solid #ccc;width:120px;height:60px;"></div></div>
-    </div>`;
-
+  const d = rassemblerDonneesRapport();
+  d.dateLettre = new Date().toLocaleDateString('fr-FR', {year: 'numeric', month: 'long', day: 'numeric'});
+  body.innerHTML = construireLettre(d);
   bg.style.display = 'flex';
 }
 
