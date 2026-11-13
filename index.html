@@ -386,6 +386,31 @@ body.mode-essai .toolbar{justify-content:center}
 .guide-card{background:var(--surface);border-radius:var(--r);padding:18px;border-left:4px solid var(--accent);box-shadow:var(--shadow)}
 .guide-card h3{font-size:14px;margin-bottom:6px}
 .guide-card p{font-size:13px;color:var(--text2)}
+/* COCKPIT (onglet 0) : tableau de bord en lecture seule */
+.cockpit{max-width:1100px;margin:24px auto 0;padding:0 20px}
+.cockpit + .guide{margin-top:16px}
+.cockpit h2{font-size:17px;margin:0 0 4px;color:var(--primary)}
+.cockpit-sub{font-size:13px;color:var(--text2);margin:0 0 16px}
+.cockpit-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:20px}
+.cockpit-alertes{background:var(--surface);border-radius:var(--r);box-shadow:var(--shadow);padding:16px 20px;margin-bottom:20px;border-left:4px solid var(--p1)}
+.cockpit-alertes.cockpit-ok{border-left-color:var(--s4)}
+.cockpit-alertes.cockpit-info{border-left-color:var(--border)}
+.cockpit-alertes h3{font-size:15px;margin:0 0 8px}
+.cockpit-alertes ul{list-style:none;margin:0;padding:0}
+.cockpit-alertes li{padding:8px 0;border-top:1px solid var(--border);font-size:13px}
+.cockpit-alertes li:first-child{border-top:0}
+.cockpit-al-ref{font-weight:700;margin-right:6px}
+.cockpit-al-constat{display:block;color:var(--text2);margin-top:2px}
+.cockpit-al-ech{display:inline-block;margin-left:8px;padding:1px 8px;border-radius:10px;background:#fdecea;color:var(--p1);font-size:11px;font-weight:700;white-space:nowrap}
+.cockpit-al-reste{font-size:12px;color:var(--text2);margin:8px 0 0}
+.cockpit-nav{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.cockpit-nav .btn{justify-content:center;padding:12px 10px}
+.guide-details{margin-top:8px}
+.guide-details > summary{cursor:pointer;font-weight:700;font-size:14px;padding:12px 16px;background:var(--surface);border-radius:var(--r);box-shadow:var(--shadow);list-style:none}
+.guide-details > summary::-webkit-details-marker{display:none}
+.guide-details[open] > summary{margin-bottom:12px}
+@media(max-width:900px){.cockpit-kpis,.cockpit-nav{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:600px){.cockpit-kpis,.cockpit-nav{grid-template-columns:1fr}.cockpit{padding:0 12px}}
 .badge-ref{display:inline-block;background:#f0f2f5;border:1px solid var(--border);border-radius:4px;font-size:10px;padding:1px 5px;color:var(--text2);font-weight:600}
 .table-ref{width:100%;border-collapse:collapse;margin:12px 0;font-size:13px}
 .table-ref th{background:var(--primary);color:#fff;padding:8px 12px;text-align:left}
@@ -893,7 +918,7 @@ input[type="number"], input[type="text"], input[type="email"], input[type="tel"]
 if ('serviceWorker' in navigator) {
   try {
     // Doit rester égale à VERSION dans sw.js : le message n'apparaît que si le service worker actif est plus récent que la page.
-    const VERSION_PAGE = 'v36';
+    const VERSION_PAGE = 'v37';
     let bandeauAffiche = false;
     navigator.serviceWorker.addEventListener('message', e => {
       if (!e.data || e.data.type !== 'sw-active' || e.data.version === VERSION_PAGE || bandeauAffiche) return;
@@ -1234,7 +1259,7 @@ a.essai-btn{display:inline-flex;align-items:center;justify-content:center;text-d
 </header>
 
 <nav class="tabs">
-  <div class="tab active" onclick="showTab(0)" id="tab0">ℹ️ Mode d'emploi</div>
+  <div class="tab active" onclick="showTab(0)" id="tab0">🧭 Cockpit</div>
   <div class="tab" onclick="showTab(1)" id="tab1">📋 Identification</div>
   <div class="tab" onclick="showTab(2)" id="tab2">📝 Grille de saisie</div>
   <div class="tab" onclick="showTab(3)" id="tab3">📊 Synthèse</div>
@@ -1243,12 +1268,15 @@ a.essai-btn{display:inline-flex;align-items:center;justify-content:center;text-d
   <div class="tab" onclick="showTab(6)" id="tab6">📁 Historique</div>
 </nav>
 
-<!-- TAB 0: MODE D'EMPLOI -->
+<!-- TAB 0: COCKPIT (tableau de bord) puis MODE D'EMPLOI (bloc replié) -->
 <div class="panel active" id="panel0">
+  <div class="cockpit" id="cockpit"></div>
   <div class="guide">
+    <div id="compat-panel"></div>
+    <details class="guide-details" id="guideDetails">
+    <summary>ℹ️ Mode d'emploi, méthode d'analyse et veille réglementaire</summary>
     <h1>Mode d'emploi — Audit Incendie Numérique</h1>
     <p>Outil Sam Incendie — deux grilles interactives pour évaluer, prioriser et suivre la conformité incendie de vos bâtiments.</p>
-    <div id="compat-panel"></div>
     <div class="guide-grid">
       <div class="guide-card"><h3>1️⃣ Identification</h3><p>Renseignez les informations du bâtiment, la date et l'auditeur avant de commencer.</p></div>
       <div class="guide-card"><h3>2️⃣ Grille de saisie</h3><p>Naviguez par domaine. Notez chaque point de 1 à 5, renseignez le constat et la préconisation.</p></div>
@@ -1299,6 +1327,7 @@ a.essai-btn{display:inline-flex;align-items:center;justify-content:center;text-d
       <tr><td>Décret 19/11/2025 — SEE</td><td>Solutions d'Effet Équivalent : cadre légal pour dérogations motivées</td><td>19/11/2025</td></tr>
       <tr><td>Arr. 19/02/2026 — Bois/biosourcés</td><td>Matériaux biosourcés autorisés en structure d'ERP sous conditions</td><td>19/02/2026</td></tr>
     </table>
+    </details>
   </div>
 </div>
 
@@ -4489,7 +4518,7 @@ function showTab(n){
   document.querySelectorAll('.panel').forEach((p,i)=>p.classList.toggle('active',i===n));
   document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',i===n));
   switch(n){
-    case 0: afficherPanneauCompat(); break;
+    case 0: renderCockpit(); afficherPanneauCompat(); break;
     case 1: {
       const selErp = document.getElementById('select-erp-type-main');
       if(selErp) selErp.value = state.erpSubType||'M';
@@ -4640,6 +4669,7 @@ function switchType(type){
   }
   if(typeof rafraichirChampsSpecifiquesIdentification==='function') rafraichirChampsSpecifiquesIdentification();
   renderGrille();
+  if(state.activeTab===0) renderCockpit();
   if(state.activeTab===3) renderSynthese();
   if(state.activeTab===4) renderPlan();
   updateProgress();
@@ -4962,6 +4992,7 @@ function setErpType(t){
   const selMain = document.getElementById('select-erp-type-main');
   if(selMain && !document.getElementById('i_mixte')?.checked) selMain.value = state.erpSubType||'M';
   if(typeof rafraichirChampsSpecifiquesIdentification==='function') rafraichirChampsSpecifiquesIdentification();
+  if(state.activeTab===0) renderCockpit();
   if(state.activeTab===2) renderGrille();
   if(state.activeTab===3) renderSynthese();
   updateProgress();
@@ -5601,7 +5632,7 @@ function renderPlan() {
             </div>
             <div style="border-top: 1px solid #e2e8f0; padding-top: 10px; display: flex; justify-content: space-between; align-items: center;">
                 <span style="font-size: 11px; color: #718096;">Fait le : ${dateDuJour}</span>
-                <span style="font-size: 11px; font-weight: bold; color: #4a5568; border-bottom: 1px dashed #718096; width: 40mm; text-align: right; padding-bottom: 25px;">Visa de l'expert certifié, jury SSIAP 1 & 2</span>
+                <span style="font-size: 11px; font-weight: bold; color: #4a5568; border-bottom: 1px dashed #718096; width: 40mm; text-align: right; padding-bottom: 25px;">Visa de l'expert certifié en sécurité incendie</span>
             </div>
         </div>
         <!-- FIN PAGE DE GARDE -->
@@ -7681,6 +7712,7 @@ function init(){
   essaiAppliquerAccesAuDemarrage();
   if(!SamCompat.caps.serviceWorker && !state.isDemo) avisUneFois('hors-ligne', SamCompat.MSG.horsLigne);
   afficherPanneauCompat();
+  renderCockpit();
   majBandeauCompat();
   Quota.surveiller();
   Store.apresDemarrage();
@@ -7688,6 +7720,93 @@ function init(){
   if(state.isDemo && essaiChoixActif() && state.auditType !== 'erp') switchType('erp');
   // Essai : on ouvre directement sur les questions (pas sur le mode d'emploi de l'outil complet).
   if(state.isDemo) showTab(2);
+}
+
+// ==================== COCKPIT (onglet 0) ====================
+// Tableau de bord en LECTURE SEULE : rien n'est écrit dans state ni dans le stockage.
+// Mêmes règles que la Synthèse (points applicables, notes de 1 à 5) et que le plan d'actions (compilerActionsPlan, dateEcheance).
+const COCKPIT_MAX_ALERTES = 8;
+function calculerCockpit(){
+  const ctx = state.auditType === 'erp' ? getERPContext() : null;
+  const scores = state.scores || {};
+  const applicables = getAllPoints().filter(p => !isPointNA(p, ctx));
+  const notes = applicables.map(p => parseInt((scores[p.id] || {}).note, 10)).filter(n => n >= 1 && n <= 5);
+  const id = state.identification || {};
+  const dateAudit = typeof id.date === 'string' ? id.date : '';
+  const dateValide = dateAudit !== '' && !Number.isNaN(new Date(dateAudit).getTime());
+  const entree = entreePlan('all');
+  const p1 = compilerActionsPlan(entree).actions.filter(a => a.priorite === 'P1');
+  const p1Retard = [];
+  if(dateValide){
+    p1.forEach(a => {
+      const ech = dateEcheance(a.priorite, dateAudit);
+      if(ech.depasse) p1Retard.push({id: a.id, ref: a.ref, label: (entree.points[a.id] || {}).label || '', constat: a.constat || '', echeance: ech.label});
+    });
+  }
+  return {
+    nom: id.nom || '',
+    score: scoreGlobalRapport(),
+    reference: getAuditData().reference,
+    nbNotes: notes.length,
+    nbApplicables: applicables.length,
+    critiques: notes.filter(n => n <= 2).length,
+    avancement: applicables.length ? Math.round(notes.length / applicables.length * 100) : 0,
+    dateValide: dateValide,
+    nbP1: p1.length,
+    p1Retard: p1Retard
+  };
+}
+
+function htmlCockpit(c){
+  const e = echapperRapport;
+  const pluriel = (n, mot) => n + ' ' + mot + (n > 1 ? 's' : '');
+  const kpi = (classe, valeur, libelle, classeSous, sous) =>
+    '<div class="kpi-card"><div class="kpi-val ' + classe + '">' + valeur + '</div><div class="kpi-label">' + libelle + '</div><div class="kpi-sub ' + classeSous + '">' + sous + '</div></div>';
+  const aScore = c.score !== null;
+  const ecart = (aScore && typeof c.reference === 'number') ? Math.round((c.score - c.reference) * 10) / 10 : null;
+  const cartes = [
+    kpi(!aScore ? 'kpi-gray' : c.score >= 4 ? 'kpi-green' : c.score >= 3 ? 'kpi-amber' : 'kpi-red', aScore ? c.score.toFixed(1) : '—', 'Score global / 5',
+      ecart === null ? 'kpi-gray' : ecart >= 0 ? 'kpi-green' : 'kpi-red', ecart === null ? 'Aucun point saisi' : (ecart >= 0 ? '+' : '') + ecart + ' vs référence ' + c.reference + '/5'),
+    kpi(c.nbNotes === 0 ? 'kpi-gray' : c.critiques === 0 ? 'kpi-green' : 'kpi-red', c.nbNotes === 0 ? '—' : c.critiques, 'Points critiques (≤ 2/5)',
+      'kpi-gray', c.nbNotes === 0 ? 'Aucun point saisi' : 'sur ' + c.nbNotes + (c.nbNotes > 1 ? ' points saisis' : ' point saisi')),
+    kpi(!c.dateValide ? 'kpi-gray' : c.p1Retard.length === 0 ? 'kpi-green' : 'kpi-red', c.dateValide ? c.p1Retard.length : '—', 'Actions P1 en retard',
+      'kpi-gray', c.dateValide ? 'sur ' + pluriel(c.nbP1, 'action') + ' P1' : 'Date d\'audit à renseigner'),
+    kpi(c.avancement >= 80 ? 'kpi-green' : c.avancement > 0 ? 'kpi-amber' : 'kpi-gray', c.avancement + ' %', 'Avancement de la saisie',
+      'kpi-gray', c.nbNotes + ' / ' + c.nbApplicables + ' points saisis')
+  ];
+  let alertes;
+  if(!c.dateValide){
+    alertes = '<div class="cockpit-alertes cockpit-info"><h3>🚨 Alertes prioritaires</h3><p class="cockpit-al-reste">Renseignez la date de l\'audit (onglet Identification) pour suivre les échéances des actions P1.</p></div>';
+  } else if(c.p1Retard.length === 0){
+    alertes = '<div class="cockpit-alertes cockpit-ok"><h3>🚨 Alertes prioritaires</h3><p class="cockpit-al-reste">' + (c.nbP1 === 0 ? 'Aucune action P1 au plan d\'actions.' : '✅ Aucune action P1 en retard.') + '</p></div>';
+  } else {
+    const lignes = c.p1Retard.slice(0, COCKPIT_MAX_ALERTES).map(a => {
+      const constat = a.constat.length > 160 ? a.constat.slice(0, 157) + '…' : a.constat;
+      return '<li><span class="cockpit-al-ref">' + e(a.ref) + '</span>' + e(a.label) + '<span class="cockpit-al-ech">échéance ' + e(a.echeance) + '</span><span class="cockpit-al-constat">' + e(constat) + '</span></li>';
+    }).join('');
+    const reste = c.p1Retard.length - COCKPIT_MAX_ALERTES;
+    alertes = '<div class="cockpit-alertes"><h3>🚨 Alertes prioritaires : ' + pluriel(c.p1Retard.length, 'action') + ' P1 en retard</h3><ul>' + lignes + '</ul>'
+      + (reste > 0 ? '<p class="cockpit-al-reste">+ ' + reste + ' autre' + (reste > 1 ? 's' : '') + ' : <a href="#" onclick="showTab(4);return false">voir le plan d\'actions</a></p>' : '') + '</div>';
+  }
+  const navigation = '<div class="cockpit-nav">'
+    + '<button class="btn" onclick="showTab(1)">📋 Identification</button>'
+    + '<button class="btn" onclick="showTab(2)">📝 Grille de saisie</button>'
+    + '<button class="btn" onclick="sauvegarderSnapshotHistorique(this)">📸 Snapshot</button>'
+    + '<button class="btn" onclick="genererLettreCourrier()">📄 Lettre gestionnaire</button>'
+    + '</div>';
+  return '<h2>🧭 Cockpit</h2><p class="cockpit-sub">' + (c.nom ? 'Dossier : ' + e(c.nom) : 'Aucun nom de dossier renseigné') + '</p>'
+    + '<div class="cockpit-kpis">' + cartes.join('') + '</div>' + alertes + navigation;
+}
+
+function renderCockpit(){
+  const zone = document.getElementById('cockpit');
+  if(!zone) return;
+  try{
+    zone.innerHTML = htmlCockpit(calculerCockpit());
+  }catch(err){
+    console.error('Cockpit :', err);
+    zone.innerHTML = '<p class="cockpit-sub">Le tableau de bord n\'a pas pu être calculé. Le reste de l\'application n\'est pas affecté.</p>';
+  }
 }
 
 // ==================== DÉLAIS RÉGLEMENTAIRES ====================
