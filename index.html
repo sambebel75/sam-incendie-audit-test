@@ -904,7 +904,15 @@ input[type="number"], input[type="text"], input[type="email"], input[type="tel"]
 .lettre-modal-bg.open{display:flex}
 .lettre-modal{background:#fff;border-radius:8px;padding:36px;max-width:720px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.3);font-family:'Times New Roman',serif;font-size:13px;line-height:1.7;color:#1a1f2e;position:relative}
 .lettre-modal .no-print{font-family:'Segoe UI',sans-serif}
-@media print{.lettre-modal-bg{display:block!important;position:static;background:none;padding:0}.lettre-modal{box-shadow:none;border-radius:0}.lettre-modal .no-print{display:none!important}}
+/* Impression : la lettre n'est jamais ajoutée à une impression ordinaire ; elle est seule imprimée tant que body.mode-lettre est actif (imprimerLettre) */
+@media print{
+  .lettre-modal-bg{display:none!important}
+  body.mode-lettre{background:#fff!important}
+  body.mode-lettre > *:not(#lettreBg){display:none!important}
+  body.mode-lettre #lettreBg{display:block!important;position:static;background:none;padding:0;overflow:visible}
+  body.mode-lettre .lettre-modal{box-shadow:none;border-radius:0;max-width:none;padding:0;margin:0}
+  body.mode-lettre .lettre-modal .no-print{display:none!important}
+}
 </style>
 
 <meta name="theme-color" content="#e8341c">
@@ -918,7 +926,7 @@ input[type="number"], input[type="text"], input[type="email"], input[type="tel"]
 if ('serviceWorker' in navigator) {
   try {
     // Doit rester égale à VERSION dans sw.js : le message n'apparaît que si le service worker actif est plus récent que la page.
-    const VERSION_PAGE = 'v38';
+    const VERSION_PAGE = 'v39';
     let bandeauAffiche = false;
     navigator.serviceWorker.addEventListener('message', e => {
       if (!e.data || e.data.type !== 'sw-active' || e.data.version === VERSION_PAGE || bandeauAffiche) return;
@@ -1803,7 +1811,7 @@ a.essai-btn{display:inline-flex;align-items:center;justify-content:center;text-d
 <div class="lettre-modal-bg" id="lettreBg" onclick="if(event.target===this)fermerLettre()">
   <div class="lettre-modal" id="lettreContenu">
     <div class="no-print" style="display:flex;justify-content:flex-end;gap:8px;margin-bottom:16px;font-family:'Segoe UI',sans-serif">
-      <button class="btn btn-accent" onclick="window.print()">🖨️ Imprimer la lettre</button>
+      <button class="btn btn-accent" onclick="imprimerLettre()">🖨️ Imprimer la lettre</button>
       <button class="btn" onclick="fermerLettre()">✕ Fermer</button>
     </div>
     <div id="lettreBody"></div>
@@ -8120,6 +8128,15 @@ function fermerLettre() {
   const bg = document.getElementById('lettreBg');
   if (bg) bg.style.display = 'none';
 }
+
+// Imprime la lettre SEULE (classe mode-lettre : le reste de l'outil est masqué à l'impression), puis rétablit l'écran.
+function imprimerLettre() {
+  const corps = document.getElementById('lettreBody');
+  if (!corps || !corps.innerHTML.trim()) return;
+  document.body.classList.add('mode-lettre');
+  requestAnimationFrame(() => window.print());
+}
+window.addEventListener('afterprint', () => document.body.classList.remove('mode-lettre'));
 
 // --- Comparatif historique ---
 function renderComparatif(snapshots) {
