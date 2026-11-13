@@ -1051,7 +1051,7 @@ input[type="number"], input[type="text"], input[type="email"], input[type="tel"]
 if ('serviceWorker' in navigator) {
   try {
     // Doit rester égale à VERSION dans sw.js : le message n'apparaît que si le service worker actif est plus récent que la page.
-    const VERSION_PAGE = 'v44';
+    const VERSION_PAGE = 'v45';
     let bandeauAffiche = false;
     navigator.serviceWorker.addEventListener('message', e => {
       if (!e.data || e.data.type !== 'sw-active' || e.data.version === VERSION_PAGE || bandeauAffiche) return;
@@ -4235,7 +4235,7 @@ const LICENCE_TOLERANCE_MS = 5 * 60 * 1000;
 const LICENCE_DELAI_MS = 4000;
 const LICENCE_CONTACT = 'contact@samincendie.fr';
 const LICENCE_REPLI_URL = 'https://worldtimeapi.org/api/timezone/Etc/UTC';
-const LICENCE = {serveur: null, derniereVerif: 0, enCours: false, bloque: '', urlEntree: null};
+const LICENCE = {serveur: null, derniereVerif: 0, enCours: false, bloque: '', urlRefus: null};
 
 // Domaine autorisé : liste exacte, ou sous-domaine d'aperçu du projet Cloudflare. samincendie.fr.evil.com et evilsamincendie.fr sont refusés.
 function domaineAutorise(hostname){
@@ -4367,7 +4367,7 @@ function licenceMessageCode(code){
   return '';
 }
 
-// Écran bloquant (pur : renvoie du HTML). type = 'domaine' | 'expire' | 'invalide'.
+// Écran bloquant (pur : renvoie du HTML). type = 'domaine' | 'expire' | 'invalide' | 'inconnu'.
 function htmlEcranBloquant(type, infos){
   const e = echapperRapport;
   const i = infos || {};
@@ -4378,8 +4378,13 @@ function htmlEcranBloquant(type, infos){
     texte = 'Cette copie de Sam Incendie — Audit n\'est pas hébergée sur un site autorisé. Pour utiliser l\'outil, rendez-vous sur samincendie.fr, ou écrivez à ' + contact + '.';
   } else {
     const date = dateLongueFr(i.expireLe);
-    titre = type === 'expire' && date ? 'Votre accès Bêta a expiré le ' + date : 'Votre accès Bêta n\'est plus valide';
-    texte = 'Vos données restent enregistrées sur cet appareil : exportez votre dossier pour le conserver. Pour prolonger votre accès, saisissez un nouveau code ou écrivez à ' + contact + '.';
+    if(type === 'inconnu'){
+      titre = 'Code d\'accès non reconnu';
+      texte = 'Le code reçu dans ce lien n\'est pas reconnu. Vérifiez le lien ou saisissez le code à la main. Vos données restent enregistrées sur cet appareil : exportez votre dossier pour le conserver, ou écrivez à ' + contact + '.';
+    } else {
+      titre = type === 'expire' && date ? 'Votre accès Bêta a expiré le ' + date : 'Votre accès Bêta n\'est plus valide';
+      texte = 'Vos données restent enregistrées sur cet appareil : exportez votre dossier pour le conserver. Pour prolonger votre accès, saisissez un nouveau code ou écrivez à ' + contact + '.';
+    }
     actions = '<button type="button" class="btn btn-accent" onclick="licenceExporterDossier()">💾 Exporter mon dossier</button>'
       + '<form class="licence-form" onsubmit="licenceValiderNouveauCode(event)"><label>Nouveau code d\'accès<input type="text" id="licence-code-champ" class="essai-code-champ" autocomplete="off" autocapitalize="characters" spellcheck="false"></label>'
       + '<button type="submit" class="btn">Ouvrir avec ce code</button><span class="licence-msg" id="licence-msg" role="status"></span></form>';
@@ -4414,7 +4419,7 @@ function licenceValiderNouveauCode(ev){
   const msg = document.getElementById('licence-msg');
   const code = champ ? champ.value : '';
   if(essaiCodeValide(code)){
-    LICENCE.urlEntree = null;
+    LICENCE.urlRefus = null;
     licenceLever();
     essaiOuvrirOutilComplet(code);
     return;
@@ -4422,17 +4427,29 @@ function licenceValiderNouveauCode(ev){
   if(msg) msg.textContent = licenceMessageCode(code);
 }
 
-// Applique l'état du code à l'écran : bloque si le code gardé sur l'appareil (ou celui de l'adresse) est expiré, lève le blocage s'il est valable.
+// Un code d'adresse d'abord refusé (heure locale fausse) mais valable à l'heure du serveur est finalement accepté, comme au démarrage.
+function licenceAccepterCodeAdresse(){
+  const r = LICENCE.urlRefus;
+  try{ localStorage.setItem(ACCES_CLE, r.empreinte); }catch(err){}
+  LICENCE.urlRefus = null;
+  if(state.isDemo){ state.isDemo = false; renderGrille(); updateProgress(); }
+}
+
+// Applique l'état du code à l'écran. PRIORITÉ ABSOLUE au code passé dans l'adresse (paramètre d'accès) : refusé (expiré, inconnu ou illisible), il bloque
+// même si un ancien code valable est gardé sur l'appareil. Sans code dans l'adresse, on regarde le code gardé sur l'appareil.
 // Le blocage par domaine, lui, ne se lève jamais.
 function licenceAppliquerEtat(){
   if(LICENCE.bloque === 'domaine') return;
+  const r = LICENCE.urlRefus;
+  if(r){
+    const st = r.entree ? accesStatut(r.entree, licenceAujourdhui()) : {etat: 'inconnu', expireLe: ''};
+    if(st.etat === 'ok' || st.etat === 'permanent'){ licenceAccepterCodeAdresse(); if(LICENCE.bloque) licenceLever(); return; }
+    licenceBloquer(st.etat, st);
+    return;
+  }
   const st = licenceEtatStocke();
   if(st.etat === 'ok' || st.etat === 'permanent'){ if(LICENCE.bloque) licenceLever(); return; }
   if(st.etat === 'expire' || st.etat === 'invalide'){ licenceBloquer(st.etat, st); return; }
-  if(LICENCE.urlEntree){
-    const sUrl = accesStatut(LICENCE.urlEntree, licenceAujourdhui());
-    if(sUrl.etat === 'expire' || sUrl.etat === 'invalide'){ licenceBloquer(sUrl.etat, sUrl); return; }
-  }
   if(LICENCE.bloque) licenceLever();
 }
 
@@ -4556,14 +4573,17 @@ function essaiAppliquerAccesAuDemarrage(){
     try { if(window.parent && window.parent !== window) code = new URLSearchParams(window.parent.location.search).get('acces') || ''; } catch(e){}
   }
   if(code && essaiCodeValide(code)){
+    LICENCE.urlRefus = null;
     try { localStorage.setItem(ACCES_CLE, essaiEmpreinteCode(code)); } catch(e){}
     if(dansAdresse){
       try { const u = new URL(location.href); u.searchParams.delete('acces'); history.replaceState(null, '', u.pathname + u.search + u.hash); } catch(e){}
     }
   } else if(code){
-    LICENCE.urlEntree = accesEntreeParEmpreinte(essaiEmpreinteCode(code));
+    // Le code de l'adresse a la priorité ABSOLUE : refusé (inconnu, expiré ou illisible), il bloque même si un ancien code valable est gardé.
+    const h = essaiEmpreinteCode(code);
+    LICENCE.urlRefus = {entree: accesEntreeParEmpreinte(h), empreinte: h};
   }
-  if(essaiAccesEnregistre() && state.isDemo){
+  if(!LICENCE.urlRefus && essaiAccesEnregistre() && state.isDemo){
     state.isDemo = false;
     renderGrille();
     updateProgress();
