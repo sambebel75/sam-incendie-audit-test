@@ -827,6 +827,29 @@ input[type="number"]:focus, input[type="text"]:focus, input[type="email"]:focus,
     --border-color: #4a5568;
 }
 
+/* Mode nuit : l'interface utilise --bg, --surface, --text... (le bloc ci-dessus ne redéfinissait que --bg-main, --bg-card...).
+   Sans ces variables, les cartes restaient blanches avec un texte clair : grille de saisie illisible, surtout sur téléphone en apparence sombre. */
+[data-theme="dark"] {
+    --bg: #1a202c;
+    --surface: #2d3748;
+    --surface2: #262e3d;
+    --text: #f7fafc;
+    --text2: #a9b4c4;
+    --border: #4a5568;
+    --shadow: 0 2px 8px rgba(0,0,0,.45);
+}
+[data-theme="dark"] .guide h2, [data-theme="dark"] .cockpit h2, [data-theme="dark"] .registre h2 { color: var(--text); }
+/* Mode nuit : éléments à fond clair codé en dur (le texte hérité est clair), boutons au texte noir par défaut, rouges trop sombres. */
+[data-theme="dark"] .type-card.active, [data-theme="dark"] .domain-nav-item.active, [data-theme="dark"] .gn2-card.winner,
+[data-theme="dark"] .erp-type-banner, [data-theme="dark"] .point-ref-link:hover { background: rgba(232,52,28,.2); }
+[data-theme="dark"] .pri-btn:not(.active), [data-theme="dark"] .filter-btn:not(.active), [data-theme="dark"] .calc-adj { color: var(--text); }
+[data-theme="dark"] .kpi-red, [data-theme="dark"] .diff-neg { color: #ff7b8a; }
+[data-theme="dark"] textarea, [data-theme="dark"] input[type="date"] { background: var(--surface2); color: var(--text); border-color: var(--border); }
+[data-theme="dark"] textarea::placeholder, [data-theme="dark"] input::placeholder { color: var(--text2); }
+/* Plan d'actions : feuille blanche à texte foncé (ses couleurs sont codées en dur pour l'impression), lisible aussi en mode nuit. */
+[data-theme="dark"] .plan-wrap { background: #fff; color: #1a202c; border-radius: 8px; }
+[data-theme="dark"] .plan-wrap div[style*="background: white"], [data-theme="dark"] .plan-wrap div[style*="background: #ffffff"], [data-theme="dark"] .plan-wrap .print-report-wrapper { background-color: #fff !important; color: #1a202c !important; }
+
 body {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     background-color: var(--bg-main);
@@ -1051,7 +1074,7 @@ input[type="number"], input[type="text"], input[type="email"], input[type="tel"]
 if ('serviceWorker' in navigator) {
   try {
     // Doit rester égale à VERSION dans sw.js : le message n'apparaît que si le service worker actif est plus récent que la page.
-    const VERSION_PAGE = 'v45';
+    const VERSION_PAGE = 'v46';
     let bandeauAffiche = false;
     navigator.serviceWorker.addEventListener('message', e => {
       if (!e.data || e.data.type !== 'sw-active' || e.data.version === VERSION_PAGE || bandeauAffiche) return;
